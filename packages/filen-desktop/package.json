@@ -1,0 +1,38 @@
+{
+	"name": "filen-desktop",
+	"version": "3.0.0",
+	"description": "Filen Desktop Client",
+	"homepage": "https://filen.io",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/FilenCloudDienste/filen-apps.git"
+	},
+	"license": "AGPLv3",
+	"author": "Filen Cloud Dienste UG (haftungsbeschränkt) <support@filen.io>",
+	"type": "commonjs",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"private": true,
+	"scripts": {
+		"tsc": "tsc",
+		"clear": "rimraf ./dist",
+		"build": "npm run clear && npm run lint && npm run tsc",
+		"dev": "npm run build && cross-env NODE_ENV=development electron ./src/index.dev.js --no-sandbox",
+		"ncu": "npm-check-updates --interactive --format group",
+		"lint": "eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored"
+	},
+	"engines": {
+		"node": ">=24"
+	},
+	"devDependencies": {
+		"@types/node": "^24.3.0",
+		"@typescript-eslint/parser": "^8.39.1",
+		"cross-env": "^10.0.0",
+		"electron": "^37.3.0",
+		"electron-builder": "^26.0.12",
+		"eslint": "^9.33.0",
+		"npm-check-updates": "^18.0.2",
+		"tsx": "^4.20.4",
+		"typescript": "^5.9.2"
+	}
+}
