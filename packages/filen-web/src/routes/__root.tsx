@@ -1,22 +1,55 @@
 import { Outlet, createRootRoute, useLocation } from "@tanstack/react-router"
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
+// import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 import { ThemeProvider } from "@/providers/theme.provider"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { memo, useMemo } from "react"
-import useConfig from "@/hooks/useConfig"
+import DriveHeader from "@/components/drive/list/header"
+import { memo, useMemo, useState, useEffect, useRef, useCallback } from "react"
+import { useAuth } from "@/hooks/useAuth"
 import DesktopWrapper from "@/components/desktopWrapper"
+import { QueryClientProvider } from "@tanstack/react-query"
+import queryClient from "@/queries/client"
+import setup from "@/lib/setup"
+import { Toaster } from "@/components/ui/sonner"
+import DragSelect from "@/components/dragSelect"
 
 export const Root = memo(() => {
 	const { pathname } = useLocation()
-	const {
-		config: { authed }
-	} = useConfig()
+	const { authed } = useAuth()
+	const settingUpRef = useRef<boolean>(false)
+	const [setupDone, setSetupDone] = useState<boolean>(false)
 
 	const withSidebar = useMemo(() => {
 		return authed && !(pathname.startsWith("/404") || pathname.startsWith("/error"))
 	}, [authed, pathname])
+
+	const doSetup = useCallback(async () => {
+		if (setupDone || settingUpRef.current) {
+			return
+		}
+
+		settingUpRef.current = true
+
+		try {
+			const setupResult = await setup()
+
+			if (!setupResult.success) {
+				console.error(setupResult.errorMessage)
+
+				return
+			}
+
+			setSetupDone(true)
+		} catch (e) {
+			console.error(e)
+		} finally {
+			settingUpRef.current = false
+		}
+	}, [setupDone])
+
+	useEffect(() => {
+		doSetup()
+	}, [doSetup])
 
 	return (
 		<ThemeProvider
@@ -24,45 +57,31 @@ export const Root = memo(() => {
 			storageKey="filen-ui-theme"
 		>
 			<DesktopWrapper>
-				{withSidebar ? (
-					<SidebarProvider className="flex h-full">
-						<AppSidebar />
-						<SidebarInset
-							className="z-50"
-							sidebarRight={<div>hello world</div>}
-						>
-							{pathname.startsWith("/drive") && (
-								<header className="flex h-16 shrink-0 items-center gap-2">
-									<div className="flex items-center gap-2 px-4">
-										{/*<SidebarTrigger className="-ml-1" />
-										<Separator
-											orientation="vertical"
-											className="mr-2 data-[orientation=vertical]:h-4"
-										/>*/}
-										<Breadcrumb>
-											<BreadcrumbList>
-												<BreadcrumbItem className="hidden md:block">
-													<BreadcrumbLink href="#">Building Your Application</BreadcrumbLink>
-												</BreadcrumbItem>
-												<BreadcrumbSeparator className="hidden md:block" />
-												<BreadcrumbItem>
-													<BreadcrumbPage>Data Fetching</BreadcrumbPage>
-												</BreadcrumbItem>
-											</BreadcrumbList>
-										</Breadcrumb>
-									</div>
-								</header>
-							)}
+				{setupDone ? (
+					<QueryClientProvider client={queryClient}>
+						{withSidebar ? (
+							<SidebarProvider className="flex h-full">
+								<AppSidebar />
+								<SidebarInset className="z-50">
+									{pathname.startsWith("/drive") && <DriveHeader />}
+									<Outlet />
+								</SidebarInset>
+							</SidebarProvider>
+						) : (
 							<Outlet />
-						</SidebarInset>
-					</SidebarProvider>
+						)}
+						{/*<TanStackRouterDevtools
+							position="bottom-right"
+							initialIsOpen={false}
+						/>*/}
+						<DragSelect />
+						<Toaster />
+					</QueryClientProvider>
 				) : (
-					<Outlet />
+					<div className="flex flex-1 absolute w-full h-full z-[9999] top-0 left-0 right-0 bottom-0 bg-background items-center justify-center">
+						Setting up...
+					</div>
 				)}
-				<TanStackRouterDevtools
-					position="bottom-right"
-					initialIsOpen={false}
-				/>
 			</DesktopWrapper>
 		</ThemeProvider>
 	)

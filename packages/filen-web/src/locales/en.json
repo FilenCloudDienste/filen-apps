@@ -1,3 +1,25 @@
 {
-	"cloudDrive": "Cloud Drive"
+	"cloudDrive": "Cloud Drive",
+	"formatBytes": {
+		"b": "Bytes",
+		"kib": "KiB",
+		"mib": "MiB",
+		"gib": "GiB",
+		"tib": "TiB",
+		"pib": "PiB",
+		"eib": "EiB",
+		"zib": "ZiB",
+		"yib": "YiB"
+	},
+	"bpsToReadable": {
+		"b": "B/s",
+		"kib": "KiB/s",
+		"mib": "MiB/s",
+		"gib": "GiB/s",
+		"tib": "TiB/s",
+		"pib": "PiB/s",
+		"eib": "EiB/s",
+		"zib": "ZiB/s",
+		"yib": "YiB/s"
+	}
 }

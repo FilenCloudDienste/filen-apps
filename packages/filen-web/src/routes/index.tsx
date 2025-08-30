@@ -1,11 +1,9 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router"
 import { memo } from "react"
-import useConfig from "@/hooks/useConfig"
+import { useAuth } from "@/hooks/useAuth"
 
 export const Index = memo(() => {
-	const {
-		config: { authed }
-	} = useConfig()
+	const { authed } = useAuth()
 
 	if (!authed) {
 		return <Navigate to="/auth/login" />

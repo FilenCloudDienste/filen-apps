@@ -1,13 +1,19 @@
+import Semaphore from "./semaphore"
+
 export class ServiceWorker {
 	private isRegistered: boolean = false
+	private readonly mutex: Semaphore = new Semaphore(1)
+	private registration: ServiceWorkerRegistration | null = null
 
 	public async register(): Promise<void> {
-		if (this.isRegistered || !window || !window.navigator || !("serviceWorker" in window.navigator)) {
-			return
-		}
+		await this.mutex.acquire()
 
 		try {
-			const registration = await window.navigator.serviceWorker.register(
+			if (this.isRegistered || !window || !window.navigator || !("serviceWorker" in window.navigator)) {
+				return
+			}
+
+			this.registration = await window.navigator.serviceWorker.register(
 				import.meta.env.MODE === "production" ? "/sw.js" : "/dev-sw.js?dev-sw",
 				{
 					scope: "/",
@@ -15,14 +21,20 @@ export class ServiceWorker {
 				}
 			)
 
-			await registration.update()
+			await this.registration.update()
 
 			this.isRegistered = true
 
-			console.log("Service worker registered")
+			console.log("Service worker registered!")
 		} catch (e) {
 			console.error(e)
+		} finally {
+			this.mutex.release()
 		}
+	}
+
+	public getRegistration(): ServiceWorkerRegistration | null {
+		return this.registration
 	}
 }
 

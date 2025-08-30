@@ -17,6 +17,10 @@ code {
 	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
+* {
+	user-select: none;
+}
+
 :root {
 	--radius: 0.625rem;
 	--background: oklch(1 0 0);

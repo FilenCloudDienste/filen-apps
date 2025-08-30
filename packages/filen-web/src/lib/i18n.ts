@@ -7,7 +7,7 @@ let locales: string[] = ["en"]
 
 try {
 	const browserLanguages = globalThis?.navigator?.languages
-		?.map(lang => lang.trim().toLowerCase().split("-").at(0) ?? "")
+		?.map(lang => lang.trim().toLowerCase().split("-")[0] ?? "")
 		.filter(lang => lang.length > 0)
 
 	locales = browserLanguages.length > 0 ? browserLanguages : ["en"]
@@ -24,7 +24,7 @@ i18n.use(initReactI18next)
 		},
 		ns: ["translation"],
 		defaultNS: "translation",
-		lng: locales.at(0) ?? "en",
+		lng: locales[0] ?? "en",
 		debug: true,
 		fallbackLng: "en",
 		supportedLngs: ["en"],

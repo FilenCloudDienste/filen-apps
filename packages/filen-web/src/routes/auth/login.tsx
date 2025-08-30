@@ -2,15 +2,58 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import useConfig from "@/hooks/useConfig"
-import { memo, useState } from "react"
+import authService from "@/services/auth.service"
+import { memo, useState, useCallback } from "react"
 import { LoaderCircleIcon } from "lucide-react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { toast } from "sonner"
+
+export const formSchema = z.object({
+	email: z.email(),
+	password: z.string().min(1).max(Number.MAX_SAFE_INTEGER)
+})
 
 export const Login = memo(() => {
-	const { setConfig } = useConfig()
 	const navigate = useNavigate()
 	const [loggingIn, setLoggingIn] = useState<boolean>(false)
+
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			email: "",
+			password: ""
+		}
+	})
+
+	const onSubmit = useCallback(
+		async (values: z.infer<typeof formSchema>) => {
+			setLoggingIn(true)
+
+			try {
+				await authService.login(values.email, values.password)
+
+				navigate({
+					to: "/drive/$"
+				})
+			} catch (e) {
+				console.error(e)
+
+				if (typeof e === "string") {
+					if (e.includes("email_or_password_wrong")) {
+						form.reset()
+
+						toast.error("Email or password is incorrect")
+					}
+				}
+			} finally {
+				setLoggingIn(false)
+			}
+		},
+		[navigate, form]
+	)
 
 	return (
 		<div className="bg-background flex flex-1 flex-col items-center justify-center gap-6 p-6 md:p-10">
@@ -31,73 +74,55 @@ export const Login = memo(() => {
 							<CardDescription>Login to your Filen account</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<form>
-								<div className="grid gap-6">
-									<div className="grid gap-6">
-										<div className="grid gap-3">
-											<Label htmlFor="email">Email</Label>
-											<Input
-												id="email"
-												type="email"
-												placeholder="m@example.com"
-												required={true}
-												disabled={loggingIn}
-											/>
-										</div>
-										<div className="grid gap-3">
-											<div className="flex items-center">
-												<Label htmlFor="password">Password</Label>
-												<a
-													href="#"
-													className="ml-auto text-sm underline-offset-4 hover:underline"
-												>
-													Forgot your password?
-												</a>
-											</div>
-											<Input
-												id="password"
-												type="password"
-												required={true}
-												disabled={loggingIn}
-											/>
-										</div>
-										<Button
-											type="submit"
-											className="w-full"
-											disabled={loggingIn}
-											onClick={async () => {
-												setLoggingIn(true)
-
-												try {
-													await new Promise<void>(resolve => setTimeout(resolve, 3000)) // Simulate login delay
-
-													setConfig(prev => ({
-														...prev,
-														authed: true
-													}))
-
-													navigate({
-														to: "/drive/$"
-													})
-												} finally {
-													setLoggingIn(false)
-												}
-											}}
-										>
-											{loggingIn ? <LoaderCircleIcon className="animate-spin" /> : "Login"}
-										</Button>
-									</div>
-									<div className="text-center text-sm">
-										Don&apos;t have an account?{" "}
-										<a
-											href="#"
-											className="underline underline-offset-4"
-										>
-											Sign up
-										</a>
-									</div>
-								</div>
-							</form>
+							<Form {...form}>
+								<form
+									onSubmit={form.handleSubmit(onSubmit)}
+									className="space-y-4"
+								>
+									<FormField
+										control={form.control}
+										name="email"
+										disabled={loggingIn}
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Email</FormLabel>
+												<FormControl>
+													<Input
+														placeholder="email@filen.io"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={form.control}
+										name="password"
+										disabled={loggingIn}
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Password</FormLabel>
+												<FormControl>
+													<Input
+														type="password"
+														placeholder="••••••••••••••••"
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<Button
+										type="submit"
+										className="w-full mt-2"
+										disabled={loggingIn}
+									>
+										{loggingIn ? <LoaderCircleIcon className="animate-spin" /> : "Login"}
+									</Button>
+								</form>
+							</Form>
 						</CardContent>
 					</Card>
 					<div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">

@@ -1,7 +1,16 @@
-import * as React from "react"
-import { Folder, ChevronRight, NotebookIcon, Contact2Icon, MessageCircleIcon } from "lucide-react"
+import { useMemo, useState, useEffect } from "react"
+import {
+	Folder,
+	ChevronRight,
+	NotebookIcon,
+	Contact2Icon,
+	MessageCircleIcon,
+	ImagesIcon,
+	PlusIcon,
+	HardDriveIcon,
+	FolderSyncIcon
+} from "lucide-react"
 import { NavUser } from "@/components/nav-user"
-import { Label } from "@/components/ui/label"
 import {
 	Sidebar,
 	SidebarContent,
@@ -17,72 +26,55 @@ import {
 	SidebarGroupLabel,
 	useSidebar
 } from "@/components/ui/sidebar"
-import { Switch } from "@/components/ui/switch"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "@tanstack/react-router"
-
-// This is sample data
-const data = {
-	user: {
-		name: "shadcn",
-		email: "m@example.com",
-		avatar: "/avatars/shadcn.jpg"
-	},
-	navMain: [
-		{
-			title: "Notes",
-			url: "/notes",
-			icon: NotebookIcon,
-			isActive: false
-		},
-		{
-			title: "Chats",
-			url: "/chats",
-			icon: MessageCircleIcon,
-			isActive: false
-		},
-		{
-			title: "Contacts",
-			url: "/contacts",
-			icon: Contact2Icon,
-			isActive: false
-		}
-	],
-	tree: [
-		["app", ["api", ["hello", ["route.ts"]], "page.tsx", "layout.tsx", ["blog", ["page.tsx"]]]],
-		[
-			"components",
-			[
-				"ui",
-				"button.tsx",
-				"card.tsx",
-				[
-					"foo",
-					"bar",
-					["foo", "bar", ["foo", "bar", ["foo", "bar", ["foo", "bar", ["foo", "bar", ["foo", "bar", ["foo", "bar"]]]]]]]
-				]
-			],
-			"header.tsx",
-			"footer.tsx"
-		],
-		["lib", ["util.ts"]],
-		["public", "favicon.ico", "vercel.svg"],
-		".eslintrc.json",
-		".gitignore",
-		"next.config.js",
-		"tailwind.config.js",
-		"package.json",
-		"README.md"
-	]
-}
-
-type FileTreeNode = string | FileTreeNode[]
+import useDriveItemsQuery from "@/queries/useDriveItems.query"
+import type { Dir as FilenSdkRsDir } from "@filen/sdk-rs"
+import { orderItemsByType, cn } from "@/lib/utils"
+import pathModule from "path"
+import {
+	ContextMenu,
+	ContextMenuCheckboxItem,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuLabel,
+	ContextMenuRadioGroup,
+	ContextMenuRadioItem,
+	ContextMenuSeparator,
+	ContextMenuShortcut,
+	ContextMenuSub,
+	ContextMenuSubContent,
+	ContextMenuSubTrigger,
+	ContextMenuTrigger
+} from "@/components/ui/context-menu"
+import { DirectoryIcon } from "./itemIcons"
+import useDrivePath from "@/hooks/useDrivePath"
+import useDriveParent from "@/hooks/useDriveParent"
+import cacheMap from "@/lib/cacheMap"
+import { Button } from "./ui/button"
+import { IS_DESKTOP } from "@/constants"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { setOpen } = useSidebar()
 	const { t } = useTranslation()
 	const location = useLocation()
+	const driveParent = useDriveParent()
+
+	const driveItemsQuery = useDriveItemsQuery({
+		path: "/"
+	})
+
+	const items = useMemo(() => {
+		if (driveItemsQuery.status !== "success") {
+			return []
+		}
+
+		return orderItemsByType({
+			items: driveItemsQuery.data,
+			type: "nameAsc"
+		}).filter(item => item.type === "directory")
+	}, [driveItemsQuery.status, driveItemsQuery.data])
 
 	return (
 		<Sidebar
@@ -112,11 +104,51 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarHeader>
-				<SidebarContent>
+				<SidebarContent data-dragselectallowed={true}>
 					<SidebarGroup>
 						<SidebarGroupContent className="px-1.5 md:px-0">
 							<SidebarMenu>
-								{data.navMain.map(item => (
+								{[
+									{
+										title: "Drive",
+										url: "/drive",
+										icon: Folder
+									},
+									{
+										title: "Photos",
+										url: "/photos",
+										icon: ImagesIcon
+									},
+									{
+										title: "Notes",
+										url: "/notes",
+										icon: NotebookIcon
+									},
+									{
+										title: "Chats",
+										url: "/chats",
+										icon: MessageCircleIcon
+									},
+									{
+										title: "Contacts",
+										url: "/contacts",
+										icon: Contact2Icon
+									},
+									...(IS_DESKTOP
+										? [
+												{
+													title: "Syncs",
+													url: "/syncs",
+													icon: FolderSyncIcon
+												},
+												{
+													title: "Mounts",
+													url: "/mounts",
+													icon: HardDriveIcon
+												}
+											]
+										: [])
+								].map(item => (
 									<SidebarMenuItem key={item.title}>
 										<Link
 											to={item.url}
@@ -129,8 +161,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 													children: item.title,
 													hidden: false
 												}}
-												isActive={location.pathname === item.url}
-												className="px-2.5 md:px-2"
+												isActive={location.pathname.includes(item.url)}
+												className="px-2.5 md:px-2 cursor-pointer"
 											>
 												<item.icon />
 												<span>{item.title}</span>
@@ -143,33 +175,51 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					</SidebarGroup>
 				</SidebarContent>
 				<SidebarFooter>
-					<NavUser user={data.user} />
+					<NavUser
+						user={{
+							name: "testnet",
+							email: "testnet@example.com",
+							avatar: ""
+						}}
+					/>
 				</SidebarFooter>
 			</Sidebar>
 			<Sidebar
 				collapsible="none"
 				className="hidden flex-1 md:flex overflow-x-hidden"
 			>
-				<SidebarHeader className="gap-3.5 p-4">
-					<div className="flex w-full items-center justify-between">
-						<div className="text-foreground text-base font-medium">{location.pathname}</div>
-						<Label className="flex items-center gap-2 text-sm">
-							<span>Unreads</span>
-							<Switch className="shadow-none" />
-						</Label>
+				<SidebarHeader
+					className="gap-3.5 p-4"
+					data-dragselectallowed={true}
+				>
+					<div className="flex w-full items-center justify-between gap-4">
+						<div className="text-foreground text-base font-medium text-ellipsis truncate">
+							{cacheMap.directoryUUIDToName.get(driveParent?.uuid ?? "") ?? "Cloud Drive"}
+						</div>
+						<Button
+							size="sm"
+							variant="secondary"
+						>
+							<PlusIcon />
+							New
+						</Button>
 					</div>
 					<SidebarInput placeholder="Search..." />
 				</SidebarHeader>
-				<SidebarContent>
-					<SidebarGroup className="overflow-x-hidden">
+				<SidebarContent
+					className="overflow-x-hidden overflow-y-auto"
+					data-dragselectallowed={true}
+				>
+					<SidebarGroup className="overflow-x-hidden shrink-0">
 						<SidebarGroupLabel>{t("cloudDrive")}</SidebarGroupLabel>
 						<SidebarGroupContent>
 							<SidebarMenu>
-								{data.tree.map((node, index) => (
+								{items.map(dir => (
 									<Tree
-										key={index}
-										node={node}
+										key={dir.data.uuid}
+										dir={dir.data}
 										level={0}
+										path={pathModule.posix.join("/", dir.data.uuid)}
 									/>
 								))}
 							</SidebarMenu>
@@ -181,54 +231,127 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	)
 }
 
-function Tree({ node, level }: { node: FileTreeNode; level: number }) {
-	const [name, ...nodes] = Array.isArray(node) ? node : [node]
+function Tree({ dir, level, path }: { dir: FilenSdkRsDir; level: number; path: string }) {
+	const drivePath = useDrivePath()
 
-	if (!nodes.length) {
-		return (
-			<Link
-				to="/drive/$"
-				params={{
-					_splat: `/${Math.random().toString().substring(2, 5)}/${Math.random().toString().substring(2, 5)}`
-				}}
-			>
-				<SidebarMenuButton
-					style={{
-						width: `calc(var(--sidebar-width) - var(--sidebar-width-icon) - ${level * 26 + 16}px)`
-					}}
-				>
-					<Folder />
-					{name}
-				</SidebarMenuButton>
-			</Link>
-		)
-	}
+	const openAsPerDrivePath = useMemo(() => {
+		return drivePath.includes(path)
+	}, [drivePath, path])
+
+	const [open, setOpen] = useState<boolean>(openAsPerDrivePath)
+	const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false)
+
+	const driveItemsQuery = useDriveItemsQuery(
+		{
+			path: pathModule.posix.join(path, dir.uuid)
+		},
+		{
+			enabled: open
+		}
+	)
+
+	const items = useMemo(() => {
+		if (driveItemsQuery.status !== "success") {
+			return []
+		}
+
+		return orderItemsByType({
+			items: driveItemsQuery.data,
+			type: "nameAsc"
+		}).filter(item => item.type === "directory")
+	}, [driveItemsQuery.status, driveItemsQuery.data])
+
+	useEffect(() => {
+		setOpen(openAsPerDrivePath)
+	}, [openAsPerDrivePath])
 
 	return (
 		<SidebarMenuItem>
 			<Collapsible
-				className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
+				className="group/collapsible [&[data-state=open]>div>button>svg:first-child]:rotate-90"
 				style={{
 					width: `calc(var(--sidebar-width) - var(--sidebar-width-icon) - ${level * 26 + 16}px)`
 				}}
+				open={open}
+				onOpenChange={setOpen}
 			>
 				<CollapsibleTrigger asChild={true}>
-					<SidebarMenuButton>
-						<ChevronRight className="transition-transform" />
-						<Folder />
-						{name}
-					</SidebarMenuButton>
+					<div>
+						<ContextMenu onOpenChange={setContextMenuOpen}>
+							<ContextMenuTrigger asChild={true}>
+								<SidebarMenuButton className={cn("overflow-hidden", contextMenuOpen && "bg-muted")}>
+									<ChevronRight className="transition-transform" />
+									<DirectoryIcon
+										color={null}
+										width={16}
+										height={16}
+									/>
+									<p className="text-ellipsis truncate">{dir.meta?.name ?? pathModule.basename(dir.uuid)}</p>
+								</SidebarMenuButton>
+							</ContextMenuTrigger>
+							<ContextMenuContent className="w-52">
+								<ContextMenuItem
+									inset
+									onClick={() => {
+										alert("Download clicked")
+									}}
+								>
+									Download
+									<ContextMenuShortcut>⌘[</ContextMenuShortcut>
+								</ContextMenuItem>
+								<ContextMenuItem inset>
+									Back
+									<ContextMenuShortcut>⌘[</ContextMenuShortcut>
+								</ContextMenuItem>
+								<ContextMenuItem
+									inset
+									disabled
+								>
+									Forward
+									<ContextMenuShortcut>⌘]</ContextMenuShortcut>
+								</ContextMenuItem>
+								<ContextMenuItem inset>
+									Reload
+									<ContextMenuShortcut>⌘R</ContextMenuShortcut>
+								</ContextMenuItem>
+								<ContextMenuSub>
+									<ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
+									<ContextMenuSubContent className="w-44">
+										<ContextMenuItem>Save Page...</ContextMenuItem>
+										<ContextMenuItem>Create Shortcut...</ContextMenuItem>
+										<ContextMenuItem>Name Window...</ContextMenuItem>
+										<ContextMenuSeparator />
+										<ContextMenuItem>Developer Tools</ContextMenuItem>
+										<ContextMenuSeparator />
+										<ContextMenuItem>Delete</ContextMenuItem>
+									</ContextMenuSubContent>
+								</ContextMenuSub>
+								<ContextMenuSeparator />
+								<ContextMenuCheckboxItem checked>Show Bookmarks</ContextMenuCheckboxItem>
+								<ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
+								<ContextMenuSeparator />
+								<ContextMenuRadioGroup value="pedro">
+									<ContextMenuLabel inset>People</ContextMenuLabel>
+									<ContextMenuRadioItem value="pedro">Pedro Duarte</ContextMenuRadioItem>
+									<ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
+								</ContextMenuRadioGroup>
+							</ContextMenuContent>
+						</ContextMenu>
+					</div>
 				</CollapsibleTrigger>
 				<CollapsibleContent>
-					<SidebarMenuSub>
-						{nodes.map((subNode, index) => (
-							<Tree
-								key={index}
-								node={subNode}
-								level={level + 1}
-							/>
-						))}
-					</SidebarMenuSub>
+					{open && items.length > 0 ? (
+						<SidebarMenuSub>
+							{items.map(subDir => (
+								<Tree
+									key={subDir.data.uuid}
+									dir={subDir.data}
+									level={level + 1}
+									path={pathModule.posix.join(path, subDir.data.uuid)}
+								/>
+							))}
+						</SidebarMenuSub>
+					) : null}
 				</CollapsibleContent>
 			</Collapsible>
 		</SidebarMenuItem>
