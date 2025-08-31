@@ -6,6 +6,7 @@ import useDriveParent from "@/hooks/useDriveParent"
 import pathModule from "path"
 import { Link } from "@tanstack/react-router"
 import cacheMap from "@/lib/cacheMap"
+import useElementDimensions from "@/hooks/useElementDimensions"
 
 export const DriveHeaderBreadcrumb = memo(
 	({ index, component, drivePathComponents }: { index: number; component: string; drivePathComponents: string[] }) => {
@@ -23,7 +24,7 @@ export const DriveHeaderBreadcrumb = memo(
 		return (
 			<Fragment>
 				{index > 0 && <BreadcrumbSeparator />}
-				<BreadcrumbItem>
+				<BreadcrumbItem className="shrink-0">
 					{(component === "/" && drivePathComponents.length === 1) || driveParent?.uuid === component ? (
 						<BreadcrumbPage>{componentName}</BreadcrumbPage>
 					) : (
@@ -43,37 +44,40 @@ DriveHeaderBreadcrumb.displayName = "DriveHeaderBreadcrumb"
 
 export const DriveHeader = memo(() => {
 	const drivePath = useDrivePath()
+	const [ref, { width }] = useElementDimensions<HTMLDivElement>()
 
 	const drivePathComponents = useMemo(() => {
 		return ["/", ...drivePath.split("/").filter(Boolean)]
 	}, [drivePath])
 
 	return (
-		<header className="flex shrink-0 items-center">
+		<header
+			className="flex shrink-0 items-center w-full h-auto"
+			data-dragselectallowed={true}
+		>
 			<div
-				className="overflow-hidden"
+				ref={ref}
+				className="flex items-center gap-2 px-4 py-4 flex-row w-full h-auto"
 				data-dragselectallowed={true}
-				style={{
-					width: "calc(100dvw - var(--sidebar-width) - var(--sidebar-width-icon) + 16px)"
-				}}
 			>
-				<div
-					className="flex items-center gap-2 px-4 w-[calc(100dvw*100)] py-4"
-					data-dragselectallowed={true}
-				>
-					<Breadcrumb>
-						<BreadcrumbList>
-							{drivePathComponents.map((component, index) => (
-								<DriveHeaderBreadcrumb
-									key={index}
-									index={index}
-									component={component}
-									drivePathComponents={drivePathComponents}
-								/>
-							))}
-						</BreadcrumbList>
-					</Breadcrumb>
-				</div>
+				<Breadcrumb data-dragselectallowed={true}>
+					<BreadcrumbList
+						className="overflow-hidden flex-nowrap flex flex-row flex-1"
+						style={{
+							width: width - 32
+						}}
+						data-dragselectallowed={true}
+					>
+						{drivePathComponents.map((component, index) => (
+							<DriveHeaderBreadcrumb
+								key={index}
+								index={index}
+								component={component}
+								drivePathComponents={drivePathComponents}
+							/>
+						))}
+					</BreadcrumbList>
+				</Breadcrumb>
 			</div>
 		</header>
 	)

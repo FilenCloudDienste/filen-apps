@@ -282,7 +282,7 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 	)
 }
 
-function SidebarInset({ className, sidebarRight, ...props }: React.ComponentProps<"main"> & { sidebarRight?: React.ReactNode }) {
+function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
 	return (
 		<React.Fragment>
 			<main
@@ -298,20 +298,6 @@ function SidebarInset({ className, sidebarRight, ...props }: React.ComponentProp
 				)}
 				{...props}
 			/>
-			{sidebarRight && (
-				<div
-					data-slot="sidebar-inset-right-sidebar"
-					data-dragselectallowed={true}
-					className={cn(
-						"w-[calc(var(--sidebar-width)-var(--sidebar-width-icon))] flex-col bg-background md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm ml-0! transition-transform animate-in shrink hidden lg:flex",
-						IS_DESKTOP
-							? "md:peer-data-[variant=inset]:m-6 md:peer-data-[variant=inset]:mr-4 md:peer-data-[variant=inset]:mb-4"
-							: "md:peer-data-[variant=inset]:m-4"
-					)}
-				>
-					{sidebarRight}
-				</div>
-			)}
 		</React.Fragment>
 	)
 }

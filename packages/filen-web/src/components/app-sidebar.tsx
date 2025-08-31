@@ -282,7 +282,7 @@ function Tree({ dir, level, path }: { dir: FilenSdkRsDir; level: number; path: s
 								<SidebarMenuButton className={cn("overflow-hidden", contextMenuOpen && "bg-muted")}>
 									<ChevronRight className="transition-transform" />
 									<DirectoryIcon
-										color={null}
+										color={dir.color}
 										width={16}
 										height={16}
 									/>

@@ -21,13 +21,13 @@ export const initialState: ThemeProviderState = {
 export const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 export const ThemeProvider = memo(({ children, defaultTheme = "system", storageKey = "vite-ui-theme", ...props }: ThemeProviderProps) => {
-	const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem(storageKey) as Theme) || defaultTheme)
+	const [theme, setTheme] = useState<Theme>(() => (globalThis.localStorage.getItem(storageKey) as Theme) ?? defaultTheme)
 
 	const value = useMemo(
 		() => ({
 			theme,
 			setTheme: (theme: Theme) => {
-				localStorage.setItem(storageKey, theme)
+				globalThis.localStorage.setItem(storageKey, theme)
 
 				setTheme(theme)
 			}
@@ -36,12 +36,12 @@ export const ThemeProvider = memo(({ children, defaultTheme = "system", storageK
 	)
 
 	useEffect(() => {
-		const root = window.document.documentElement
+		const root = globalThis.window.document.documentElement
 
 		root.classList.remove("light", "dark")
 
 		if (theme === "system") {
-			const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+			const systemTheme = globalThis.window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 
 			root.classList.add(systemTheme)
 
@@ -50,6 +50,20 @@ export const ThemeProvider = memo(({ children, defaultTheme = "system", storageK
 
 		root.classList.add(theme)
 	}, [theme])
+
+	useEffect(() => {
+		const mediaQuery = globalThis.window.matchMedia("(prefers-color-scheme: dark)")
+
+		const handleChange = (event: MediaQueryListEvent) => {
+			setTheme(event.matches ? "dark" : "light")
+		}
+
+		mediaQuery.addEventListener("change", handleChange)
+
+		return () => {
+			mediaQuery.removeEventListener("change", handleChange)
+		}
+	}, [])
 
 	return (
 		<ThemeProviderContext.Provider

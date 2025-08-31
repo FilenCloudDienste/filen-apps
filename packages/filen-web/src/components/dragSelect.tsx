@@ -49,8 +49,8 @@ export const DragSelect = memo(() => {
 			top: show ? `${Math.min(startPos.y, endPos.y)}px` : 0,
 			width: show ? `${Math.abs(startPos.x - endPos.x)}px` : 0,
 			height: show ? `${Math.abs(startPos.y - endPos.y)}px` : 0,
-			backgroundColor: "rgba(0, 120, 255, 0.2)",
-			border: "1px solid rgba(0, 120, 255, 0.8)",
+			backgroundColor: "rgba(0, 120, 255, 0.1)",
+			border: "1px solid rgba(0, 120, 255, 0.7)",
 			zIndex: show ? 999999999 : 0,
 			display: show ? "flex" : "none"
 		} satisfies React.CSSProperties

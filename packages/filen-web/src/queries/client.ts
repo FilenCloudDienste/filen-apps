@@ -37,7 +37,11 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	| "gcTime"
 	| "refetchInterval"
 	| "throwOnError"
+	| "retryOnMount"
 	| "experimental_prefetchInRender"
+	| "refetchIntervalInBackground"
+	| "retry"
+	| "retryDelay"
 > = {
 	refetchOnMount: "always",
 	refetchOnReconnect: "always",
@@ -46,6 +50,10 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	gcTime: CACHE_TIME,
 	refetchInterval: false,
 	experimental_prefetchInRender: true,
+	refetchIntervalInBackground: false,
+	retry: true,
+	retryDelay: 1000,
+	retryOnMount: true,
 	throwOnError(err) {
 		console.error(err)
 
