@@ -1,4 +1,4 @@
-import {
+import initFilenSdkRs, {
 	login as filenSdkRsLogin,
 	type StringifiedClient as FilenSdkRsStringifiedClient,
 	fromStringified as filenSdkRsFromStringified,
@@ -9,6 +9,7 @@ import {
 import { transfer as comlinkTransfer } from "comlink"
 import { extractTransferables } from "./utils"
 import path from "path"
+import Semaphore from "../semaphore"
 
 export type FilenSdkRsClientFunctions = Omit<
 	{
@@ -35,16 +36,36 @@ export type WorkerToMainMessage =
 
 let filenSdkRsClient: FilenSdkRsClient | null = null
 let messageHandlerForMainThread: ((message: WorkerToMainMessage) => void) | null = null
+let filenSdkRsWasmInitialized: boolean = false
+const initMutex: Semaphore = new Semaphore(1)
+
+export async function waitForFilenSdkRsWasmInit(): Promise<void> {
+	await initMutex.acquire()
+
+	try {
+		while (!filenSdkRsWasmInitialized) {
+			await initFilenSdkRs()
+
+			filenSdkRsWasmInitialized = true
+		}
+	} finally {
+		initMutex.release()
+	}
+}
 
 export async function setMessageHandler(handler: (message: WorkerToMainMessage) => void): Promise<void> {
 	messageHandlerForMainThread = handler
 }
 
 export async function getClient(): Promise<FilenSdkRsClient | null> {
+	await waitForFilenSdkRsWasmInit()
+
 	return filenSdkRsClient
 }
 
 export async function stringifyClient(): Promise<FilenSdkRsStringifiedClient | null> {
+	await waitForFilenSdkRsWasmInit()
+
 	if (!filenSdkRsClient) {
 		return null
 	}
@@ -53,12 +74,20 @@ export async function stringifyClient(): Promise<FilenSdkRsStringifiedClient | n
 }
 
 export async function setClient(stringifiedClient: FilenSdkRsStringifiedClient): Promise<FilenSdkRsClient> {
-	filenSdkRsClient = filenSdkRsFromStringified(stringifiedClient)
+	await waitForFilenSdkRsWasmInit()
+
+	filenSdkRsClient = filenSdkRsFromStringified({
+		...stringifiedClient,
+		maxIoMemoryUsage: BigInt(1024 * 1024 * 32),
+		maxParallelRequests: BigInt(32)
+	})
 
 	return filenSdkRsClient
 }
 
 export async function login(...params: Parameters<typeof filenSdkRsLogin>): Promise<FilenSdkRsClient> {
+	await waitForFilenSdkRsWasmInit()
+
 	filenSdkRsClient = await filenSdkRsLogin(...params)
 
 	return filenSdkRsClient
@@ -73,13 +102,15 @@ export async function uploadFileStreamFile(
 		id: string
 	}
 ): ReturnType<FilenSdkRsClient["uploadFileFromReader"]> {
+	await waitForFilenSdkRsWasmInit()
+
 	if (!filenSdkRsClient) {
 		throw new Error("Client is not set.")
 	}
 
 	return await filenSdkRsClient.uploadFileFromReader({
 		name: params.file.name,
-		known_size: BigInt(params.file.size),
+		knownSize: BigInt(params.file.size),
 		parent: params.parent,
 		reader: params.file.stream(),
 		progress(bytes) {
@@ -103,6 +134,8 @@ export async function uploadFileStreamFileHandle(
 		id: string
 	}
 ): ReturnType<FilenSdkRsClient["uploadFileFromReader"]> {
+	await waitForFilenSdkRsWasmInit()
+
 	if (!filenSdkRsClient) {
 		throw new Error("Client is not set.")
 	}
@@ -112,7 +145,7 @@ export async function uploadFileStreamFileHandle(
 	return await filenSdkRsClient.uploadFileFromReader({
 		...params,
 		name: file.name,
-		known_size: BigInt(file.size),
+		knownSize: BigInt(file.size),
 		reader: file.stream(),
 		progress(bytes) {
 			messageHandlerForMainThread?.({
@@ -127,6 +160,8 @@ export async function uploadFileStreamFileHandle(
 }
 
 export async function downloadFile({ file, id }: { file: FilenSdkRsFile; id: string }): Promise<FileSystemFileHandle> {
+	await waitForFilenSdkRsWasmInit()
+
 	if (!filenSdkRsClient) {
 		throw new Error("Client is not set.")
 	}
@@ -160,6 +195,8 @@ export async function downloadFile({ file, id }: { file: FilenSdkRsFile; id: str
 }
 
 export async function downloadItemsToZip({ items, id }: { items: FilenSdkRsItem[]; id: string }): Promise<FileSystemFileHandle> {
+	await waitForFilenSdkRsWasmInit()
+
 	if (!filenSdkRsClient) {
 		throw new Error("Client is not set.")
 	}
@@ -192,6 +229,8 @@ export async function callSdkFunction<T extends keyof FilenSdkRsClientFunctions>
 	functionName: T
 	params: Parameters<FilenSdkRsClientFunctions[T]>
 }): Promise<Awaited<ReturnType<FilenSdkRsClientFunctions[T]>>> {
+	await waitForFilenSdkRsWasmInit()
+
 	if (!filenSdkRsClient) {
 		throw new Error("Client is not set.")
 	}

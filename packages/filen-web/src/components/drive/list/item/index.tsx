@@ -213,14 +213,17 @@ export const DriveListItem = memo(
 				onDragLeave={onDragLeave}
 				onDrop={onDrop}
 			>
-				<DriveListItemContextMenu onOpenChange={onContextMenuOpenChange}>
+				<DriveListItemContextMenu
+					onOpenChange={onContextMenuOpenChange}
+					item={item}
+				>
 					{grid ? (
 						<div
 							ref={contextMenuTriggerRef}
 							className={cn(
 								"flex flex-1 flex-col gap-2 items-center justify-center hover:bg-sidebar p-4 rounded-lg w-full overflow-hidden shrink-0",
 								(contextMenuOpen || isSelected || draggingOver) && "bg-sidebar",
-								draggingOver && "animate-pulse "
+								draggingOver && "animate-pulse"
 							)}
 						>
 							<div>

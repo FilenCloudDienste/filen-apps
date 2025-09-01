@@ -14,9 +14,14 @@ import {
 	ContextMenuSubTrigger,
 	ContextMenuTrigger
 } from "@/components/ui/context-menu"
+import type { DriveItem } from "@/queries/useDriveItems.query"
+import type { NonRootObject as FilenSdkRsNonRootObject } from "@filen/sdk-rs"
+import { useDriveStore } from "@/stores/drive.store"
+import serviceWorker from "@/lib/serviceWorker"
 
 export const DriveListItemContextMenu = memo(
-	({ children, ...props }: { children: React.ReactNode; onOpenChange?: (open: boolean) => void }) => {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	({ children, item, ...props }: { children: React.ReactNode; onOpenChange?: (open: boolean) => void; item: DriveItem }) => {
 		const onOpenChange = useCallback(
 			(open: boolean) => {
 				props.onOpenChange?.(open)
@@ -24,15 +29,48 @@ export const DriveListItemContextMenu = memo(
 			[props]
 		)
 
+		const download = useCallback(() => {
+			const itemsToEncode = [
+				...useDriveStore.getState().selectedItems.map(i => {
+					if (i.type === "directory") {
+						return {
+							type: "dir",
+							uuid: i.data.uuid,
+							meta: i.data.meta,
+							parent: i.data.parent,
+							favorited: i.data.favorited
+						} satisfies FilenSdkRsNonRootObject
+					}
+
+					return {
+						type: "file",
+						uuid: i.data.uuid,
+						meta: i.data.meta,
+						parent: i.data.parent,
+						size: i.data.size,
+						favorited: i.data.favorited,
+						region: i.data.region,
+						bucket: i.data.bucket,
+						chunks: i.data.chunks
+					} satisfies FilenSdkRsNonRootObject
+				})
+			] satisfies FilenSdkRsNonRootObject[]
+
+			window.open(
+				serviceWorker.buildDownloadUrl({
+					items: itemsToEncode,
+					type: "download"
+				})
+			)
+		}, [])
+
 		return (
 			<ContextMenu onOpenChange={onOpenChange}>
 				<ContextMenuTrigger asChild={true}>{children}</ContextMenuTrigger>
-				<ContextMenuContent className="w-52">
+				<ContextMenuContent>
 					<ContextMenuItem
-						inset
-						onClick={() => {
-							alert("Download clicked")
-						}}
+						inset={true}
+						onClick={download}
 					>
 						Download
 						<ContextMenuShortcut>⌘[</ContextMenuShortcut>

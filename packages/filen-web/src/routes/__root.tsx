@@ -35,7 +35,7 @@ export const Root = memo(() => {
 			const setupResult = await setup()
 
 			if (!setupResult.success) {
-				console.error(setupResult.errorMessage)
+				console.error(setupResult.errorType)
 
 				return
 			}

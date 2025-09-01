@@ -2,19 +2,36 @@ import sqlite from "./sqlite"
 import worker from "@/lib/worker"
 import authService from "@/services/auth.service"
 import serviceWorker from "./serviceWorker"
-import { set } from "idb-keyval"
+import { set as idbSet } from "idb-keyval"
 import cacheMap from "./cacheMap"
 import { restoreQueries } from "@/queries/client"
+import { pack } from "msgpackr"
 
 export function checkOpfsAvailable(): boolean {
-	return globalThis.navigator && globalThis.navigator.storage && typeof globalThis.navigator.storage.getDirectory === "function"
+	return (
+		globalThis &&
+		globalThis.window.navigator &&
+		globalThis.window.navigator.storage &&
+		typeof globalThis.window.navigator.storage.getDirectory === "function"
+	)
+}
+
+export function checkServiceWorkerAvailable(): boolean {
+	return globalThis && globalThis.window.navigator && "serviceWorker" in globalThis.window.navigator
+}
+
+export function checkWasmAvailable(): boolean {
+	return globalThis && globalThis.window && "WebAssembly" in globalThis.window
+}
+
+export function checkIndexedDbAvailable(): boolean {
+	return globalThis && globalThis.window && "indexedDB" in globalThis.window
 }
 
 export async function setup(): Promise<
 	| {
 			success: false
-			errorType: "opfs" | "loggedOut"
-			errorMessage?: string
+			errorType: "opfs" | "loggedOut" | "wasm" | "serviceWorker" | "indexedDb"
 	  }
 	| {
 			success: true
@@ -25,8 +42,28 @@ export async function setup(): Promise<
 	if (!checkOpfsAvailable()) {
 		return {
 			success: false,
-			errorType: "opfs",
-			errorMessage: "Your browser does not support the necessary file system APIs."
+			errorType: "opfs"
+		}
+	}
+
+	if (!checkServiceWorkerAvailable()) {
+		return {
+			success: false,
+			errorType: "serviceWorker"
+		}
+	}
+
+	if (!checkWasmAvailable()) {
+		return {
+			success: false,
+			errorType: "wasm"
+		}
+	}
+
+	if (!checkIndexedDbAvailable()) {
+		return {
+			success: false,
+			errorType: "indexedDb"
 		}
 	}
 
@@ -49,6 +86,7 @@ export async function setup(): Promise<
 		}
 
 		await worker.direct.setClient(client)
+		await idbSet("serviceWorkerClient", pack(client))
 
 		const root = await worker.sdk("root")
 
@@ -56,8 +94,6 @@ export async function setup(): Promise<
 	}
 
 	await serviceWorker.register()
-
-	await set("serviceWorkerId", globalThis.crypto.randomUUID())
 
 	console.log("Setup complete!")
 

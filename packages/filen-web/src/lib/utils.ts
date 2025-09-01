@@ -279,3 +279,7 @@ export function isValidHexColor(value: string, length: number = 6): boolean {
 
 	return hexColorPattern.test(value)
 }
+
+export function clickDownloadUrl(url: string): void {
+	window.open(url, "_blank", "noopener,noreferrer")
+}
