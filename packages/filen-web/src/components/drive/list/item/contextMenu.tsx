@@ -18,6 +18,7 @@ import type { DriveItem } from "@/queries/useDriveItems.query"
 import type { NonRootObject as FilenSdkRsNonRootObject } from "@filen/sdk-rs"
 import { useDriveStore } from "@/stores/drive.store"
 import serviceWorker from "@/lib/serviceWorker"
+import worker from "@/lib/worker"
 
 export const DriveListItemContextMenu = memo(
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -73,6 +74,48 @@ export const DriveListItemContextMenu = memo(
 						onClick={download}
 					>
 						Download
+						<ContextMenuShortcut>⌘[</ContextMenuShortcut>
+					</ContextMenuItem>
+					<ContextMenuItem
+						inset={true}
+						onClick={async () => {
+							const itemsToEncode = [
+								...useDriveStore.getState().selectedItems.map(i => {
+									if (i.type === "directory") {
+										return {
+											type: "dir",
+											uuid: i.data.uuid,
+											meta: i.data.meta,
+											parent: i.data.parent,
+											favorited: i.data.favorited
+										} satisfies FilenSdkRsNonRootObject
+									}
+
+									return {
+										type: "file",
+										uuid: i.data.uuid,
+										meta: i.data.meta,
+										parent: i.data.parent,
+										size: i.data.size,
+										favorited: i.data.favorited,
+										region: i.data.region,
+										bucket: i.data.bucket,
+										chunks: i.data.chunks
+									} satisfies FilenSdkRsNonRootObject
+								})
+							] satisfies FilenSdkRsNonRootObject[]
+
+							console.log(
+								await worker.direct.compressItems({
+									items: itemsToEncode,
+									name: "testcompress.zip",
+									parent: await worker.sdk("root"),
+									id: "123"
+								})
+							)
+						}}
+					>
+						Compress
 						<ContextMenuShortcut>⌘[</ContextMenuShortcut>
 					</ContextMenuItem>
 					<ContextMenuItem inset>

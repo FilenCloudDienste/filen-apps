@@ -12,10 +12,10 @@ export type KeyValueItem = {
 	value: Buffer
 }
 
-export class FilenDatabase extends Dexie {
+export class IdbKeyValue extends Dexie {
 	public readonly kvStore!: Table<KeyValueItem, string>
 
-	constructor() {
+	public constructor() {
 		super("filen")
 
 		this.version(VERSION).stores({
@@ -25,7 +25,7 @@ export class FilenDatabase extends Dexie {
 }
 
 export class Idb {
-	private readonly db: FilenDatabase = new FilenDatabase()
+	private readonly db: IdbKeyValue = new IdbKeyValue()
 	private initDone: boolean = false
 	private readonly initMutex: Semaphore = new Semaphore(1)
 

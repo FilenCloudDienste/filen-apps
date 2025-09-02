@@ -245,7 +245,7 @@ export const DriveListItem = memo(
 									/>
 								)}
 							</div>
-							<p className="text-ellipsis truncate select-none px-4">{item.data.meta?.name ?? item.data.uuid}</p>
+							<p className="text-ellipsis truncate select-none px-4 text-sm">{item.data.meta?.name ?? item.data.uuid}</p>
 						</div>
 					) : (
 						<div
@@ -277,7 +277,7 @@ export const DriveListItem = memo(
 											height={20}
 										/>
 									)}
-									<p className="text-ellipsis truncate select-none">{item.data.meta?.name ?? item.data.uuid}</p>
+									<p className="text-ellipsis truncate select-none text-sm">{item.data.meta?.name ?? item.data.uuid}</p>
 								</div>
 								<div className="flex flex-row items-center w-[40%] justify-between overflow-hidden gap-8">
 									<div className="flex flex-row items-center overflow-hidden w-[25%]">

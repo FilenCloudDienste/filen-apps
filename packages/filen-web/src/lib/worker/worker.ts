@@ -4,7 +4,8 @@ import initFilenSdkRs, {
 	fromStringified as filenSdkRsFromStringified,
 	type Client as FilenSdkRsClient,
 	type File as FilenSdkRsFile,
-	type Item as FilenSdkRsItem
+	type Item as FilenSdkRsItem,
+	type DirEnum as FilenSdkRsDirEnum
 } from "@filen/sdk-rs"
 import { transfer as comlinkTransfer } from "comlink"
 import { extractTransferables } from "./utils"
@@ -15,7 +16,7 @@ export type FilenSdkRsClientFunctions = Omit<
 	{
 		[K in keyof FilenSdkRsClient]: (...args: Parameters<FilenSdkRsClient[K]>) => ReturnType<FilenSdkRsClient[K]>
 	},
-	"free" | "uploadFileFromReader" | "downloadFileToWriter" | "downloadFile" | "uploadFile" | "toStringified" | "downloadItemsToZip"
+	"free"
 >
 
 export type WorkerToMainMessage =
@@ -29,6 +30,14 @@ export type WorkerToMainMessage =
 	| {
 			type: "downloadProgress"
 			data: {
+				id: string
+				bytes: number
+			}
+	  }
+	| {
+			type: "compressProgress"
+			data: {
+				type: "upload" | "download"
 				id: string
 				bytes: number
 			}
@@ -194,7 +203,17 @@ export async function downloadFile({ file, id }: { file: FilenSdkRsFile; id: str
 	return fileHandle
 }
 
-export async function downloadItemsToZip({ items, id }: { items: FilenSdkRsItem[]; id: string }): Promise<FileSystemFileHandle> {
+export async function compressItems({
+	items,
+	id,
+	parent,
+	name
+}: {
+	items: FilenSdkRsItem[]
+	id: string
+	parent: FilenSdkRsDirEnum
+	name: string
+}): Promise<FilenSdkRsFile> {
 	await waitForFilenSdkRsWasmInit()
 
 	if (!filenSdkRsClient) {
@@ -203,26 +222,50 @@ export async function downloadItemsToZip({ items, id }: { items: FilenSdkRsItem[
 
 	const opfsFileName = `${self.crypto.randomUUID()}.zip`
 	const opfsRoot = await self.navigator.storage.getDirectory()
-	const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
-		create: true
-	})
-	const writer = await fileHandle.createWritable()
 
-	await filenSdkRsClient.downloadItemsToZip({
-		items,
-		writer,
-		progress(bytes) {
-			messageHandlerForMainThread?.({
-				type: "downloadProgress",
-				data: {
-					id,
-					bytes: Number(bytes)
-				}
-			})
-		}
-	})
+	try {
+		const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
+			create: true
+		})
+		const writer = await fileHandle.createWritable()
 
-	return fileHandle
+		await filenSdkRsClient.downloadItemsToZip({
+			items,
+			writer,
+			progress(bytes) {
+				messageHandlerForMainThread?.({
+					type: "compressProgress",
+					data: {
+						type: "download",
+						id,
+						bytes: Number(bytes)
+					}
+				})
+			}
+		})
+
+		const file = await fileHandle.getFile()
+		const reader = file.stream()
+
+		return await filenSdkRsClient.uploadFileFromReader({
+			reader,
+			parent,
+			name,
+			knownSize: BigInt(file.size),
+			progress(bytes) {
+				messageHandlerForMainThread?.({
+					type: "compressProgress",
+					data: {
+						type: "upload",
+						id,
+						bytes: Number(bytes)
+					}
+				})
+			}
+		})
+	} finally {
+		await opfsRoot.removeEntry(opfsFileName).catch(() => {})
+	}
 }
 
 export async function callSdkFunction<T extends keyof FilenSdkRsClientFunctions>(functionNameAndParams: {

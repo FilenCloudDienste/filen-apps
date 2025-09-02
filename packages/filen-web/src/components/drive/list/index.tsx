@@ -6,6 +6,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuShortcut, 
 import useDrivePath from "@/hooks/useDrivePath"
 import DriveListItem from "./item"
 import useElementDimensions from "@/hooks/useElementDimensions"
+import DriveListHeader from "./header"
 
 export const grid = false
 
@@ -33,6 +34,7 @@ export const DriveList = memo(() => {
 			ref={ref}
 			className="flex flex-1 flex-col px-4"
 		>
+			<DriveListHeader />
 			<ContextMenu>
 				<ContextMenuTrigger asChild={true}>
 					{grid ? (
