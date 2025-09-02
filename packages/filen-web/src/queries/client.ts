@@ -73,6 +73,8 @@ export const queryClient = new QueryClient({
 export async function restoreQueries(): Promise<void> {
 	const keys = await queryClientPersisterKv.keys()
 
+	console.log(keys)
+
 	await Promise.all(
 		keys.map(async key => {
 			if (key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX)) {

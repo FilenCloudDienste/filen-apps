@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from "react"
-import sqlite from "@/lib/sqlite"
+import idb from "@/lib/idb"
 import events from "@/lib/events"
 import cacheMap from "@/lib/cacheMap"
 
-export function useSqlite<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T) => void)) => void, boolean] {
+export function useIdb<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T) => void)) => void, boolean] {
 	const kvValueRef = useRef<T | null>(cacheMap.kv.get(key) ?? null)
 	const [state, setState] = useState<T>(kvValueRef.current ?? initialValue)
 	const [loaded, setLoaded] = useState<boolean>(kvValueRef.current ? true : false)
@@ -12,9 +12,9 @@ export function useSqlite<T>(key: string, initialValue: T): [T, (fn: T | ((prev:
 	const flush = useCallback(
 		async (before: T, now: T) => {
 			try {
-				await sqlite.kv.set(key, now)
+				await idb.set(key, now)
 			} catch (e) {
-				console.error("Error setting value in SQLite:", e)
+				console.error("Error setting value in IndexedDB:", e)
 
 				setState(before)
 			}
@@ -30,14 +30,14 @@ export function useSqlite<T>(key: string, initialValue: T): [T, (fn: T | ((prev:
 		didRetrieveRef.current = true
 
 		try {
-			const value = await sqlite.kv.get<T>(key)
+			const value = await idb.get<T>(key)
 
 			if (value) {
 				setState(value)
 				setLoaded(true)
 			}
 		} catch (e) {
-			console.error("Error fetching value from SQLite:", e)
+			console.error("Error fetching value from IndexedDB:", e)
 		}
 	}, [key])
 
@@ -80,3 +80,5 @@ export function useSqlite<T>(key: string, initialValue: T): [T, (fn: T | ((prev:
 
 	return [state, set, loaded]
 }
+
+export default useIdb

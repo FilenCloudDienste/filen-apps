@@ -1,5 +1,5 @@
 import Semaphore from "./semaphore"
-import { set as idbSet, get as idbGet } from "idb-keyval"
+import idb from "./idb"
 import type { NonRootObject as FilenSdkRsNonRootObject } from "@filen/sdk-rs"
 import { pack } from "msgpackr"
 
@@ -14,6 +14,10 @@ export class ServiceWorker {
 	private registration: ServiceWorkerRegistration | null = null
 	private readonly clientId: string = globalThis.crypto.randomUUID()
 	private renewClientIdInterval: ReturnType<typeof setInterval> | undefined = undefined
+
+	public constructor() {
+		this.renewClientIds().catch(console.error)
+	}
 
 	public async register(): Promise<void> {
 		await this.mutex.acquire()
@@ -37,7 +41,7 @@ export class ServiceWorker {
 
 			await this.registration.update()
 
-			await this.renewClientId()
+			await this.renewClientIds()
 
 			this.isRegistered = true
 
@@ -50,28 +54,30 @@ export class ServiceWorker {
 	}
 
 	private async setClientIds(): Promise<void> {
-		const current = (await idbGet<ServiceWorkerClientId[]>("serviceWorkerClientIds")) ?? []
+		const current = (await idb.get<ServiceWorkerClientId[]>("serviceWorkerClientIds")) ?? []
 
-		await idbSet(
-			"serviceWorkerClientIds",
-			pack([
-				...current,
-				{
-					id: this.clientId,
-					timeoutAt: Date.now() + 30000
-				} satisfies ServiceWorkerClientId
-			])
-		).catch(console.error)
+		await idb
+			.set(
+				"serviceWorkerClientIds",
+				[
+					...current,
+					{
+						id: this.clientId,
+						timeoutAt: Date.now() + 60000
+					} satisfies ServiceWorkerClientId
+				].filter(clientId => clientId.timeoutAt > Date.now())
+			)
+			.catch(console.error)
 	}
 
-	private async renewClientId(): Promise<void> {
+	private async renewClientIds(): Promise<void> {
 		clearInterval(this.renewClientIdInterval)
 
 		await this.setClientIds()
 
 		this.renewClientIdInterval = setInterval(() => {
 			this.setClientIds().catch(console.error)
-		}, 15000)
+		}, 5000)
 	}
 
 	public getRegistration(): ServiceWorkerRegistration | null {

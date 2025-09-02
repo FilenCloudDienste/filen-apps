@@ -78,8 +78,8 @@ export async function setClient(stringifiedClient: FilenSdkRsStringifiedClient):
 
 	filenSdkRsClient = filenSdkRsFromStringified({
 		...stringifiedClient,
-		maxIoMemoryUsage: BigInt(1024 * 1024 * 64),
-		maxParallelRequests: BigInt(128)
+		maxIoMemoryUsage: 1024 * 1024 * 64,
+		maxParallelRequests: 128
 	})
 
 	return filenSdkRsClient

@@ -136,7 +136,7 @@ export default defineConfig({
 		}
 	},
 	optimizeDeps: {
-		exclude: ["@filen/sdk-rs", "sqlocal", "pdfjs-dist"]
+		exclude: ["@filen/sdk-rs", "pdfjs-dist"]
 	},
 	server: {
 		headers: {

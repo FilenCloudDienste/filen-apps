@@ -1,5 +1,5 @@
 import { type StringifiedClient } from "@filen/sdk-rs"
-import sqlite from "@/lib/sqlite"
+import idb from "@/lib/idb"
 import worker from "@/lib/worker"
 
 export type ActiveSessionLocalStorage = {
@@ -8,12 +8,12 @@ export type ActiveSessionLocalStorage = {
 	avatar?: string
 }
 
-export type SessionSqlite = {
+export type SessionIdb = {
 	rootUuid: string
 	client: StringifiedClient
 }
 
-export const SESSIONS_KEY_SQLITE: string = "sessions"
+export const SESSIONS_KEY_IDB: string = "sessions"
 export const ACTIVE_SESSION_KEY_LOCAL_STORAGE: string = "activeSession"
 
 export class AuthService {
@@ -28,7 +28,7 @@ export class AuthService {
 			return false
 		}
 
-		const storedSessions = (await sqlite.kv.get<SessionSqlite[]>(SESSIONS_KEY_SQLITE)) ?? []
+		const storedSessions = (await idb.get<SessionIdb[]>(SESSIONS_KEY_IDB)) ?? []
 
 		if (storedSessions.length === 0) {
 			return false
@@ -50,7 +50,7 @@ export class AuthService {
 			return null
 		}
 
-		const storedSessions = (await sqlite.kv.get<SessionSqlite[]>(SESSIONS_KEY_SQLITE)) ?? []
+		const storedSessions = (await idb.get<SessionIdb[]>(SESSIONS_KEY_IDB)) ?? []
 
 		if (storedSessions.length === 0) {
 			return null
@@ -83,19 +83,19 @@ export class AuthService {
 			} satisfies ActiveSessionLocalStorage)
 		)
 
-		const storedSessions = (await sqlite.kv.get<SessionSqlite[]>(SESSIONS_KEY_SQLITE)) ?? []
+		const storedSessions = (await idb.get<SessionIdb[]>(SESSIONS_KEY_IDB)) ?? []
 
-		await sqlite.kv.set(SESSIONS_KEY_SQLITE, [
+		await idb.set(SESSIONS_KEY_IDB, [
 			...storedSessions.filter(session => session.rootUuid !== client.rootUuid),
 			{
 				rootUuid: client.rootUuid,
 				client
-			} satisfies SessionSqlite
+			} satisfies SessionIdb
 		])
 	}
 
 	public async logout(): Promise<void> {
-		await sqlite.clear()
+		await idb.clear()
 
 		window.location.href = "/"
 	}

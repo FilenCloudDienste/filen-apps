@@ -1,11 +1,9 @@
-import sqlite from "./sqlite"
+import idb from "./idb"
 import worker from "@/lib/worker"
 import authService from "@/services/auth.service"
 import serviceWorker from "./serviceWorker"
-import { set as idbSet } from "idb-keyval"
 import cacheMap from "./cacheMap"
 import { restoreQueries } from "@/queries/client"
-import { pack } from "msgpackr"
 
 export function checkOpfsAvailable(): boolean {
 	return (
@@ -67,7 +65,7 @@ export async function setup(): Promise<
 		}
 	}
 
-	await sqlite.waitForInit()
+	await idb.waitForInit()
 
 	await restoreQueries()
 
@@ -86,7 +84,7 @@ export async function setup(): Promise<
 		}
 
 		await worker.direct.setClient(client)
-		await idbSet("serviceWorkerClient", pack(client))
+		await idb.set("serviceWorkerClient", client)
 
 		const root = await worker.sdk("root")
 

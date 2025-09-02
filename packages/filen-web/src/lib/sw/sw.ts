@@ -1,6 +1,6 @@
 /// <reference types="@types/serviceworker" />
 
-import { get as idbGet } from "idb-keyval"
+import idb from "../idb"
 import initFilenSdkRs, {
 	type Client as FilenSdkRsClient,
 	fromStringified as filenSdkRsFromStringified,
@@ -9,20 +9,20 @@ import initFilenSdkRs, {
 } from "@filen/sdk-rs"
 import Semaphore from "../semaphore"
 import filenSdkRsWasmPath from "@filen/sdk-rs/browser/sdk-rs_bg.wasm?url"
-import { unpack } from "msgpackr"
 import mime from "mime"
 import type { ServiceWorkerClientId } from "../serviceWorker"
+import { unpack } from "msgpackr"
 
 let filenSdkRsWasmInitialized: boolean = false
 let filenSdkRsClient: FilenSdkRsClient | null = null
 const initMutex: Semaphore = new Semaphore(1)
 
 export async function waitForFilenSdkRsClient(): Promise<FilenSdkRsStringifiedClient> {
-	while (!(await idbGet("serviceWorkerClient"))) {
+	while (!(await idb.get("serviceWorkerClient"))) {
 		await new Promise<void>(resolve => setTimeout(resolve, 100))
 	}
 
-	return unpack((await idbGet("serviceWorkerClient"))!)
+	return (await idb.get("serviceWorkerClient"))!
 }
 
 export async function waitForFilenSdkRsWasmInit(): Promise<void> {
@@ -36,8 +36,8 @@ export async function waitForFilenSdkRsWasmInit(): Promise<void> {
 
 			filenSdkRsClient = filenSdkRsFromStringified({
 				...client,
-				maxIoMemoryUsage: BigInt(1024 * 1024 * 64),
-				maxParallelRequests: BigInt(128)
+				maxIoMemoryUsage: 1024 * 1024 * 64,
+				maxParallelRequests: 128
 			})
 
 			filenSdkRsWasmInitialized = true
@@ -108,9 +108,8 @@ export function createContentDisposition(fileName?: string): string {
 }
 
 export async function validateClientId(clientId: string): Promise<boolean> {
-	const idbClientIds = await idbGet("serviceWorkerClientIds")
-	const idbClientIdsDecoded: ServiceWorkerClientId[] = idbClientIds ? unpack(idbClientIds) : []
-	const idbClientId = idbClientIdsDecoded.find(c => c.id === clientId)
+	const idbClientIds = (await idb.get<ServiceWorkerClientId[]>("serviceWorkerClientIds")) ?? []
+	const idbClientId = idbClientIds.find(c => c.id === clientId)
 
 	if (!idbClientId) {
 		return false
