@@ -34,7 +34,11 @@ export async function waitForFilenSdkRsWasmInit(): Promise<void> {
 		while (!filenSdkRsWasmInitialized) {
 			await initFilenSdkRs(fetch(filenSdkRsWasmPath))
 
-			filenSdkRsClient = filenSdkRsFromStringified(client)
+			filenSdkRsClient = filenSdkRsFromStringified({
+				...client,
+				maxIoMemoryUsage: BigInt(1024 * 1024 * 64),
+				maxParallelRequests: BigInt(128)
+			})
 
 			filenSdkRsWasmInitialized = true
 		}
