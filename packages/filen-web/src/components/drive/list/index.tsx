@@ -7,12 +7,13 @@ import useDrivePath from "@/hooks/useDrivePath"
 import DriveListItem from "./item"
 import useElementDimensions from "@/hooks/useElementDimensions"
 import DriveListHeader from "./header"
-
-export const grid = false
+import useIdb from "@/hooks/useIdb"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export const DriveList = memo(() => {
 	const drivePath = useDrivePath()
 	const [ref, { width }] = useElementDimensions<HTMLDivElement>()
+	const [listViewMode] = useIdb<"list" | "grid">("listViewMode", "list")
 
 	const driveItemsQuery = useDriveItemsQuery({
 		path: drivePath
@@ -37,7 +38,7 @@ export const DriveList = memo(() => {
 			<DriveListHeader />
 			<ContextMenu>
 				<ContextMenuTrigger asChild={true}>
-					{grid ? (
+					{listViewMode === "grid" ? (
 						<VirtuosoGrid
 							key={drivePath}
 							className="w-full h-full flex flex-1 overflow-x-hidden overflow-y-scroll"
@@ -91,6 +92,36 @@ export const DriveList = memo(() => {
 							defaultItemHeight={45}
 							fixedItemHeight={45}
 							skipAnimationFrameInResizeObserver={true}
+							components={{
+								EmptyPlaceholder: () => {
+									if (driveItemsQuery.status === "success") {
+										return (
+											<div className="flex flex-1 w-full h-full flex-row items-center justify-center">
+												<p>No files found</p>
+											</div>
+										)
+									}
+
+									return (
+										<div className="flex flex-1 w-full h-auto flex-col overflow-hidden">
+											{Array.from(
+												{
+													length: Math.ceil(window.innerHeight / 45 / 3)
+												},
+												(_, i) => (
+													<div
+														key={i}
+														className="flex flex-row items-center gap-4 border-b justify-center h-[45px]"
+													>
+														<Skeleton className="h-[20px] w-[20px] rounded-full" />
+														<Skeleton className="h-[20px] w-full rounded-lg" />
+													</div>
+												)
+											)}
+										</div>
+									)
+								}
+							}}
 							itemContent={(index, item) => (
 								<DriveListItem
 									item={item}

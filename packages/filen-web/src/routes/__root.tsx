@@ -12,7 +12,10 @@ import setup from "@/lib/setup"
 import { Toaster } from "@/components/ui/sonner"
 import DragSelect from "@/components/dragSelect"
 import DriveInfo from "@/components/drive/info"
+import Preview from "@/components/preview"
 import RequireInternet from "@/components/requireInternet"
+import { cn } from "@/lib/utils"
+import { IS_DESKTOP } from "@/constants"
 
 export const Root = memo(() => {
 	const { pathname } = useLocation()
@@ -64,15 +67,26 @@ export const Root = memo(() => {
 							{withSidebar ? (
 								<SidebarProvider className="flex flex-1 h-full w-full">
 									<AppSidebar />
-									<SidebarInset className="z-50">
-										{pathname.startsWith("/drive") && <DriveHeader />}
-										<Outlet />
-									</SidebarInset>
-									<DriveInfo />
+									<div
+										className={cn(
+											"flex flex-col flex-1 w-full h-full gap-4",
+											IS_DESKTOP ? "p-0 md:p-4 md:pt-6" : "p-0 md:p-4"
+										)}
+									>
+										<div className="flex flex-row w-full h-full gap-4">
+											<SidebarInset className="z-50 rounded-xl shadow-sm">
+												{pathname.startsWith("/drive") && <DriveHeader />}
+												<Outlet />
+											</SidebarInset>
+											<DriveInfo />
+										</div>
+										{/*<div className="flex flex-row rounded-lg bg-background w-full h-auto shadow-sm">player</div>*/}
+									</div>
 								</SidebarProvider>
 							) : (
 								<Outlet />
 							)}
+							<Preview />
 							<DragSelect />
 							<Toaster />
 						</QueryClientProvider>

@@ -1,22 +1,14 @@
-import { memo, useMemo } from "react"
+import { memo } from "react"
 import { useDriveStore } from "@/stores/drive.store"
 import { useShallow } from "zustand/shallow"
 import { cn } from "@/lib/utils"
-import { IS_DESKTOP } from "@/constants"
+import useIdb from "@/hooks/useIdb"
 
-export const DriveInfo = memo(() => {
+export const DriveInfo = memo(({ className }: { className?: string }) => {
 	const selectedItems = useDriveStore(useShallow(state => state.selectedItems))
+	const [driveInfoVisible] = useIdb<boolean>("driveInfoVisible", false)
 
-	const info = useMemo(() => {
-		if (selectedItems.length === 0) {
-			return null
-		}
-
-		return selectedItems.at(0) ?? null
-	}, [selectedItems])
-
-	// eslint-disable-next-line no-constant-condition
-	if (true) {
+	if (!driveInfoVisible) {
 		return null
 	}
 
@@ -25,15 +17,19 @@ export const DriveInfo = memo(() => {
 			data-slot="sidebar-inset-right-sidebar"
 			data-dragselectallowed={true}
 			className={cn(
-				"w-[calc((var(--sidebar-width)+var(--sidebar-width-icon))/1.5)] flex-col bg-background md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm ml-0! transition-transform animate-in animate-out ease-linear shrink-0 hidden lg:flex",
-				IS_DESKTOP
-					? "md:peer-data-[variant=inset]:m-6 md:peer-data-[variant=inset]:mr-4 md:peer-data-[variant=inset]:mb-4"
-					: "md:peer-data-[variant=inset]:m-4"
+				"w-[calc((var(--sidebar-width)+var(--sidebar-width-icon))/1.5)] flex-col bg-background rounded-xl hidden lg:flex shadow-sm",
+				className
 			)}
 		>
 			<div className="p-4 w-full h-full">
-				<h2 className="text-lg font-semibold text-ellipsis truncate">{info?.data.meta?.name}</h2>
-				<code className="mt-4">{JSON.stringify(info?.data.meta?.name, null, 4)}</code>
+				<h2 className="text-lg font-semibold text-ellipsis truncate">info</h2>
+				<div>
+					{selectedItems.length === 0
+						? "none selected"
+						: selectedItems.length === 1
+							? `${selectedItems[0]!.data.meta?.name} selected`
+							: `${selectedItems.length} items selected`}
+				</div>
 			</div>
 		</div>
 	)

@@ -8,6 +8,10 @@ export type XY = {
 	y: number
 }
 
+export function rectOverlap(rect1: DOMRect, rect2: DOMRect): boolean {
+	return !(rect1.right < rect2.left || rect1.left > rect2.right || rect1.bottom < rect2.top || rect1.top > rect2.bottom)
+}
+
 export const DragSelect = memo(() => {
 	const [isDragging, setIsDragging] = useState<boolean>(false)
 	const [startPos, setStartPos] = useState<XY>({
@@ -100,11 +104,11 @@ export const DragSelect = memo(() => {
 		return dragAreaRef.current.getBoundingClientRect()
 	}, [])
 
-	const rectOverlap = useCallback((rect1: DOMRect, rect2: DOMRect) => {
-		return !(rect1.right < rect2.left || rect1.left > rect2.right || rect1.bottom < rect2.top || rect1.top > rect2.bottom)
-	}, [])
-
 	const checkCollision = useCallback(() => {
+		if (items.length === 0) {
+			return
+		}
+
 		const selectionRect = getSelectionRect()
 		const collisions: string[] = []
 		const targets = targetRects()
@@ -117,16 +121,8 @@ export const DragSelect = memo(() => {
 			}
 		}
 
-		for (const collision of collisions) {
-			const item = items.find(i => i.data.uuid === collision)
-
-			if (!item) {
-				continue
-			}
-
-			useDriveStore.getState().setSelectedItems(prev => [...prev.filter(i => i.data.uuid !== item.data.uuid), item])
-		}
-	}, [getSelectionRect, rectOverlap, targetRects, items])
+		useDriveStore.getState().setSelectedItems([...items.filter(i => collisions.includes(i.data.uuid))])
+	}, [getSelectionRect, targetRects, items])
 
 	const mouseMoveListener = useCallback(
 		(e: MouseEvent) => {

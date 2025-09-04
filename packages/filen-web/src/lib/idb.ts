@@ -6,6 +6,7 @@ import events from "./events"
 import Semaphore from "./semaphore"
 
 export const VERSION = 1
+export const UNCACHED_KEYS: string[] = ["serviceWorkerClient", "serviceWorkerClientIds"]
 
 export type KeyValueItem = {
 	key: string
@@ -37,22 +38,20 @@ export class Idb {
 
 			const entries = await this.db.kvStore.toArray()
 
-			await Promise.all(
-				entries.map(async ({ key, value }) => {
-					if (key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX)) {
-						return
-					}
+			for (const { key, value } of entries) {
+				if (key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX) || UNCACHED_KEYS.includes(key)) {
+					continue
+				}
 
-					const parsed = unpack(value)
+				const parsed = unpack(value)
 
-					cacheMap.kv.set(key, parsed)
+				cacheMap.kv.set(key, parsed)
 
-					events.emit("kvChange", {
-						key,
-						value: parsed
-					})
+				events.emit("kvChange", {
+					key,
+					value: parsed
 				})
-			)
+			}
 
 			this.initDone = true
 		} finally {

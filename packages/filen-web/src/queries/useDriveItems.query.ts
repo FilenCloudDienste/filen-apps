@@ -7,16 +7,20 @@ import cacheMap from "@/lib/cacheMap"
 
 export type ExtraData = {
 	undecryptable: boolean
+	size: bigint
 }
+
+export type DriveItemFile = FilenSdkRsFile & ExtraData
+export type DriveItemDirectory = FilenSdkRsDir & ExtraData
 
 export type DriveItem =
 	| {
 			type: "directory"
-			data: FilenSdkRsDir & ExtraData
+			data: DriveItemDirectory
 	  }
 	| {
 			type: "file"
-			data: FilenSdkRsFile & ExtraData
+			data: DriveItemFile
 	  }
 
 export type UseDriveItemsQueryParams = {
@@ -36,7 +40,8 @@ export async function fetchDriveItems(params: UseDriveItemsQueryParams): Promise
 			type: "directory",
 			data: {
 				...dir,
-				undecryptable: Boolean(dir.meta)
+				undecryptable: Boolean(dir.meta),
+				size: 0n
 			}
 		})
 

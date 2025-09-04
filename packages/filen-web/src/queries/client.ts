@@ -43,9 +43,9 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	| "retry"
 	| "retryDelay"
 > = {
-	refetchOnMount: "always",
-	refetchOnReconnect: "always",
-	refetchOnWindowFocus: "always",
+	refetchOnMount: true,
+	refetchOnReconnect: true,
+	refetchOnWindowFocus: true,
 	staleTime: 0,
 	gcTime: CACHE_TIME,
 	refetchInterval: false,
@@ -72,8 +72,6 @@ export const queryClient = new QueryClient({
 
 export async function restoreQueries(): Promise<void> {
 	const keys = await queryClientPersisterKv.keys()
-
-	console.log(keys)
 
 	await Promise.all(
 		keys.map(async key => {

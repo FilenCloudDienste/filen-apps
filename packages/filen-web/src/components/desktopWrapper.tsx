@@ -18,7 +18,7 @@ export const DesktopWrapper = memo(({ children }: { children: React.ReactNode })
 
 	return (
 		<div className="flex flex-1 h-[100dvh] w-[100dvw] bg-transparent p-[4px] overflow-hidden">
-			<div className="flex flex-1 h-full w-full bg-transparent border border-border rounded-[8px] overflow-hidden">
+			<div className="flex flex-1 h-full w-full bg-transparent border-[1px] border-border rounded-[8px] overflow-hidden">
 				<div className="absolute flex flex-1 w-full top-0 left-0 right-0 z-40 p-[5px] bg-transparent">
 					<div
 						className="flex flex-1 w-full bg-transparent rounded-t-[8px] h-[24px] flex-row items-center justify-end"

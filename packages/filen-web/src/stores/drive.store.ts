@@ -30,3 +30,5 @@ export const useDriveStore = create<DriveStore>(set => ({
 		}))
 	}
 }))
+
+export default useDriveStore

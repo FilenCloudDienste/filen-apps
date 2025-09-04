@@ -2,7 +2,6 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 import { PanelLeftIcon } from "lucide-react"
-import { IS_DESKTOP } from "@/constants"
 import { useIsMobile } from "@/hooks/useMobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -14,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "350px"
+const SIDEBAR_WIDTH = "300px"
 const SIDEBAR_WIDTH_MOBILE = "250px"
 const SIDEBAR_WIDTH_ICON = "64px"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -282,20 +281,13 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 	)
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+function SidebarInset({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<React.Fragment>
-			<main
+			<div
 				data-slot="sidebar-inset"
 				data-dragselectallowed={true}
-				className={cn(
-					"bg-background relative flex w-full flex-1 flex-col",
-					IS_DESKTOP
-						? "md:peer-data-[variant=inset]:m-6 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-4 md:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:mb-4 md:peer-data-[variant=inset]:mr-4"
-						: "md:peer-data-[variant=inset]:m-4 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-4 md:peer-data-[variant=inset]:ml-2",
-					"md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
-					className
-				)}
+				className={cn("bg-background relative flex w-full flex-1 flex-col", className)}
 				{...props}
 			/>
 		</React.Fragment>

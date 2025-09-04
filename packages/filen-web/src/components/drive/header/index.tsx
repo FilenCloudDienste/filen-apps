@@ -7,6 +7,10 @@ import pathModule from "path"
 import { Link } from "@tanstack/react-router"
 import cacheMap from "@/lib/cacheMap"
 import useElementDimensions from "@/hooks/useElementDimensions"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { ListIcon, GridIcon, InfoIcon } from "lucide-react"
+import useIdb from "@/hooks/useIdb"
+import { Toggle } from "@/components/ui/toggle"
 
 export const DriveHeaderBreadcrumb = memo(
 	({ index, component, drivePathComponents }: { index: number; component: string; drivePathComponents: string[] }) => {
@@ -45,6 +49,8 @@ DriveHeaderBreadcrumb.displayName = "DriveHeaderBreadcrumb"
 export const DriveHeader = memo(() => {
 	const drivePath = useDrivePath()
 	const [ref, { width }] = useElementDimensions<HTMLDivElement>()
+	const [listViewMode, setListViewMode] = useIdb<"list" | "grid">("listViewMode", "list")
+	const [driveInfoVisible, setDriveInfoVisible] = useIdb<boolean>("driveInfoVisible", false)
 
 	const drivePathComponents = useMemo(() => {
 		return ["/", ...drivePath.split("/").filter(Boolean)]
@@ -52,7 +58,7 @@ export const DriveHeader = memo(() => {
 
 	return (
 		<header
-			className="flex shrink-0 items-center w-full h-auto"
+			className="flex shrink-0 items-center w-full h-auto flex-row justify-between"
 			data-dragselectallowed={true}
 		>
 			<div
@@ -78,6 +84,30 @@ export const DriveHeader = memo(() => {
 						))}
 					</BreadcrumbList>
 				</Breadcrumb>
+			</div>
+			<div className="flex flex-row items-center px-4 gap-2">
+				<ToggleGroup
+					type="single"
+					value={listViewMode}
+					variant="outline"
+					size="sm"
+					onValueChange={setListViewMode as (value: "list" | "grid") => void}
+				>
+					<ToggleGroupItem value="list">
+						<ListIcon />
+					</ToggleGroupItem>
+					<ToggleGroupItem value="grid">
+						<GridIcon />
+					</ToggleGroupItem>
+				</ToggleGroup>
+				<Toggle
+					variant="default"
+					size="sm"
+					pressed={driveInfoVisible}
+					onPressedChange={setDriveInfoVisible}
+				>
+					<InfoIcon />
+				</Toggle>
 			</div>
 		</header>
 	)

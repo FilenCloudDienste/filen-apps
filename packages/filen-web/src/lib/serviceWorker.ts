@@ -57,16 +57,13 @@ export class ServiceWorker {
 		const current = (await idb.get<ServiceWorkerClientId[]>("serviceWorkerClientIds")) ?? []
 
 		await idb
-			.set(
-				"serviceWorkerClientIds",
-				[
-					...current,
-					{
-						id: this.clientId,
-						timeoutAt: Date.now() + 60000
-					} satisfies ServiceWorkerClientId
-				].filter(clientId => clientId.timeoutAt > Date.now())
-			)
+			.set("serviceWorkerClientIds", [
+				...current.filter(c => c.id !== this.clientId && c.timeoutAt > Date.now()),
+				{
+					id: this.clientId,
+					timeoutAt: Date.now() + 60000
+				} satisfies ServiceWorkerClientId
+			])
 			.catch(console.error)
 	}
 
@@ -94,19 +91,19 @@ export class ServiceWorker {
 		name
 	}: {
 		items: FilenSdkRsNonRootObject[]
-		type?: "download" | "preview"
+		type?: "download" | "stream"
 		name?: string
 	}): string {
 		const baseUrl = new URL("/serviceWorker/download", globalThis.window.location.origin)
 
-		baseUrl.searchParams.set("clientId", this.clientId)
+		baseUrl.searchParams.set("clientId", encodeURIComponent(this.clientId))
 
 		if (type) {
-			baseUrl.searchParams.set("type", type)
+			baseUrl.searchParams.set("type", encodeURIComponent(type))
 		}
 
 		if (name) {
-			baseUrl.searchParams.set("name", name)
+			baseUrl.searchParams.set("name", encodeURIComponent(name))
 		}
 
 		if (items && items.length > 0) {

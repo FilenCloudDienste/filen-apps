@@ -1,7 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { t } from "@/lib/i18n"
-import { type DriveItem } from "@/queries/useDriveItems.query"
+import type { DriveItem } from "@/queries/useDriveItems.query"
+import pathModule from "path"
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
@@ -282,4 +283,103 @@ export function isValidHexColor(value: string, length: number = 6): boolean {
 
 export function clickDownloadUrl(url: string): void {
 	window.open(url, "_blank", "noopener,noreferrer")
+}
+
+export type PreviewType = "pdf" | "video" | "audio" | "code" | "text" | "docx" | "image" | "markdown" | "unknown"
+
+export function getPreviewType(fileName: string): PreviewType {
+	const parsed = pathModule.posix.parse(fileName.trim().toLowerCase())
+
+	switch (parsed.ext) {
+		case ".pdf": {
+			return "pdf"
+		}
+
+		case ".gif":
+		case ".png":
+		case ".jpg":
+		case ".jpeg":
+		case ".webp":
+		case ".svg": {
+			return "image"
+		}
+
+		case ".mov":
+		case ".mkv":
+		case ".webm":
+		case ".mp4": {
+			return "video"
+		}
+
+		case ".mp3": {
+			return "audio"
+		}
+
+		case ".js":
+		case ".cjs":
+		case ".mjs":
+		case ".jsx":
+		case ".tsx":
+		case ".ts":
+		case ".cpp":
+		case ".c":
+		case ".php":
+		case ".htm":
+		case ".html5":
+		case ".html":
+		case ".css":
+		case ".css3":
+		case ".sass":
+		case ".xml":
+		case ".json":
+		case ".sql":
+		case ".java":
+		case ".kt":
+		case ".swift":
+		case ".py3":
+		case ".py":
+		case ".cmake":
+		case ".cs":
+		case ".dart":
+		case ".dockerfile":
+		case ".go":
+		case ".less":
+		case ".yaml":
+		case ".vue":
+		case ".svelte":
+		case ".vbs":
+		case ".cobol":
+		case ".toml":
+		case ".conf":
+		case ".sh":
+		case ".rs":
+		case ".rb":
+		case ".ps1":
+		case ".bat":
+		case ".ps":
+		case ".protobuf":
+		case ".ahk":
+		case ".litcoffee":
+		case ".coffee":
+		case ".log":
+		case ".proto": {
+			return "code"
+		}
+
+		case ".txt": {
+			return "text"
+		}
+
+		case ".md": {
+			return "markdown"
+		}
+
+		case ".docx": {
+			return "docx"
+		}
+
+		default: {
+			return "unknown"
+		}
+	}
 }

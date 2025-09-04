@@ -28,32 +28,17 @@ import {
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useTranslation } from "react-i18next"
-import { Link, useLocation } from "@tanstack/react-router"
-import useDriveItemsQuery from "@/queries/useDriveItems.query"
-import type { Dir as FilenSdkRsDir } from "@filen/sdk-rs"
+import { Link, useLocation, useNavigate } from "@tanstack/react-router"
+import useDriveItemsQuery, { type DriveItem } from "@/queries/useDriveItems.query"
 import { orderItemsByType, cn } from "@/lib/utils"
 import pathModule from "path"
-import {
-	ContextMenu,
-	ContextMenuCheckboxItem,
-	ContextMenuContent,
-	ContextMenuItem,
-	ContextMenuLabel,
-	ContextMenuRadioGroup,
-	ContextMenuRadioItem,
-	ContextMenuSeparator,
-	ContextMenuShortcut,
-	ContextMenuSub,
-	ContextMenuSubContent,
-	ContextMenuSubTrigger,
-	ContextMenuTrigger
-} from "@/components/ui/context-menu"
 import { DirectoryIcon } from "./itemIcons"
 import useDrivePath from "@/hooks/useDrivePath"
 import useDriveParent from "@/hooks/useDriveParent"
 import cacheMap from "@/lib/cacheMap"
 import { Button } from "./ui/button"
 import { IS_DESKTOP } from "@/constants"
+import DriveListItemMenu from "./drive/list/item/menu"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { setOpen } = useSidebar()
@@ -217,7 +202,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								{items.map(dir => (
 									<Tree
 										key={dir.data.uuid}
-										dir={dir.data}
+										dir={dir}
 										level={0}
 										path={pathModule.posix.join("/", dir.data.uuid)}
 									/>
@@ -231,8 +216,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	)
 }
 
-function Tree({ dir, level, path }: { dir: FilenSdkRsDir; level: number; path: string }) {
+function Tree({ dir, level, path }: { dir: DriveItem; level: number; path: string }) {
 	const drivePath = useDrivePath()
+	const navigate = useNavigate()
 
 	const openAsPerDrivePath = useMemo(() => {
 		return drivePath.includes(path)
@@ -243,7 +229,7 @@ function Tree({ dir, level, path }: { dir: FilenSdkRsDir; level: number; path: s
 
 	const driveItemsQuery = useDriveItemsQuery(
 		{
-			path: pathModule.posix.join(path, dir.uuid)
+			path: pathModule.posix.join(path, dir.data.uuid)
 		},
 		{
 			enabled: open
@@ -277,66 +263,39 @@ function Tree({ dir, level, path }: { dir: FilenSdkRsDir; level: number; path: s
 			>
 				<CollapsibleTrigger asChild={true}>
 					<div>
-						<ContextMenu onOpenChange={setContextMenuOpen}>
-							<ContextMenuTrigger asChild={true}>
-								<SidebarMenuButton className={cn("overflow-hidden", contextMenuOpen && "bg-muted")}>
-									<ChevronRight className="transition-transform" />
-									<DirectoryIcon
-										color={dir.color}
-										width={16}
-										height={16}
-									/>
-									<p className="text-ellipsis truncate">{dir.meta?.name ?? pathModule.basename(dir.uuid)}</p>
-								</SidebarMenuButton>
-							</ContextMenuTrigger>
-							<ContextMenuContent className="w-52">
-								<ContextMenuItem
-									inset
-									onClick={() => {
-										alert("Download clicked")
+						<DriveListItemMenu
+							onOpenChange={setContextMenuOpen}
+							item={dir}
+							type="context"
+						>
+							<SidebarMenuButton
+								className={cn("overflow-hidden cursor-pointer", contextMenuOpen && "bg-muted")}
+								onClick={e => {
+									e.preventDefault()
+									e.stopPropagation()
+
+									navigate({
+										to: pathModule.posix.join("/drive", path)
+									})
+								}}
+							>
+								<ChevronRight
+									className="transition-transform cursor-pointer"
+									onClick={e => {
+										e.preventDefault()
+										e.stopPropagation()
+
+										setOpen(prev => !prev)
 									}}
-								>
-									Download
-									<ContextMenuShortcut>⌘[</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuItem inset>
-									Back
-									<ContextMenuShortcut>⌘[</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuItem
-									inset
-									disabled
-								>
-									Forward
-									<ContextMenuShortcut>⌘]</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuItem inset>
-									Reload
-									<ContextMenuShortcut>⌘R</ContextMenuShortcut>
-								</ContextMenuItem>
-								<ContextMenuSub>
-									<ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
-									<ContextMenuSubContent className="w-44">
-										<ContextMenuItem>Save Page...</ContextMenuItem>
-										<ContextMenuItem>Create Shortcut...</ContextMenuItem>
-										<ContextMenuItem>Name Window...</ContextMenuItem>
-										<ContextMenuSeparator />
-										<ContextMenuItem>Developer Tools</ContextMenuItem>
-										<ContextMenuSeparator />
-										<ContextMenuItem>Delete</ContextMenuItem>
-									</ContextMenuSubContent>
-								</ContextMenuSub>
-								<ContextMenuSeparator />
-								<ContextMenuCheckboxItem checked>Show Bookmarks</ContextMenuCheckboxItem>
-								<ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
-								<ContextMenuSeparator />
-								<ContextMenuRadioGroup value="pedro">
-									<ContextMenuLabel inset>People</ContextMenuLabel>
-									<ContextMenuRadioItem value="pedro">Pedro Duarte</ContextMenuRadioItem>
-									<ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
-								</ContextMenuRadioGroup>
-							</ContextMenuContent>
-						</ContextMenu>
+								/>
+								<DirectoryIcon
+									color={dir.type === "directory" ? dir.data.color : null}
+									width={16}
+									height={16}
+								/>
+								<p className="text-ellipsis truncate">{dir.data.meta?.name ?? pathModule.basename(dir.data.uuid)}</p>
+							</SidebarMenuButton>
+						</DriveListItemMenu>
 					</div>
 				</CollapsibleTrigger>
 				<CollapsibleContent>
@@ -345,7 +304,7 @@ function Tree({ dir, level, path }: { dir: FilenSdkRsDir; level: number; path: s
 							{items.map(subDir => (
 								<Tree
 									key={subDir.data.uuid}
-									dir={subDir.data}
+									dir={subDir}
 									level={level + 1}
 									path={pathModule.posix.join(path, subDir.data.uuid)}
 								/>

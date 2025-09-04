@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "@tanstack/react-router"
 import { memo, useRef, useCallback, useState } from "react"
-import type { DriveItem } from "@/queries/useDriveItems.query"
+import type { DriveItem, DriveItemFile } from "@/queries/useDriveItems.query"
 import { EllipsisVerticalIcon } from "lucide-react"
-import { formatBytes, simpleDate, cn } from "@/lib/utils"
+import { formatBytes, simpleDate, cn, getPreviewType } from "@/lib/utils"
 import { FileIcon, DirectoryIcon } from "@/components/itemIcons"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -10,9 +10,10 @@ import DriveListItemHoverCard from "./hoverCard"
 import pathModule from "path"
 import { useDriveStore } from "@/stores/drive.store"
 import { useShallow } from "zustand/shallow"
-import DriveListItemContextMenu from "./contextMenu"
-
-import { grid } from "../index"
+import DriveListItemMenu from "./menu"
+import usePreviewStore from "@/stores/preview.store"
+import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
+import useIdb from "@/hooks/useIdb"
 
 export const DriveListItem = memo(
 	({ item, isLast, items, index }: { item: DriveItem; isLast: boolean; items: DriveItem[]; index: number }) => {
@@ -21,7 +22,17 @@ export const DriveListItem = memo(
 		const [draggingOver, setDraggingOver] = useState<boolean>(false)
 		const location = useLocation()
 		const navigate = useNavigate()
-		const isSelected = useDriveStore(useShallow(state => state.selectedItems.some(i => i.data.uuid === item?.data.uuid)))
+		const isSelected = useDriveStore(useShallow(state => state.selectedItems.some(i => i.data.uuid === item.data.uuid)))
+		const [listViewMode] = useIdb<"list" | "grid">("listViewMode", "list")
+
+		const directorySizeQuery = useDirectorySizeQuery(
+			{
+				uuid: item.data.uuid
+			},
+			{
+				enabled: item.type === "directory"
+			}
+		)
 
 		const openContextMenu = useCallback((e: React.MouseEvent) => {
 			e.preventDefault()
@@ -115,9 +126,21 @@ export const DriveListItem = memo(
 					return
 				}
 
-				console.log("File clicked", item.data.uuid)
+				const previewItems = items
+					.map(i => (i.type === "file" ? i.data : null))
+					.filter(i => Boolean(i) && getPreviewType(i?.meta?.name ?? "") !== "unknown") as DriveItemFile[]
+				const initialIndex = previewItems.findIndex(i => i.uuid === item.data.uuid)
+
+				if (initialIndex === -1) {
+					return
+				}
+
+				usePreviewStore.getState().show({
+					items: previewItems,
+					initialIndex
+				})
 			},
-			[item, location.pathname, navigate]
+			[item, location.pathname, navigate, items]
 		)
 
 		const onContextMenuOpenChange = useCallback(
@@ -206,18 +229,19 @@ export const DriveListItem = memo(
 				onClick={onClick}
 				className="flex w-full h-auto dragselect-collision-check"
 				onDoubleClick={onDoubleClick}
-				data-uuid={item?.data.uuid}
+				data-uuid={item.data.uuid}
 				draggable={true}
 				onDragStart={onDragStart}
 				onDragOver={onDragOver}
 				onDragLeave={onDragLeave}
 				onDrop={onDrop}
 			>
-				<DriveListItemContextMenu
+				<DriveListItemMenu
 					onOpenChange={onContextMenuOpenChange}
 					item={item}
+					type="context"
 				>
-					{grid ? (
+					{listViewMode === "grid" ? (
 						<div
 							ref={contextMenuTriggerRef}
 							className={cn(
@@ -282,16 +306,18 @@ export const DriveListItem = memo(
 								<div className="flex flex-row items-center w-[40%] justify-between overflow-hidden gap-8">
 									<div className="flex flex-row items-center overflow-hidden w-[25%]">
 										<p className="text-ellipsis truncate select-none text-sm">
-											{formatBytes(item.type === "directory" ? 0 : Number(item.data.size))}
+											{formatBytes(
+												item.type === "directory"
+													? directorySizeQuery.status === "success"
+														? Number(directorySizeQuery.data.size)
+														: Number(item.data.size)
+													: Number(item.data.size)
+											)}
 										</p>
 									</div>
 									<div className="flex flex-1 flex-row items-center overflow-hidden">
 										<p className="text-ellipsis truncate select-none text-sm">
-											{simpleDate(
-												item.type === "directory"
-													? Number(item.data.meta?.created ?? Date.now())
-													: Number(item.data.meta?.modified ?? Date.now())
-											)}
+											{item.type === "directory" ? "-" : simpleDate(Number(item.data.meta?.modified ?? Date.now()))}
 										</p>
 									</div>
 									<div className="flex flex-row items-center overflow-hidden pr-4">
@@ -323,7 +349,7 @@ export const DriveListItem = memo(
 							</div>
 						</div>
 					)}
-				</DriveListItemContextMenu>
+				</DriveListItemMenu>
 			</div>
 		)
 	}

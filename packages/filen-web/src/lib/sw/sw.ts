@@ -36,8 +36,8 @@ export async function waitForFilenSdkRsWasmInit(): Promise<void> {
 
 			filenSdkRsClient = filenSdkRsFromStringified({
 				...client,
-				maxIoMemoryUsage: 1024 * 1024 * 64,
-				maxParallelRequests: 128
+				maxIoMemoryUsage: 1024 * 1024 * 32,
+				maxParallelRequests: 32
 			})
 
 			filenSdkRsWasmInitialized = true
@@ -91,20 +91,15 @@ export function parseByteRange(range: string | null, totalLength: number): { sta
 	}
 }
 
-export function createContentDisposition(fileName?: string): string {
-	if (!fileName) {
-		fileName = "file"
-	}
-
+export function createContentDisposition(params?: { fileName?: string; type?: "inline" | "attachment" }): string {
+	const fileName = params?.fileName ?? "file"
 	const asciiFilename = fileName
 		// eslint-disable-next-line no-control-regex
 		.replace(/[^\x00-\x7F]/g, "_")
 		.replace(/[<>:"/\\|?*]/g, "_")
 		.substring(0, 100)
 
-	const utf8Filename = encodeURIComponent(fileName)
-
-	return `attachment; filename="${asciiFilename}"; filename*=UTF-8''${utf8Filename}`
+	return `${params?.type ?? "attachment"}; filename="${asciiFilename}";`
 }
 
 export async function validateClientId(clientId: string): Promise<boolean> {
@@ -128,10 +123,10 @@ export async function stream(e: FetchEvent): Promise<Response> {
 	}
 
 	const url = new URL(e.request.url)
-	const clientId = url.searchParams.get("clientId") ?? null
+	const clientId = url.searchParams.get("clientId") ? decodeURIComponent(url.searchParams.get("clientId")!) : null
 	const items = url.searchParams.get("items") ?? null
-	const type = (url.searchParams.get("type") ?? "download") as "download" | "stream"
-	const name = url.searchParams.get("name") ?? null
+	const type = (url.searchParams.get("type") ? decodeURIComponent(url.searchParams.get("type")!) : "download") as "download" | "stream"
+	const name = url.searchParams.get("name") ? decodeURIComponent(url.searchParams.get("name")!) : null
 
 	if (!clientId || !items || !["stream", "download"].includes(type)) {
 		return new Response("Missing clientId or items parameter", {
@@ -173,7 +168,7 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		"X-Content-Type-Options": "nosniff",
 		"Cache-Control": "public, max-age=31536000, immutable",
 		Expires: new Date(Date.now() + 31536000 * 1000).toUTCString(),
-		ETag: `"${Buffer.from(itemsDecoded.map(item => item.uuid).join(","), "utf-8").toString("hex")}"`,
+		ETag: `"${Buffer.from(await self.crypto.subtle.digest("SHA-256", Buffer.from(itemsDecoded.map(item => item.uuid).join(","), "utf-8"))).toString("hex")}"`,
 		"Last-Modified": "Wed, 01 Sep 2025 00:00:00 GMT"
 	})
 
@@ -181,15 +176,17 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		responseHeaders.set("Content-Type", "application/zip")
 		responseHeaders.set(
 			"Content-Disposition",
-			createContentDisposition(
-				itemsDecoded.length === 1
-					? itemsDecoded.at(0)?.meta?.name
-						? `${itemsDecoded.at(0)?.meta?.name}.zip`
-						: `${self.crypto.randomUUID()}.zip`
-					: name
-						? `${name}.zip`
-						: `${self.crypto.randomUUID()}.zip`
-			)
+			createContentDisposition({
+				fileName:
+					itemsDecoded.length === 1
+						? itemsDecoded.at(0)?.meta?.name
+							? `${itemsDecoded.at(0)?.meta?.name}.zip`
+							: `${self.crypto.randomUUID()}.zip`
+						: name
+							? `${name}.zip`
+							: `${self.crypto.randomUUID()}.zip`,
+				type: "attachment"
+			})
 		)
 
 		const transformer = new TransformStream()
@@ -201,8 +198,6 @@ export async function stream(e: FetchEvent): Promise<Response> {
 				abortSignal: e.request.signal
 			})
 			.catch(err => {
-				console.error(err)
-
 				transformer.writable.abort(err).catch(() => {})
 				transformer.readable.cancel(err).catch(() => {})
 			})
@@ -229,34 +224,34 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		e.request.headers.get("Content-Range") ??
 		null
 	let start = 0
-	let end = totalSize - 1
+	let end = totalSize
+	const parsedRange = parseByteRange(range, totalSize)
 
 	responseHeaders.set(
 		"Content-Type",
 		name ? (mime.getType(name) ?? "application/octet-stream") : (item.meta?.mime ?? "application/octet-stream")
 	)
 
-	if (type === "stream") {
-		const parsedRange = parseByteRange(range, totalSize)
-
-		if (!parsedRange) {
-			return new Response("Invalid range", {
-				status: 400
-			})
-		}
-
+	if (type === "stream" && parsedRange) {
 		start = parsedRange.start
 		end = parsedRange.end
 
 		responseStatus = 206
 
 		responseHeaders.set("Accept-Ranges", "bytes")
-		responseHeaders.set("Content-Length", (end - start + 1).toString())
+		responseHeaders.set("Content-Length", (end - start).toString())
 		responseHeaders.set("Content-Range", `bytes ${start}-${end}/${totalSize}`)
 	} else {
 		responseStatus = 200
 
-		responseHeaders.set("Content-Disposition", createContentDisposition(name ?? item.meta?.name ?? item.uuid))
+		responseHeaders.set(
+			"Content-Disposition",
+			createContentDisposition({
+				fileName: name ?? item.meta?.name ?? item.uuid,
+				type: "inline"
+			})
+		)
+
 		responseHeaders.set("Content-Length", totalSize.toString())
 	}
 
@@ -266,11 +261,11 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		.downloadFileToWriter({
 			file: item,
 			writer: transformer.writable,
-			abortSignal: e.request.signal
+			abortSignal: e.request.signal,
+			start: BigInt(start),
+			end: BigInt(end)
 		})
 		.catch(err => {
-			console.error(err)
-
 			transformer.writable.abort(err).catch(() => {})
 			transformer.readable.cancel(err).catch(() => {})
 		})

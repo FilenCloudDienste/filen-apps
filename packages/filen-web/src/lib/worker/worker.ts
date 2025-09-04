@@ -87,8 +87,8 @@ export async function setClient(stringifiedClient: FilenSdkRsStringifiedClient):
 
 	filenSdkRsClient = filenSdkRsFromStringified({
 		...stringifiedClient,
-		maxIoMemoryUsage: 1024 * 1024 * 64,
-		maxParallelRequests: 128
+		maxIoMemoryUsage: 1024 * 1024 * 32,
+		maxParallelRequests: 32
 	})
 
 	return filenSdkRsClient
@@ -103,10 +103,7 @@ export async function login(...params: Parameters<typeof filenSdkRsLogin>): Prom
 }
 
 export async function uploadFileStreamFile(
-	params: Omit<
-		Parameters<FilenSdkRsClient["uploadFileFromReader"]>[0],
-		"reader" | "progress" | "name" | "known_size" | "abort_signal"
-	> & {
+	params: Omit<Parameters<FilenSdkRsClient["uploadFileFromReader"]>[0], "reader" | "progress" | "name" | "knownSize" | "abortSignal"> & {
 		file: File
 		id: string
 	}
@@ -135,10 +132,7 @@ export async function uploadFileStreamFile(
 }
 
 export async function uploadFileStreamFileHandle(
-	params: Omit<
-		Parameters<FilenSdkRsClient["uploadFileFromReader"]>[0],
-		"reader" | "name" | "known_size" | "progress" | "abort_signal"
-	> & {
+	params: Omit<Parameters<FilenSdkRsClient["uploadFileFromReader"]>[0], "reader" | "name" | "knownSize" | "progress" | "abortSignal"> & {
 		fileHandle: FileSystemFileHandle
 		id: string
 	}

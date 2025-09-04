@@ -24,6 +24,11 @@ const createWindow = async () => {
 			autoplayPolicy: "no-user-gesture-required",
 			contextIsolation: true,
 			experimentalFeatures: true,
+			nodeIntegration: false,
+			webSecurity: true,
+			nodeIntegrationInSubFrames: false,
+			nodeIntegrationInWorker: false,
+			webgl: true,
 			preload: isDev ? path.join(__dirname, "..", "dist", "preload.js") : path.join(__dirname, "preload.js"),
 			devTools: isDev,
 			zoomFactor: 1
