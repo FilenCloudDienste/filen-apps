@@ -73,7 +73,8 @@ export const DriveListItemMenu = memo(
 						favorited: i.data.favorited,
 						region: i.data.region,
 						bucket: i.data.bucket,
-						chunks: i.data.chunks
+						chunks: i.data.chunks,
+						canMakeThumbnail: i.data.canMakeThumbnail
 					} satisfies FilenSdkRsNonRootObject
 				})
 			] satisfies FilenSdkRsNonRootObject[]
@@ -148,7 +149,8 @@ export const DriveListItemMenu = memo(
 										favorited: i.data.favorited,
 										region: i.data.region,
 										bucket: i.data.bucket,
-										chunks: i.data.chunks
+										chunks: i.data.chunks,
+										canMakeThumbnail: i.data.canMakeThumbnail
 									} satisfies FilenSdkRsNonRootObject
 								})
 							] satisfies FilenSdkRsNonRootObject[]

@@ -3,7 +3,7 @@ import { memo, useRef, useCallback, useState } from "react"
 import type { DriveItem, DriveItemFile } from "@/queries/useDriveItems.query"
 import { EllipsisVerticalIcon } from "lucide-react"
 import { formatBytes, simpleDate, cn, getPreviewType } from "@/lib/utils"
-import { FileIcon, DirectoryIcon } from "@/components/itemIcons"
+import { DirectoryIcon } from "@/components/itemIcons"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import DriveListItemHoverCard from "./hoverCard"
@@ -14,6 +14,7 @@ import DriveListItemMenu from "./menu"
 import usePreviewStore from "@/stores/preview.store"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 import useIdb from "@/hooks/useIdb"
+import Thumbnail from "@/components/thumbnail"
 
 export const DriveListItem = memo(
 	({ item, isLast, items, index }: { item: DriveItem; isLast: boolean; items: DriveItem[]; index: number }) => {
@@ -262,8 +263,8 @@ export const DriveListItem = memo(
 										</div>
 									</DriveListItemHoverCard>
 								) : (
-									<FileIcon
-										fileName={item.data.meta?.name ?? item.data.uuid}
+									<Thumbnail
+										item={item}
 										width={64}
 										height={64}
 									/>
@@ -295,8 +296,8 @@ export const DriveListItem = memo(
 											</div>
 										</DriveListItemHoverCard>
 									) : (
-										<FileIcon
-											fileName={item.data.meta?.name ?? item.data.uuid}
+										<Thumbnail
+											item={item}
 											width={20}
 											height={20}
 										/>

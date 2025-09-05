@@ -3,8 +3,9 @@ import { experimental_createQueryPersister, type PersistedQuery } from "@tanstac
 import { QueryClient, type UseQueryOptions } from "@tanstack/react-query"
 import type { DriveItem } from "./useDriveItems.query"
 import cacheMap from "@/lib/cacheMap"
+import { pack, unpack } from "msgpackr"
 
-export const UNCACHED_QUERY_KEYS: string[] = []
+export const UNCACHED_QUERY_KEYS: string[] = ["thumbnailObjectUrl"]
 export const CACHE_TIME: number = 86400 * 1000 * 365
 
 export const shouldPersistQuery = (queryKey: unknown[]) => {
@@ -22,9 +23,9 @@ export const queryClientPersister = experimental_createQueryPersister({
 			return undefined
 		}
 
-		return query
+		return pack(query)
 	},
-	deserialize: query => query as PersistedQuery,
+	deserialize: query => unpack(query as Buffer) as PersistedQuery,
 	prefix: QUERY_CLIENT_PERSISTER_PREFIX
 })
 
@@ -65,7 +66,8 @@ export const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
 			...DEFAULT_QUERY_OPTIONS,
-			persister: queryClientPersister.persisterFn
+			persister: queryClientPersister.persisterFn,
+			queryKeyHashFn: queryKey => pack(queryKey).toString("base64")
 		}
 	}
 })
@@ -75,24 +77,18 @@ export async function restoreQueries(): Promise<void> {
 
 	await Promise.all(
 		keys.map(async key => {
-			if (key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX)) {
-				const persistedQuery = (await queryClientPersisterKv.getItem(key)) as unknown as PersistedQuery
+			try {
+				const persistedQuery = unpack((await queryClientPersisterKv.getItem(key)) as Buffer) as unknown as PersistedQuery
 
-				if (!persistedQuery || !persistedQuery.state) {
-					await queryClientPersisterKv.removeItem(key)
-
-					return
-				}
-
-				const shouldNotPersist = !shouldPersistQuery(persistedQuery.queryKey as unknown[])
-
-				if (persistedQuery.state.dataUpdatedAt + CACHE_TIME < Date.now()) {
+				if (!persistedQuery || !persistedQuery.state || persistedQuery.state.dataUpdatedAt + CACHE_TIME < Date.now()) {
 					await queryClientPersisterKv.removeItem(key)
 
 					return
 				}
 
 				if (persistedQuery.state.status === "success") {
+					const shouldNotPersist = !shouldPersistQuery(persistedQuery.queryKey as unknown[])
+
 					if (!shouldNotPersist) {
 						queryClient.setQueryData(persistedQuery.queryKey, persistedQuery.state.data, {
 							updatedAt: persistedQuery.state.dataUpdatedAt
@@ -108,6 +104,8 @@ export async function restoreQueries(): Promise<void> {
 						await queryClientPersisterKv.removeItem(key)
 					}
 				}
+			} catch {
+				await queryClientPersisterKv.removeItem(key)
 			}
 		})
 	)

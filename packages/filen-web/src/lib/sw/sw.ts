@@ -52,13 +52,7 @@ self.addEventListener("install", () => {
 })
 
 self.addEventListener("activate", (event: ExtendableEvent) => {
-	event.waitUntil(
-		(async () => {
-			await waitForFilenSdkRsWasmInit()
-
-			self.clients.claim()
-		})()
-	)
+	event.waitUntil(self.clients.claim())
 })
 
 export function parseByteRange(range: string | null, totalLength: number): { start: number; end: number } | null {

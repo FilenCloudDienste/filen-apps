@@ -54,3 +54,35 @@ export function extractTransferables(value: unknown): Transferable[] {
 
 	return transferables
 }
+
+export async function rawPixelsToJpegBlob(imageData: Uint8Array, width: number, height: number, quality: number = 0.8): Promise<Blob> {
+	let canvas: OffscreenCanvas | null = null
+	let ctx: OffscreenCanvasRenderingContext2D | null = null
+
+	try {
+		canvas = new OffscreenCanvas(width, height)
+		ctx = canvas.getContext("2d")
+
+		if (!ctx) {
+			throw new Error("Failed to get canvas context")
+		}
+
+		const imgData = new ImageData(new Uint8ClampedArray(imageData), width, height)
+
+		ctx.putImageData(imgData, 0, 0)
+
+		const blob = await canvas.convertToBlob({
+			type: "image/jpeg",
+			quality: quality
+		})
+
+		return blob
+	} finally {
+		if (ctx) {
+			ctx.clearRect(0, 0, width, height)
+		}
+
+		canvas = null
+		ctx = null
+	}
+}

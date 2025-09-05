@@ -8,7 +8,7 @@ import initFilenSdkRs, {
 	type DirEnum as FilenSdkRsDirEnum
 } from "@filen/sdk-rs"
 import { transfer as comlinkTransfer } from "comlink"
-import { extractTransferables } from "./utils"
+import { extractTransferables, rawPixelsToJpegBlob } from "./utils"
 import path from "path"
 import Semaphore from "../semaphore"
 
@@ -260,6 +260,46 @@ export async function compressItems({
 	} finally {
 		await opfsRoot.removeEntry(opfsFileName).catch(() => {})
 	}
+}
+
+export async function generateThumbnail(file: FilenSdkRsFile) {
+	await waitForFilenSdkRsWasmInit()
+
+	if (!filenSdkRsClient) {
+		throw new Error("Client is not set.")
+	}
+
+	if (!file.canMakeThumbnail) {
+		throw new Error("File cannot make thumbnail.")
+	}
+
+	const opfsFileName = `${file.uuid}.jpg`
+	const opfsRoot = await self.navigator.storage.getDirectory()
+	const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
+		create: true
+	})
+
+	if ((await fileHandle.getFile()).size > 0) {
+		return fileHandle
+	}
+
+	const thumbnail = await filenSdkRsClient.makeThumbnailInMemory({
+		file,
+		maxHeight: 128,
+		maxWidth: 128
+	})
+
+	if (!thumbnail) {
+		throw new Error("Failed to generate thumbnail.")
+	}
+
+	const blob = await rawPixelsToJpegBlob(thumbnail.imageData, thumbnail.width, thumbnail.height, 0.8)
+	const writer = await fileHandle.createWritable()
+
+	await writer.write(blob)
+	await writer.close()
+
+	return fileHandle
 }
 
 export async function callSdkFunction<T extends keyof FilenSdkRsClientFunctions>(functionNameAndParams: {

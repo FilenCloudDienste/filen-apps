@@ -6,7 +6,8 @@ export const cacheMap = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	kv: new Map<string, any>(),
 	directoryUUIDToDirEnum: new Map<string, FilenSdkRsDirEnum>(),
-	driveRoot: null as FilenSdkRsRoot | null
+	driveRoot: null as FilenSdkRsRoot | null,
+	thumbnails: new Map<string, string>()
 }
 
 export default cacheMap

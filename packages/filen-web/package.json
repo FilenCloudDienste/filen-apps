@@ -20,7 +20,7 @@
 		"preview": "cross-env NODE_OPTIONS=--max_old_space_size=16384 vite preview --host --port 3000"
 	},
 	"dependencies": {
-		"@filen/sdk-rs": "^0.3.8",
+		"@filen/sdk-rs": "^0.3.9",
 		"@hookform/resolvers": "^5.2.1",
 		"@radix-ui/react-alert-dialog": "^1.1.15",
 		"@radix-ui/react-avatar": "^1.1.10",

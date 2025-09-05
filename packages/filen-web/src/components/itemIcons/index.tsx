@@ -161,18 +161,31 @@ export function fileNameToSvgIcon(fileName: string): string {
 	}
 }
 
-export const FileIcon = memo(({ fileName, width, height }: { fileName: string; width?: string | number; height?: string | number }) => {
-	const icon = useMemo(() => {
-		return fileNameToSvgIcon(fileName)
-	}, [fileName])
-	return (
-		<img
-			src={icon}
-			width={width ?? 32}
-			height={height ?? 32}
-		/>
-	)
-})
+export const FileIcon = memo(
+	({
+		fileName,
+		width,
+		height,
+		className
+	}: {
+		fileName: string
+		width?: string | number
+		height?: string | number
+		className?: string
+	}) => {
+		const icon = useMemo(() => {
+			return fileNameToSvgIcon(fileName)
+		}, [fileName])
+		return (
+			<img
+				src={icon}
+				width={width ?? 32}
+				height={height ?? 32}
+				className={className}
+			/>
+		)
+	}
+)
 
 FileIcon.displayName = "FileIcon"
 
