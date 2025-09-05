@@ -262,7 +262,7 @@ export async function compressItems({
 	}
 }
 
-export async function generateThumbnail(file: FilenSdkRsFile) {
+export async function generateThumbnail(file: FilenSdkRsFile): Promise<string> {
 	await waitForFilenSdkRsWasmInit()
 
 	if (!filenSdkRsClient) {
@@ -280,7 +280,7 @@ export async function generateThumbnail(file: FilenSdkRsFile) {
 	})
 
 	if ((await fileHandle.getFile()).size > 0) {
-		return fileHandle
+		return globalThis.URL.createObjectURL(await fileHandle.getFile())
 	}
 
 	const thumbnail = await filenSdkRsClient.makeThumbnailInMemory({
@@ -299,7 +299,7 @@ export async function generateThumbnail(file: FilenSdkRsFile) {
 	await writer.write(blob)
 	await writer.close()
 
-	return fileHandle
+	return globalThis.URL.createObjectURL(await fileHandle.getFile())
 }
 
 export async function callSdkFunction<T extends keyof FilenSdkRsClientFunctions>(functionNameAndParams: {

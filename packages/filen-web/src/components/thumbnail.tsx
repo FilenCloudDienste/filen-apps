@@ -1,9 +1,9 @@
 import { memo } from "react"
 import type { DriveItem } from "@/queries/useDriveItems.query"
-import cacheMap from "@/lib/cacheMap"
 import { FileIcon } from "./itemIcons"
 import { useQuery } from "@tanstack/react-query"
 import worker from "@/lib/worker"
+import cacheMap from "@/lib/cacheMap"
 
 export const Thumbnail = memo(({ item, width, height }: { item: DriveItem; width: number; height: number }) => {
 	const query = useQuery({
@@ -13,13 +13,11 @@ export const Thumbnail = memo(({ item, width, height }: { item: DriveItem; width
 				return null
 			}
 
-			const fromCache = cacheMap.thumbnails.get(item.data.uuid) ?? null
-
-			if (fromCache) {
-				return fromCache
+			if (cacheMap.thumbnails.has(item.data.uuid)) {
+				return cacheMap.thumbnails.get(item.data.uuid) as string
 			}
 
-			const fileHandle = await worker.direct.generateThumbnail({
+			const urlObject = await worker.direct.generateThumbnail({
 				uuid: item.data.uuid,
 				meta: item.data.meta,
 				parent: item.data.parent,
@@ -30,10 +28,6 @@ export const Thumbnail = memo(({ item, width, height }: { item: DriveItem; width
 				chunks: item.data.chunks,
 				canMakeThumbnail: item.data.canMakeThumbnail
 			})
-
-			const blob = await fileHandle.getFile()
-
-			const urlObject = globalThis.URL.createObjectURL(blob)
 
 			cacheMap.thumbnails.set(item.data.uuid, urlObject)
 

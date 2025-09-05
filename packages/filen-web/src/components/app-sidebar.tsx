@@ -39,6 +39,14 @@ import cacheMap from "@/lib/cacheMap"
 import { Button } from "./ui/button"
 import { IS_DESKTOP } from "@/constants"
 import DriveListItemMenu from "./drive/list/item/menu"
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu"
+import { inputPrompt } from "./prompts/input"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { setOpen } = useSidebar()
@@ -181,13 +189,48 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<div className="text-foreground text-base font-medium text-ellipsis truncate">
 							{cacheMap.directoryUUIDToName.get(driveParent?.uuid ?? "") ?? "Cloud Drive"}
 						</div>
-						<Button
-							size="sm"
-							variant="secondary"
-						>
-							<PlusIcon />
-							New
-						</Button>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild={true}>
+								<Button
+									size="sm"
+									variant="secondary"
+								>
+									<PlusIcon />
+									New
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								side="right"
+								align="start"
+							>
+								<DropdownMenuItem
+									onClick={() => {
+										inputPrompt({
+											title: "New directory",
+											description: "Directory name",
+											cancelText: "Cancel",
+											confirmText: "Create",
+											inputProps: {
+												placeholder: "Directory name",
+												value: "New directory"
+											},
+											onSubmit: async (): Promise<void> => {
+												await new Promise(resolve => setTimeout(resolve, 3000))
+												throw new Error("Not implemented")
+											}
+										}).then(res => {
+											console.log(res)
+										})
+									}}
+								>
+									New directory
+								</DropdownMenuItem>
+								<DropdownMenuItem>New text file</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem>Upload files</DropdownMenuItem>
+								<DropdownMenuItem>Upload directories</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</div>
 					<SidebarInput placeholder="Search..." />
 				</SidebarHeader>

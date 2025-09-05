@@ -16,6 +16,7 @@ import Preview from "@/components/preview"
 import RequireInternet from "@/components/requireInternet"
 import { cn } from "@/lib/utils"
 import { IS_DESKTOP } from "@/constants"
+import InputPrompt from "@/components/prompts/input"
 
 export const Root = memo(() => {
 	const { pathname } = useLocation()
@@ -86,6 +87,7 @@ export const Root = memo(() => {
 							) : (
 								<Outlet />
 							)}
+							<InputPrompt />
 							<Preview />
 							<DragSelect />
 							<Toaster />

@@ -1,4 +1,5 @@
 import { EventEmitter } from "eventemitter3"
+import type { InputPromptEvent } from "@/components/prompts/input"
 
 export type Events = {
 	kvChange: {
@@ -10,6 +11,7 @@ export type Events = {
 		key: string
 	}
 	kvClear: void
+	inputPrompt: InputPromptEvent
 }
 
 export class TypedEventEmitter<T> {
