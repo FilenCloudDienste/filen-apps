@@ -47,6 +47,7 @@ import {
 	DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { inputPrompt } from "./prompts/input"
+import { selectDriveItemPrompt } from "./prompts/selectDriveItem"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { setOpen } = useSidebar()
@@ -225,7 +226,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								>
 									New directory
 								</DropdownMenuItem>
-								<DropdownMenuItem>New text file</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => {
+										selectDriveItemPrompt({
+											title: "Select parent directory",
+											description: "Select the parent directory where the new file will be created",
+											confirmText: "Select",
+											cancelText: "Cancel"
+										}).then(res => {
+											console.log(res)
+										})
+									}}
+								>
+									New text file
+								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem>Upload files</DropdownMenuItem>
 								<DropdownMenuItem>Upload directories</DropdownMenuItem>

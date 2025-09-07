@@ -17,6 +17,7 @@ import RequireInternet from "@/components/requireInternet"
 import { cn } from "@/lib/utils"
 import { IS_DESKTOP } from "@/constants"
 import InputPrompt from "@/components/prompts/input"
+import SelectDriveItemPrompt from "@/components/prompts/selectDriveItem"
 
 export const Root = memo(() => {
 	const { pathname } = useLocation()
@@ -87,6 +88,7 @@ export const Root = memo(() => {
 							) : (
 								<Outlet />
 							)}
+							<SelectDriveItemPrompt />
 							<InputPrompt />
 							<Preview />
 							<DragSelect />

@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import worker from "@/lib/worker"
 import { DEFAULT_QUERY_OPTIONS } from "./client"
-import { type File as FilenSdkRsFile, type Dir as FilenSdkRsDir } from "@filen/sdk-rs"
+import type { File as FilenSdkRsFile, Dir as FilenSdkRsDir } from "@filen/sdk-rs"
 import pathModule from "path"
 import cacheMap from "@/lib/cacheMap"
 

@@ -14,7 +14,7 @@ import { Input } from "../ui/input"
 import { LoaderIcon } from "lucide-react"
 
 export type InputPromptParams = {
-	title: string
+	title?: string
 	description?: string
 	cancelText?: string
 	confirmText?: string
@@ -36,7 +36,7 @@ export type InputPromptEvent =
 	| {
 			type: "request"
 			id: string
-			params: InputPromptParams
+			params?: InputPromptParams
 	  }
 	| {
 			type: "response"
@@ -67,9 +67,7 @@ export async function inputPrompt(params: InputPromptParams): Promise<InputPromp
 export const InputPrompt = memo(() => {
 	const [open, setOpen] = useState<boolean>(false)
 	const idRef = useRef<string>("")
-	const [params, setParams] = useState<InputPromptParams>({
-		title: ""
-	})
+	const [params, setParams] = useState<InputPromptParams>({})
 	const [value, setValue] = useState<string>("")
 	const inputRef = useRef<HTMLInputElement>(null)
 	const [loading, setLoading] = useState<boolean>(false)
@@ -149,8 +147,8 @@ export const InputPrompt = memo(() => {
 			if (e.type === "request") {
 				idRef.current = e.id
 
-				setParams(e.params)
-				setValue(e.params.inputProps?.value?.toString() ?? e.params.inputProps?.defaultValue?.toString() ?? "")
+				setParams(e.params ?? {})
+				setValue(e.params?.inputProps?.value?.toString() ?? e.params?.inputProps?.defaultValue?.toString() ?? "")
 				setError(null)
 				setLoading(false)
 				setOpen(true)
@@ -173,17 +171,17 @@ export const InputPrompt = memo(() => {
 		>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{params.title}</AlertDialogTitle>
+					{params.title && <AlertDialogTitle>{params.title}</AlertDialogTitle>}
 					{params.description && <AlertDialogDescription>{params.description}</AlertDialogDescription>}
-					<Input
-						{...params.inputProps}
-						disabled={loading || params.inputProps?.disabled}
-						ref={inputRef}
-						value={value}
-						onChange={onChange}
-					/>
-					{error && <p className="text-sm text-red-500">{error}</p>}
 				</AlertDialogHeader>
+				<Input
+					{...params.inputProps}
+					disabled={loading || params.inputProps?.disabled}
+					ref={inputRef}
+					value={value}
+					onChange={onChange}
+				/>
+				{error && <p className="text-sm text-red-500">{error}</p>}
 				{(params.cancelText || params.confirmText) && (
 					<AlertDialogFooter>
 						{params.cancelText && (

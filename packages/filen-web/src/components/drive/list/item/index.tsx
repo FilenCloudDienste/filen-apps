@@ -1,5 +1,4 @@
-import { useLocation, useNavigate } from "@tanstack/react-router"
-import { memo, useRef, useCallback, useState } from "react"
+import { memo, useRef, useCallback, useState, useMemo, Fragment } from "react"
 import type { DriveItem, DriveItemFile } from "@/queries/useDriveItems.query"
 import { EllipsisVerticalIcon } from "lucide-react"
 import { formatBytes, simpleDate, cn, getPreviewType } from "@/lib/utils"
@@ -13,18 +12,69 @@ import { useShallow } from "zustand/shallow"
 import DriveListItemMenu from "./menu"
 import usePreviewStore from "@/stores/preview.store"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
-import useIdb from "@/hooks/useIdb"
 import Thumbnail from "@/components/thumbnail"
+import { Checkbox } from "@/components/ui/checkbox"
+
+export type DriveListItemFrom = "drive" | "select" | "search"
+
+export const MenuWrapper = memo(
+	({
+		onOpenChange,
+		item,
+		from,
+		children
+	}: {
+		onOpenChange: (open: boolean) => void
+		item: DriveItem
+		from: DriveListItemFrom
+		children: React.ReactNode
+	}) => {
+		if (from !== "drive") {
+			return <Fragment>{children}</Fragment>
+		}
+
+		return (
+			<DriveListItemMenu
+				onOpenChange={onOpenChange}
+				item={item}
+				type="context"
+			>
+				{children}
+			</DriveListItemMenu>
+		)
+	}
+)
+
+MenuWrapper.displayName = "MenuWrapper"
 
 export const DriveListItem = memo(
-	({ item, isLast, items, index }: { item: DriveItem; isLast: boolean; items: DriveItem[]; index: number }) => {
+	({
+		item,
+		isLast,
+		items,
+		index,
+		type,
+		from,
+		navigate,
+		path,
+		selected,
+		select
+	}: {
+		item: DriveItem
+		isLast: boolean
+		items: DriveItem[]
+		index: number
+		type: "list" | "grid"
+		from: DriveListItemFrom
+		navigate: (newPath: string) => void
+		path: string
+		selected?: boolean
+		select?: (item: DriveItem) => void
+	}) => {
 		const contextMenuTriggerRef = useRef<HTMLDivElement>(null)
 		const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false)
 		const [draggingOver, setDraggingOver] = useState<boolean>(false)
-		const location = useLocation()
-		const navigate = useNavigate()
-		const isSelected = useDriveStore(useShallow(state => state.selectedItems.some(i => i.data.uuid === item.data.uuid)))
-		const [listViewMode] = useIdb<"list" | "grid">("listViewMode", "list")
+		const isSelectedDrive = useDriveStore(useShallow(state => state.selectedItems.some(i => i.data.uuid === item.data.uuid)))
 
 		const directorySizeQuery = useDirectorySizeQuery(
 			{
@@ -35,30 +85,47 @@ export const DriveListItem = memo(
 			}
 		)
 
-		const openContextMenu = useCallback((e: React.MouseEvent) => {
-			e.preventDefault()
-			e.stopPropagation()
+		const isSelected = useMemo(() => {
+			return selected ?? isSelectedDrive
+		}, [isSelectedDrive, selected])
 
-			if (!contextMenuTriggerRef.current) {
-				return
-			}
+		const openContextMenu = useCallback(
+			(e: React.MouseEvent) => {
+				if (from !== "drive") {
+					return
+				}
 
-			contextMenuTriggerRef.current.dispatchEvent(
-				new MouseEvent("contextmenu", {
-					bubbles: true,
-					cancelable: true,
-					clientX: e.clientX,
-					clientY: e.clientY,
-					screenX: e.screenX,
-					screenY: e.screenY
-				})
-			)
-		}, [])
+				e.preventDefault()
+				e.stopPropagation()
+
+				if (!contextMenuTriggerRef.current) {
+					return
+				}
+
+				contextMenuTriggerRef.current.dispatchEvent(
+					new MouseEvent("contextmenu", {
+						bubbles: true,
+						cancelable: true,
+						clientX: e.clientX,
+						clientY: e.clientY,
+						screenX: e.screenX,
+						screenY: e.screenY
+					})
+				)
+			},
+			[from]
+		)
 
 		const onClick = useCallback(
 			(e: React.MouseEvent<HTMLDivElement>) => {
 				e.preventDefault()
 				e.stopPropagation()
+
+				if (from === "select") {
+					select?.(item)
+
+					return
+				}
 
 				if (e.ctrlKey || e.metaKey || e.altKey) {
 					useDriveStore
@@ -111,7 +178,7 @@ export const DriveListItem = memo(
 
 				useDriveStore.getState().setSelectedItems(prev => (prev.some(i => i.data.uuid === item.data.uuid) ? [] : [item]))
 			},
-			[item, index, items]
+			[item, index, items, from, select]
 		)
 
 		const onDoubleClick = useCallback(
@@ -120,10 +187,12 @@ export const DriveListItem = memo(
 				e.stopPropagation()
 
 				if (item.type === "directory") {
-					navigate({
-						to: pathModule.posix.join(location.pathname, item.data.uuid)
-					})
+					navigate(pathModule.posix.join(path, item.data.uuid))
 
+					return
+				}
+
+				if (from !== "drive") {
 					return
 				}
 
@@ -141,11 +210,15 @@ export const DriveListItem = memo(
 					initialIndex
 				})
 			},
-			[item, location.pathname, navigate, items]
+			[item, navigate, items, path, from]
 		)
 
 		const onContextMenuOpenChange = useCallback(
 			(open: boolean) => {
+				if (from !== "drive") {
+					return
+				}
+
 				setContextMenuOpen(open)
 
 				if (open && item) {
@@ -158,19 +231,23 @@ export const DriveListItem = memo(
 						)
 				}
 			},
-			[item]
+			[item, from]
 		)
 
 		const onDragStart = useCallback(() => {
+			if (from !== "drive") {
+				return
+			}
+
 			useDriveStore.getState().setSelectedItems(prev => [...prev.filter(i => i.data.uuid !== item.data.uuid), item])
 			useDriveStore
 				.getState()
 				.setDraggingItems([...useDriveStore.getState().selectedItems.filter(i => i.data.uuid !== item.data.uuid), item])
-		}, [item])
+		}, [item, from])
 
 		const onDragOver = useCallback(
 			(e: React.DragEvent) => {
-				if (item.type !== "directory") {
+				if (item.type !== "directory" || from !== "drive") {
 					return
 				}
 
@@ -178,12 +255,12 @@ export const DriveListItem = memo(
 
 				setDraggingOver(true)
 			},
-			[item]
+			[item, from]
 		)
 
 		const onDragLeave = useCallback(
 			(e: React.DragEvent) => {
-				if (item.type !== "directory") {
+				if (item.type !== "directory" || from !== "drive") {
 					return
 				}
 
@@ -191,7 +268,7 @@ export const DriveListItem = memo(
 
 				setDraggingOver(false)
 			},
-			[item]
+			[item, from]
 		)
 
 		const onDrop = useCallback(
@@ -199,7 +276,7 @@ export const DriveListItem = memo(
 				e.preventDefault()
 
 				try {
-					if (item.type !== "directory") {
+					if (item.type !== "directory" || from !== "drive") {
 						return
 					}
 
@@ -222,27 +299,27 @@ export const DriveListItem = memo(
 					useDriveStore.getState().setDraggingItems([])
 				}
 			},
-			[item]
+			[item, from]
 		)
 
 		return (
 			<div
 				onClick={onClick}
-				className="flex w-full h-auto dragselect-collision-check"
+				className={cn("flex w-full h-auto", from === "drive" && "dragselect-collision-check")}
 				onDoubleClick={onDoubleClick}
 				data-uuid={item.data.uuid}
-				draggable={true}
+				draggable={from === "drive"}
 				onDragStart={onDragStart}
 				onDragOver={onDragOver}
 				onDragLeave={onDragLeave}
 				onDrop={onDrop}
 			>
-				<DriveListItemMenu
+				<MenuWrapper
 					onOpenChange={onContextMenuOpenChange}
 					item={item}
-					type="context"
+					from={from}
 				>
-					{listViewMode === "grid" ? (
+					{type === "grid" ? (
 						<div
 							ref={contextMenuTriggerRef}
 							className={cn(
@@ -275,7 +352,11 @@ export const DriveListItem = memo(
 					) : (
 						<div
 							ref={contextMenuTriggerRef}
-							className={cn("flex w-full flex-row overflow-hidden", !isLast && "border-b")}
+							className={cn(
+								"flex w-full flex-row overflow-hidden",
+								!isLast && "border-b",
+								from === "select" && "cursor-pointer"
+							)}
 						>
 							<div
 								className={cn(
@@ -284,7 +365,25 @@ export const DriveListItem = memo(
 									draggingOver && "animate-pulse"
 								)}
 							>
-								<div className="flex flex-1 flex-row items-center w-[60%] overflow-hidden gap-4">
+								<div
+									className={cn(
+										"flex flex-1 flex-row items-center overflow-hidden gap-4",
+										from === "drive" ? "w-[60%]" : "w-[70%]"
+									)}
+								>
+									{from === "select" && (
+										<Checkbox
+											checked={isSelected}
+											onClick={e => {
+												e.preventDefault()
+												e.stopPropagation()
+
+												select?.(item)
+											}}
+											onCheckedChange={() => select?.(item)}
+											className="cursor-pointer"
+										/>
+									)}
 									{item.type === "directory" ? (
 										<DriveListItemHoverCard item={item}>
 											<div>
@@ -304,7 +403,12 @@ export const DriveListItem = memo(
 									)}
 									<p className="text-ellipsis truncate select-none text-sm">{item.data.meta?.name ?? item.data.uuid}</p>
 								</div>
-								<div className="flex flex-row items-center w-[40%] justify-between overflow-hidden gap-8">
+								<div
+									className={cn(
+										"flex flex-row items-center justify-between overflow-hidden gap-8",
+										from === "drive" ? "w-[40%]" : "w-[30%]"
+									)}
+								>
 									<div className="flex flex-row items-center overflow-hidden w-[25%]">
 										<p className="text-ellipsis truncate select-none text-sm">
 											{formatBytes(
@@ -321,36 +425,38 @@ export const DriveListItem = memo(
 											{item.type === "directory" ? "-" : simpleDate(Number(item.data.meta?.modified ?? Date.now()))}
 										</p>
 									</div>
-									<div className="flex flex-row items-center overflow-hidden pr-4">
-										<Tooltip delayDuration={1000}>
-											<TooltipTrigger asChild={true}>
-												<Button
-													size="icon"
-													variant="ghost"
-													className="w-7 h-7 hover:bg-secondary-foreground"
-													onContextMenu={e => {
-														e.preventDefault()
-														e.stopPropagation()
-													}}
-													onClick={openContextMenu}
+									{from === "drive" && (
+										<div className="flex flex-row items-center overflow-hidden pr-4">
+											<Tooltip delayDuration={1000}>
+												<TooltipTrigger asChild={true}>
+													<Button
+														size="icon"
+														variant="ghost"
+														className="w-7 h-7 hover:bg-secondary-foreground"
+														onContextMenu={e => {
+															e.preventDefault()
+															e.stopPropagation()
+														}}
+														onClick={openContextMenu}
+													>
+														<EllipsisVerticalIcon />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent
+													side="top"
+													align="center"
+													className="select-none"
 												>
-													<EllipsisVerticalIcon />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent
-												side="top"
-												align="center"
-												className="select-none"
-											>
-												More actions
-											</TooltipContent>
-										</Tooltip>
-									</div>
+													More actions
+												</TooltipContent>
+											</Tooltip>
+										</div>
+									)}
 								</div>
 							</div>
 						</div>
 					)}
-				</DriveListItemMenu>
+				</MenuWrapper>
 			</div>
 		)
 	}

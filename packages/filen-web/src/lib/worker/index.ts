@@ -1,4 +1,4 @@
-import { type FilenSdkRsClientFunctions } from "./worker"
+import type { FilenSdkRsClientFunctions } from "./worker"
 import { extractTransferables } from "./utils"
 import { transfer as comlinkTransfer, proxy as comlinkProxy } from "comlink"
 

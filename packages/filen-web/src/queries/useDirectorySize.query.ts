@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import worker from "@/lib/worker"
 import { DEFAULT_QUERY_OPTIONS } from "./client"
-import { type DirSizeResponse } from "@filen/sdk-rs"
+import type { DirSizeResponse } from "@filen/sdk-rs"
 import cacheMap from "@/lib/cacheMap"
 
 export type UseDirectorySizeQueryParams = {
@@ -24,7 +24,7 @@ export function useDirectorySizeQuery(params: UseDirectorySizeQueryParams, optio
 		...options,
 		queryKey: ["useDirectorySizeQuery", params],
 		queryFn: () => fetchDirectorySize(params),
-		staleTime: 60000
+		staleTime: 60000 * 5
 	})
 
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchDirectorySize>>, Error>

@@ -1,5 +1,6 @@
 import { EventEmitter } from "eventemitter3"
 import type { InputPromptEvent } from "@/components/prompts/input"
+import type { SelectDriveItemsEvent } from "@/components/prompts/selectDriveItem"
 
 export type Events = {
 	kvChange: {
@@ -12,6 +13,7 @@ export type Events = {
 	}
 	kvClear: void
 	inputPrompt: InputPromptEvent
+	selectDriveItemPrompt: SelectDriveItemsEvent
 }
 
 export class TypedEventEmitter<T> {

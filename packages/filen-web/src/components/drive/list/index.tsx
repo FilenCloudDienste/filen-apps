@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react"
+import { memo, useMemo, useCallback } from "react"
 import useDriveItemsQuery from "@/queries/useDriveItems.query"
 import { Virtuoso, VirtuosoGrid } from "react-virtuoso"
 import { orderItemsByType } from "@/lib/utils"
@@ -9,11 +9,14 @@ import useElementDimensions from "@/hooks/useElementDimensions"
 import DriveListHeader from "./header"
 import useIdb from "@/hooks/useIdb"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useNavigate, useLocation } from "@tanstack/react-router"
 
 export const DriveList = memo(() => {
 	const drivePath = useDrivePath()
 	const [ref, { width }] = useElementDimensions<HTMLDivElement>()
 	const [listViewMode] = useIdb<"list" | "grid">("listViewMode", "list")
+	const navigate = useNavigate()
+	const location = useLocation()
 
 	const driveItemsQuery = useDriveItemsQuery({
 		path: drivePath
@@ -29,6 +32,15 @@ export const DriveList = memo(() => {
 			type: "nameAsc"
 		})
 	}, [driveItemsQuery.status, driveItemsQuery.data])
+
+	const navigateTo = useCallback(
+		(newPath: string) => {
+			navigate({
+				to: newPath
+			})
+		},
+		[navigate]
+	)
 
 	return (
 		<div
@@ -79,6 +91,10 @@ export const DriveList = memo(() => {
 									isLast={index === items.length - 1}
 									items={items}
 									index={index}
+									navigate={navigateTo}
+									type="grid"
+									path={location.pathname}
+									from="drive"
 								/>
 							)}
 						/>
@@ -128,6 +144,10 @@ export const DriveList = memo(() => {
 									isLast={index === items.length - 1}
 									items={items}
 									index={index}
+									navigate={navigateTo}
+									type="list"
+									path={location.pathname}
+									from="drive"
 								/>
 							)}
 						/>

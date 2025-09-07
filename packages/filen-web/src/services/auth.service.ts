@@ -1,4 +1,4 @@
-import { type StringifiedClient } from "@filen/sdk-rs"
+import type { StringifiedClient } from "@filen/sdk-rs"
 import idb from "@/lib/idb"
 import worker from "@/lib/worker"
 

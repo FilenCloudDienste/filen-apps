@@ -2,7 +2,9 @@ import { create } from "zustand"
 import type { DriveItemFile } from "@/queries/useDriveItems.query"
 import { type PreviewType, getPreviewType } from "@/lib/utils"
 
-export type DriveItemFileWithPreviewType = DriveItemFile & { previewType: PreviewType }
+export type DriveItemFileWithPreviewType = DriveItemFile & {
+	previewType: PreviewType
+}
 
 export type PreviewStore = {
 	items: DriveItemFileWithPreviewType[]
