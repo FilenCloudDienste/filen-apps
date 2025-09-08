@@ -10,8 +10,6 @@ import DriveListItemMenu from "../drive/list/item/menu"
 import { IS_DESKTOP } from "@/constants"
 import { cn } from "@/lib/utils"
 
-export const margin = IS_DESKTOP ? 32 : 32
-
 export const Preview = memo(() => {
 	const open = usePreviewStore(useShallow(state => state.open))
 	const items = usePreviewStore(useShallow(state => state.items))
@@ -89,13 +87,13 @@ export const Preview = memo(() => {
 		>
 			<SheetContent
 				side="center"
-				className="border-none rounded-lg p-0 flex-col gap-0 z-50"
+				className="border border-border rounded-lg p-0 flex-col gap-0 z-50 shadow-sm"
 				hideCloseButton={true}
 				overlayClassName={cn("bg-sidebar", IS_DESKTOP ? "m-[6px] rounded-lg" : "m-0")}
 				style={{
-					height: `calc(100dvh - ${margin}px)`,
-					width: `calc(100dvw - ${margin}px)`,
-					margin: `${margin / 2}px`
+					height: "calc(100dvh - 32px)",
+					width: "calc(100dvw - 32px)",
+					margin: "16px"
 				}}
 			>
 				<SheetHeader className="flex flex-row items-center w-full px-4 border-b justify-between">
@@ -156,7 +154,7 @@ export const Preview = memo(() => {
 								<div
 									className="flex flex-1 h-full items-center justify-center overflow-hidden"
 									style={{
-										width: `calc(100dvw - ${margin}px)`
+										width: "calc(100dvw - 32px)"
 									}}
 								>
 									{item.previewType === "image" ? (

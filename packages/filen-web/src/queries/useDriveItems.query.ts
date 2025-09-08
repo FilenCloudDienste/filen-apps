@@ -62,7 +62,10 @@ export async function fetchDriveItems(params: UseDriveItemsQueryParams): Promise
 	return items
 }
 
-export function useDriveItemsQuery(params: UseDriveItemsQueryParams, options?: Omit<UseQueryOptions, "queryKey" | "queryFn">) {
+export function useDriveItemsQuery(
+	params: UseDriveItemsQueryParams,
+	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+): UseQueryResult<Awaited<ReturnType<typeof fetchDriveItems>>, Error> {
 	const query = useQuery({
 		...(DEFAULT_QUERY_OPTIONS as Omit<UseQueryOptions, "queryKey" | "queryFn">),
 		...options,

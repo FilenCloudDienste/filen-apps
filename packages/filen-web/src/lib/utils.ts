@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge"
 import { t } from "@/lib/i18n"
 import type { DriveItem } from "@/queries/useDriveItems.query"
 import pathModule from "path"
+import type { Contact } from "@filen/sdk-rs"
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
@@ -382,4 +383,14 @@ export function getPreviewType(fileName: string): PreviewType {
 			return "unknown"
 		}
 	}
+}
+
+export function contactDisplayName(contact: Contact): string {
+	const nickName = contact.nickName?.trim()
+
+	if (nickName && nickName.length > 0) {
+		return nickName
+	}
+
+	return contact.email.trim()
 }

@@ -1,15 +1,13 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router"
 import RequireAuthed from "@/components/requireAuthed"
-import DriveHeader from "@/components/drive/header"
 
-export const Route = createFileRoute("/drive")({
+export const Route = createFileRoute("/contacts")({
 	component: RouteComponent
 })
 
 function RouteComponent() {
 	return (
 		<RequireAuthed>
-			<DriveHeader />
 			<Outlet />
 		</RequireAuthed>
 	)

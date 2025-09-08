@@ -6,17 +6,24 @@ import {
 	AlertDialogDescription,
 	AlertDialogFooter,
 	AlertDialogHeader,
-	AlertDialogTitle
+	AlertDialogTitle,
+	AlertDialogActionSecondary
 } from "@/components/ui/alert-dialog"
-import { memo, useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { memo, useState, useEffect, useCallback, useRef, useMemo, Fragment } from "react"
 import events from "@/lib/events"
-import { LoaderIcon } from "lucide-react"
+import { LoaderIcon, FolderPlusIcon } from "lucide-react"
 import useDriveItemsQuery, { type DriveItem } from "@/queries/useDriveItems.query"
-import { orderItemsByType } from "@/lib/utils"
+import { orderItemsByType, cn } from "@/lib/utils"
 import { Virtuoso } from "react-virtuoso"
 import DriveListItem from "../drive/list/item"
 import { Block } from "@tanstack/react-router"
 import pathModule from "path"
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink } from "@/components/ui/breadcrumb"
+import useElementDimensions from "@/hooks/useElementDimensions"
+import { useTranslation } from "react-i18next"
+import cacheMap from "@/lib/cacheMap"
+
+export type SelectDriveItemPromptTypes = ("file" | "directory")[]
 
 export type SelectDriveItemPromptParams = {
 	title?: string
@@ -26,7 +33,7 @@ export type SelectDriveItemPromptParams = {
 	startPath?: string
 	onSubmit?: (items: DriveItem[]) => Promise<void> | void
 	multiple?: boolean
-	types?: ("file" | "directory")[]
+	types?: SelectDriveItemPromptTypes
 }
 
 export type SelectDriveItemsResponse =
@@ -71,6 +78,64 @@ export async function selectDriveItemPrompt(params: SelectDriveItemPromptParams)
 	})
 }
 
+export const Crumb = memo(
+	({
+		index,
+		component,
+		drivePathComponents,
+		path,
+		setPath,
+		disabled
+	}: {
+		index: number
+		component: string
+		drivePathComponents: string[]
+		path: string
+		setPath: React.Dispatch<React.SetStateAction<string>>
+		disabled?: boolean
+	}) => {
+		const { t } = useTranslation()
+
+		const currentParent = useMemo(() => {
+			return pathModule.posix.basename(path)
+		}, [path])
+
+		const componentName = useMemo(() => {
+			if (component === "/") {
+				return t("cloudDrive")
+			}
+
+			return cacheMap.directoryUUIDToName.get(component) ?? component
+		}, [component, t])
+
+		return (
+			<Fragment>
+				{index > 0 && <BreadcrumbSeparator />}
+				<BreadcrumbItem className={cn("shrink-0", disabled && "pointer-events-none opacity-50")}>
+					{(component === "/" && drivePathComponents.length === 1) || currentParent === component ? (
+						<BreadcrumbPage>{componentName}</BreadcrumbPage>
+					) : (
+						<BreadcrumbLink
+							className="cursor-pointer"
+							onClick={() => {
+								if (disabled) {
+									return
+								}
+
+								setPath(pathModule.posix.join("/", ...drivePathComponents.slice(1, index + 1)))
+							}}
+						>
+							{componentName}
+						</BreadcrumbLink>
+					)}
+				</BreadcrumbItem>
+			</Fragment>
+		)
+	}
+)
+
+Crumb.displayName = "Crumb"
+
 export const SelectDriveItemPrompt = memo(() => {
 	const [open, setOpen] = useState<boolean>(false)
 	const idRef = useRef<string>("")
@@ -79,6 +144,11 @@ export const SelectDriveItemPrompt = memo(() => {
 	const [error, setError] = useState<string | null>(null)
 	const [path, setPath] = useState<string>("/")
 	const [selectedItems, setSelectedItems] = useState<DriveItem[]>([])
+	const [breadcrumbContainerRef, { width: breadcrumbContainerWidth }] = useElementDimensions<HTMLDivElement>()
+
+	const pathComponents = useMemo(() => {
+		return ["/", ...path.split("/").filter(Boolean)]
+	}, [path])
 
 	const driveItemsQuery = useDriveItemsQuery(
 		{
@@ -172,6 +242,12 @@ export const SelectDriveItemPrompt = memo(() => {
 
 	const select = useCallback(
 		(item: DriveItem) => {
+			const types = params.types ?? (["file", "directory"] as const)
+
+			if (types && !types.includes(item.type)) {
+				return
+			}
+
 			if (params.multiple) {
 				setSelectedItems(prev => {
 					if (prev.some(i => i.data.uuid === item.data.uuid)) {
@@ -184,8 +260,31 @@ export const SelectDriveItemPrompt = memo(() => {
 				setSelectedItems(prev => (prev.some(i => i.data.uuid === item.data.uuid) ? [] : [item]))
 			}
 		},
-		[params.multiple]
+		[params.multiple, params.types]
 	)
+
+	const itemContent = useCallback(
+		(index: number, item: DriveItem) => {
+			return (
+				<DriveListItem
+					item={item}
+					isLast={index === items.length - 1}
+					items={items}
+					index={index}
+					from="select"
+					navigate={navigate}
+					type="list"
+					path={path}
+					select={select}
+					selected={selectedItems.some(i => i.data.uuid === item.data.uuid)}
+					selectTypes={params.types}
+				/>
+			)
+		},
+		[items, navigate, path, select, selectedItems, params.types]
+	)
+
+	const computeItemKey = useCallback((_: number, item: DriveItem) => item.data.uuid, [])
 
 	useEffect(() => {
 		const subscription = events.subscribe("selectDriveItemPrompt", e => {
@@ -224,40 +323,79 @@ export const SelectDriveItemPrompt = memo(() => {
 				onOpenChange={onOpenChange}
 			>
 				<AlertDialogContent className="w-[50dvw] max-w-[50dvw]">
-					<AlertDialogHeader>
-						{params.title && <AlertDialogTitle>{params.title}</AlertDialogTitle>}
-						{params.description && <AlertDialogDescription>{params.description}</AlertDialogDescription>}
+					<AlertDialogHeader className="flex flex-row items-center justify-between gap-8">
+						<div className="flex flex-col gap-2">
+							{params.title && <AlertDialogTitle>{params.title}</AlertDialogTitle>}
+							{params.description && <AlertDialogDescription>{params.description}</AlertDialogDescription>}
+						</div>
+						<div className="flex flex-row items-center gap-2">
+							<AlertDialogActionSecondary
+								onClick={e => {
+									e.preventDefault()
+									e.stopPropagation()
+
+									console.log("create dir")
+								}}
+							>
+								<FolderPlusIcon />
+							</AlertDialogActionSecondary>
+						</div>
 					</AlertDialogHeader>
-					<div className="w-full h-[calc(50dvh)] flex flex-1">
+					<div className="w-full h-[calc(50dvh)] flex flex-1 flex-col overflow-hidden">
+						<div
+							ref={breadcrumbContainerRef}
+							className="flex items-center gap-2 flex-row w-full h-auto overflow-hidden border-b pb-2"
+						>
+							<Breadcrumb className="overflow-hidden">
+								<BreadcrumbList
+									className="overflow-hidden flex-nowrap flex flex-row flex-1 h-full"
+									style={{
+										width: breadcrumbContainerWidth - 32
+									}}
+								>
+									{pathComponents.map((component, index) => (
+										<Crumb
+											key={index}
+											index={index}
+											component={component}
+											drivePathComponents={pathComponents}
+											path={path}
+											setPath={setPath}
+											disabled={loading}
+										/>
+									))}
+								</BreadcrumbList>
+							</Breadcrumb>
+						</div>
 						<Virtuoso
 							key={path}
 							className="w-full h-full flex flex-1 overflow-x-hidden overflow-y-scroll"
 							data={items}
-							computeItemKey={(_, item) => item.data.uuid}
+							computeItemKey={computeItemKey}
 							totalCount={items.length}
 							defaultItemHeight={36}
 							fixedItemHeight={36}
 							skipAnimationFrameInResizeObserver={true}
-							itemContent={(index, item) => (
-								<DriveListItem
-									item={item}
-									isLast={index === items.length - 1}
-									items={items}
-									index={index}
-									from="select"
-									navigate={navigate}
-									type="list"
-									path={path}
-									select={select}
-									selected={selectedItems.some(i => i.data.uuid === item.data.uuid)}
-								/>
-							)}
+							itemContent={itemContent}
 						/>
 					</div>
 					{error && <p className="text-sm text-red-500">{error}</p>}
 					{(params.cancelText || params.confirmText) && (
-						<AlertDialogFooter className="flex flex-1 flex-row items-center justify-between">
-							<div className="flex flex-row items-center gap-2">Yes</div>
+						<AlertDialogFooter className="flex flex-1 flex-row items-center justify-between!">
+							{params.types && params.types.includes("directory") && (
+								<AlertDialogActionSecondary
+									className="self-start"
+									onClick={e => {
+										e.preventDefault()
+										e.stopPropagation()
+
+										console.log("select root directory")
+									}}
+									disabled={loading || selectedItems.length > 0}
+								>
+									{loading ? <LoaderIcon className="animate-spin" /> : "Select root directory"}
+								</AlertDialogActionSecondary>
+							)}
 							<div className="flex flex-row items-center gap-2">
 								{params.cancelText && (
 									<AlertDialogCancel

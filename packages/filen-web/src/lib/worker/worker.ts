@@ -8,7 +8,7 @@ import initFilenSdkRs, {
 	type DirEnum as FilenSdkRsDirEnum
 } from "@filen/sdk-rs"
 import { transfer as comlinkTransfer } from "comlink"
-import { extractTransferables, rawPixelsToJpegBlob } from "./utils"
+import { extractTransferables } from "./utils"
 import path from "path"
 import Semaphore from "../semaphore"
 
@@ -273,14 +273,15 @@ export async function generateThumbnail(file: FilenSdkRsFile): Promise<string> {
 		throw new Error("File cannot make thumbnail.")
 	}
 
-	const opfsFileName = `${file.uuid}.jpg`
+	const opfsFileName = `${file.uuid}.webp`
 	const opfsRoot = await self.navigator.storage.getDirectory()
 	const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
 		create: true
 	})
+	const currentFile = await fileHandle.getFile()
 
-	if ((await fileHandle.getFile()).size > 0) {
-		return globalThis.URL.createObjectURL(await fileHandle.getFile())
+	if (currentFile.size > 0) {
+		return globalThis.URL.createObjectURL(currentFile)
 	}
 
 	const thumbnail = await filenSdkRsClient.makeThumbnailInMemory({
@@ -293,10 +294,9 @@ export async function generateThumbnail(file: FilenSdkRsFile): Promise<string> {
 		throw new Error("Failed to generate thumbnail.")
 	}
 
-	const blob = await rawPixelsToJpegBlob(thumbnail.imageData, thumbnail.width, thumbnail.height, 0.8)
 	const writer = await fileHandle.createWritable()
 
-	await writer.write(blob)
+	await writer.write(Buffer.from(thumbnail.webpData))
 	await writer.close()
 
 	return globalThis.URL.createObjectURL(await fileHandle.getFile())

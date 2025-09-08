@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useState, useRef, useCallback } from "react"
 import useDriveItemsQuery from "@/queries/useDriveItems.query"
 import { useDriveStore } from "@/stores/drive.store"
 import useDrivePath from "@/hooks/useDrivePath"
+import { useLocation } from "@tanstack/react-router"
 
 export type XY = {
 	x: number
@@ -24,6 +25,7 @@ export const DragSelect = memo(() => {
 	})
 	const dragAreaRef = useRef<HTMLDivElement>(null)
 	const drivePath = useDrivePath()
+	const { pathname } = useLocation()
 
 	const driveItemsQuery = useDriveItemsQuery(
 		{
@@ -43,8 +45,16 @@ export const DragSelect = memo(() => {
 	}, [driveItemsQuery])
 
 	const show = useMemo(() => {
-		return items.length > 0 && isDragging && startPos.x !== 0 && startPos.y !== 0 && endPos.x !== 0 && endPos.y !== 0
-	}, [isDragging, startPos, endPos, items.length])
+		return (
+			pathname.startsWith("/drive") &&
+			items.length > 0 &&
+			isDragging &&
+			startPos.x !== 0 &&
+			startPos.y !== 0 &&
+			endPos.x !== 0 &&
+			endPos.y !== 0
+		)
+	}, [isDragging, startPos, endPos, items.length, pathname])
 
 	const selectionBoxStyle = useMemo(() => {
 		return {

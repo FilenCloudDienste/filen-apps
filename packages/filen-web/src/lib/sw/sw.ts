@@ -189,7 +189,9 @@ export async function stream(e: FetchEvent): Promise<Response> {
 			.downloadItemsToZip({
 				items: itemsDecoded,
 				writer: transformer.writable,
-				abortSignal: e.request.signal
+				managedFuture: {
+					abortSignal: e.request.signal
+				}
 			})
 			.catch(err => {
 				transformer.writable.abort(err).catch(() => {})
@@ -255,7 +257,9 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		.downloadFileToWriter({
 			file: item,
 			writer: transformer.writable,
-			abortSignal: e.request.signal,
+			managedFuture: {
+				abortSignal: e.request.signal
+			},
 			start: BigInt(start),
 			end: BigInt(end)
 		})

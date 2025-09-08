@@ -18,7 +18,10 @@ export async function fetchDirectorySize(params: UseDirectorySizeQueryParams): P
 	return await worker.sdk("getDirSize", dir)
 }
 
-export function useDirectorySizeQuery(params: UseDirectorySizeQueryParams, options?: Omit<UseQueryOptions, "queryKey" | "queryFn">) {
+export function useDirectorySizeQuery(
+	params: UseDirectorySizeQueryParams,
+	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
+): UseQueryResult<Awaited<ReturnType<typeof fetchDirectorySize>>, Error> {
 	const query = useQuery({
 		...(DEFAULT_QUERY_OPTIONS as Omit<UseQueryOptions, "queryKey" | "queryFn">),
 		...options,

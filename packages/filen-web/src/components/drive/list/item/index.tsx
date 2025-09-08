@@ -14,6 +14,7 @@ import usePreviewStore from "@/stores/preview.store"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 import Thumbnail from "@/components/thumbnail"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { SelectDriveItemPromptTypes } from "@/components/prompts/selectDriveItem"
 
 export type DriveListItemFrom = "drive" | "select" | "search"
 
@@ -58,7 +59,8 @@ export const DriveListItem = memo(
 		navigate,
 		path,
 		selected,
-		select
+		select,
+		selectTypes
 	}: {
 		item: DriveItem
 		isLast: boolean
@@ -70,6 +72,7 @@ export const DriveListItem = memo(
 		path: string
 		selected?: boolean
 		select?: (item: DriveItem) => void
+		selectTypes?: SelectDriveItemPromptTypes
 	}) => {
 		const contextMenuTriggerRef = useRef<HTMLDivElement>(null)
 		const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false)
@@ -323,8 +326,8 @@ export const DriveListItem = memo(
 						<div
 							ref={contextMenuTriggerRef}
 							className={cn(
-								"flex flex-1 flex-col gap-2 items-center justify-center hover:bg-sidebar p-4 rounded-lg w-full overflow-hidden shrink-0",
-								(contextMenuOpen || isSelected || draggingOver) && "bg-sidebar",
+								"flex flex-1 flex-col gap-2 items-center justify-center hover:bg-sidebar hover:text-sidebar-foreground p-4 rounded-lg w-full overflow-hidden shrink-0",
+								(contextMenuOpen || isSelected || draggingOver) && "bg-sidebar text-sidebar-foreground",
 								draggingOver && "animate-pulse"
 							)}
 						>
@@ -353,15 +356,15 @@ export const DriveListItem = memo(
 						<div
 							ref={contextMenuTriggerRef}
 							className={cn(
-								"flex w-full flex-row overflow-hidden",
+								"flex w-full flex-row overflow-hidden cursor-pointer",
 								!isLast && "border-b",
-								from === "select" && "cursor-pointer"
+								from === "select" && selectTypes && !selectTypes.includes(item.type) && "opacity-50 cursor-not-allowed"
 							)}
 						>
 							<div
 								className={cn(
-									"flex flex-row w-full gap-8 justify-between overflow-hidden px-4 py-2 hover:bg-sidebar",
-									(contextMenuOpen || isSelected || draggingOver) && "bg-sidebar",
+									"flex flex-row w-full gap-8 justify-between overflow-hidden px-4 py-2 hover:bg-sidebar hover:text-sidebar-foreground",
+									(contextMenuOpen || isSelected || draggingOver) && "bg-sidebar text-sidebar-foreground",
 									draggingOver && "animate-pulse"
 								)}
 							>
