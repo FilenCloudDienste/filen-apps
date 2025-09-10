@@ -46,7 +46,7 @@ export type MenuItemType =
 			onClick?: () => void | Promise<void>
 			shortcut?: string
 			className?: string
-			destrcutive?: boolean
+			destructive?: boolean
 	  }
 	| {
 			type: "shortcut"
@@ -124,7 +124,7 @@ export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "conte
 					className={cn(
 						"cursor-pointer flex flex-row items-center gap-8",
 						item.className,
-						item.destrcutive && "text-red-500 hover:text-red-500 focus:text-red-500"
+						item.destructive && "text-red-500 hover:text-red-500 focus:text-red-500"
 					)}
 				>
 					{item.text}

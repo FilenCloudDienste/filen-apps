@@ -1,5 +1,5 @@
 import { Outlet, createRootRoute } from "@tanstack/react-router"
-import { ThemeProvider } from "@/providers/theme.provider"
+import { ThemeProvider, useTheme } from "@/providers/theme.provider"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import Sidebar from "@/components/sidebar"
 import { memo, useState, useEffect, useRef, useCallback } from "react"
@@ -21,6 +21,7 @@ import SelectContactPrompt from "@/components/prompts/selectContact"
 export const Root = memo(() => {
 	const settingUpRef = useRef<boolean>(false)
 	const [setupDone, setSetupDone] = useState<boolean>(false)
+	const { theme } = useTheme()
 
 	const doSetup = useCallback(async () => {
 		if (setupDone || settingUpRef.current) {
@@ -54,6 +55,7 @@ export const Root = memo(() => {
 		<ThemeProvider
 			defaultTheme="system"
 			storageKey="filen-ui-theme"
+			key={theme}
 		>
 			<DesktopWrapper>
 				{setupDone ? (
@@ -81,7 +83,11 @@ export const Root = memo(() => {
 						<InputPrompt />
 						<Preview />
 						<DragSelect />
-						<Toaster />
+						<Toaster
+							position="top-center"
+							richColors={true}
+							theme={theme}
+						/>
 					</QueryClientProvider>
 				) : (
 					<div className="flex flex-1 absolute w-full h-full z-[9999] top-0 left-0 right-0 bottom-0 bg-background items-center justify-center">

@@ -4,7 +4,7 @@ import idb from "../idb"
 import initFilenSdkRs, {
 	type Client as FilenSdkRsClient,
 	fromStringified as filenSdkRsFromStringified,
-	type NonRootObject as FilenSdkRsNonRootObject,
+	type NonRootItemTagged as FilenSdkRsNonRootItemTagged,
 	type StringifiedClient as FilenSdkRsStringifiedClient
 } from "@filen/sdk-rs"
 import Semaphore from "../semaphore"
@@ -134,10 +134,10 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		})
 	}
 
-	let itemsDecoded: FilenSdkRsNonRootObject[] = []
+	let itemsDecoded: FilenSdkRsNonRootItemTagged[] = []
 
 	try {
-		itemsDecoded = unpack(Buffer.from(decodeURIComponent(items), "base64")) as FilenSdkRsNonRootObject[]
+		itemsDecoded = unpack(Buffer.from(decodeURIComponent(items), "base64")) as FilenSdkRsNonRootItemTagged[]
 	} catch (e) {
 		console.error(e)
 
@@ -244,7 +244,7 @@ export async function stream(e: FetchEvent): Promise<Response> {
 			"Content-Disposition",
 			createContentDisposition({
 				fileName: name ?? item.meta?.name ?? item.uuid,
-				type: "inline"
+				type: type === "download" ? "attachment" : "inline"
 			})
 		)
 

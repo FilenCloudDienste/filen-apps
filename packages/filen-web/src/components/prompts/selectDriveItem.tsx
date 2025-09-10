@@ -22,6 +22,8 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage, BreadcrumbS
 import useElementDimensions from "@/hooks/useElementDimensions"
 import { useTranslation } from "react-i18next"
 import cacheMap from "@/lib/cacheMap"
+import { create } from "zustand"
+import { useShallow } from "zustand/shallow"
 
 export type SelectDriveItemPromptTypes = ("file" | "directory")[]
 
@@ -57,6 +59,36 @@ export type SelectDriveItemsEvent =
 			id: string
 			data: SelectDriveItemsResponse
 	  }
+
+export type SelectDriveItemPromptStore = {
+	selected: DriveItem[]
+	multiple: boolean
+	types: SelectDriveItemPromptTypes
+	setMultiple: (fn: boolean | ((prev: boolean) => boolean)) => void
+	setSelected: (fn: DriveItem[] | ((prev: DriveItem[]) => DriveItem[])) => void
+	setTypes: (fn: SelectDriveItemPromptTypes | ((prev: SelectDriveItemPromptTypes) => SelectDriveItemPromptTypes)) => void
+}
+
+export const useSelectDriveItemPromptStore = create<SelectDriveItemPromptStore>(set => ({
+	selected: [],
+	multiple: false,
+	types: ["file", "directory"],
+	setTypes(fn) {
+		set(state => ({
+			types: typeof fn === "function" ? fn(state.types) : fn
+		}))
+	},
+	setMultiple(fn) {
+		set(state => ({
+			multiple: typeof fn === "function" ? fn(state.multiple) : fn
+		}))
+	},
+	setSelected(fn) {
+		set(state => ({
+			selected: typeof fn === "function" ? fn(state.selected) : fn
+		}))
+	}
+}))
 
 export async function selectDriveItemPrompt(params: SelectDriveItemPromptParams): Promise<SelectDriveItemsResponse> {
 	return await new Promise<SelectDriveItemsResponse>(resolve => {
@@ -143,8 +175,8 @@ export const SelectDriveItemPrompt = memo(() => {
 	const [loading, setLoading] = useState<boolean>(false)
 	const [error, setError] = useState<string | null>(null)
 	const [path, setPath] = useState<string>("/")
-	const [selectedItems, setSelectedItems] = useState<DriveItem[]>([])
 	const [breadcrumbContainerRef, { width: breadcrumbContainerWidth }] = useElementDimensions<HTMLDivElement>()
+	const selected = useSelectDriveItemPromptStore(useShallow(state => state.selected))
 
 	const pathComponents = useMemo(() => {
 		return ["/", ...path.split("/").filter(Boolean)]
@@ -179,7 +211,7 @@ export const SelectDriveItemPrompt = memo(() => {
 				setLoading(true)
 
 				try {
-					await params.onSubmit(selectedItems)
+					await params.onSubmit(selected)
 				} catch (e) {
 					console.error(e)
 
@@ -200,14 +232,14 @@ export const SelectDriveItemPrompt = memo(() => {
 				id: idRef.current,
 				data: {
 					cancelled: false,
-					items: [],
+					items: selected,
 					usedOnSubmit: Boolean(params.onSubmit)
 				}
 			})
 
 			setOpen(false)
 		},
-		[params, selectedItems]
+		[params, selected]
 	)
 
 	const cancel = useCallback(() => {
@@ -236,32 +268,10 @@ export const SelectDriveItemPrompt = memo(() => {
 	)
 
 	const navigate = useCallback((newPath: string) => {
-		setSelectedItems([])
+		useSelectDriveItemPromptStore.getState().setSelected([])
+
 		setPath(newPath)
 	}, [])
-
-	const select = useCallback(
-		(item: DriveItem) => {
-			const types = params.types ?? (["file", "directory"] as const)
-
-			if (types && !types.includes(item.type)) {
-				return
-			}
-
-			if (params.multiple) {
-				setSelectedItems(prev => {
-					if (prev.some(i => i.data.uuid === item.data.uuid)) {
-						return prev.filter(i => i.data.uuid !== item.data.uuid)
-					} else {
-						return [...prev, item]
-					}
-				})
-			} else {
-				setSelectedItems(prev => (prev.some(i => i.data.uuid === item.data.uuid) ? [] : [item]))
-			}
-		},
-		[params.multiple, params.types]
-	)
 
 	const itemContent = useCallback(
 		(index: number, item: DriveItem) => {
@@ -275,13 +285,10 @@ export const SelectDriveItemPrompt = memo(() => {
 					navigate={navigate}
 					type="list"
 					path={path}
-					select={select}
-					selected={selectedItems.some(i => i.data.uuid === item.data.uuid)}
-					selectTypes={params.types}
 				/>
 			)
 		},
-		[items, navigate, path, select, selectedItems, params.types]
+		[items, navigate, path]
 	)
 
 	const computeItemKey = useCallback((_: number, item: DriveItem) => item.data.uuid, [])
@@ -291,11 +298,14 @@ export const SelectDriveItemPrompt = memo(() => {
 			if (e.type === "request") {
 				idRef.current = e.id
 
+				useSelectDriveItemPromptStore.getState().setSelected([])
+				useSelectDriveItemPromptStore.getState().setMultiple(e.params?.multiple ?? false)
+				useSelectDriveItemPromptStore.getState().setTypes(e.params?.types ?? ["file", "directory"])
+
 				setParams(e.params ?? {})
 				setError(null)
 				setLoading(false)
 				setPath(e.params?.startPath ?? "/")
-				setSelectedItems([])
 				setOpen(true)
 			}
 		})
@@ -391,7 +401,7 @@ export const SelectDriveItemPrompt = memo(() => {
 
 										console.log("select root directory")
 									}}
-									disabled={loading || selectedItems.length > 0}
+									disabled={loading || selected.length > 0}
 								>
 									{loading ? <LoaderIcon className="animate-spin" /> : "Select root directory"}
 								</AlertDialogActionSecondary>

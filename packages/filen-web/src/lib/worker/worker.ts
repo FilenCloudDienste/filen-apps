@@ -47,6 +47,7 @@ let filenSdkRsClient: FilenSdkRsClient | null = null
 let messageHandlerForMainThread: ((message: WorkerToMainMessage) => void) | null = null
 let filenSdkRsWasmInitialized: boolean = false
 const initMutex: Semaphore = new Semaphore(1)
+const generateThumbnailSemaphore: Semaphore = new Semaphore(3)
 
 export async function waitForFilenSdkRsWasmInit(): Promise<void> {
 	await initMutex.acquire()
@@ -273,33 +274,39 @@ export async function generateThumbnail(file: FilenSdkRsFile): Promise<string> {
 		throw new Error("File cannot make thumbnail.")
 	}
 
-	const opfsFileName = `${file.uuid}.webp`
-	const opfsRoot = await self.navigator.storage.getDirectory()
-	const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
-		create: true
-	})
-	const currentFile = await fileHandle.getFile()
+	await generateThumbnailSemaphore.acquire()
 
-	if (currentFile.size > 0) {
-		return globalThis.URL.createObjectURL(currentFile)
+	try {
+		const opfsFileName = `${file.uuid}.webp`
+		const opfsRoot = await self.navigator.storage.getDirectory()
+		const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
+			create: true
+		})
+		const currentFile = await fileHandle.getFile()
+
+		if (currentFile.size > 0) {
+			return globalThis.URL.createObjectURL(currentFile)
+		}
+
+		const thumbnail = await filenSdkRsClient.makeThumbnailInMemory({
+			file,
+			maxHeight: 128,
+			maxWidth: 128
+		})
+
+		if (!thumbnail) {
+			throw new Error("Failed to generate thumbnail.")
+		}
+
+		const writer = await fileHandle.createWritable()
+
+		await writer.write(Buffer.from(thumbnail.webpData))
+		await writer.close()
+
+		return globalThis.URL.createObjectURL(await fileHandle.getFile())
+	} finally {
+		generateThumbnailSemaphore.release()
 	}
-
-	const thumbnail = await filenSdkRsClient.makeThumbnailInMemory({
-		file,
-		maxHeight: 128,
-		maxWidth: 128
-	})
-
-	if (!thumbnail) {
-		throw new Error("Failed to generate thumbnail.")
-	}
-
-	const writer = await fileHandle.createWritable()
-
-	await writer.write(Buffer.from(thumbnail.webpData))
-	await writer.close()
-
-	return globalThis.URL.createObjectURL(await fileHandle.getFile())
 }
 
 export async function callSdkFunction<T extends keyof FilenSdkRsClientFunctions>(functionNameAndParams: {

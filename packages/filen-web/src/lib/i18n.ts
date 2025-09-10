@@ -1,6 +1,7 @@
 import i18n from "i18next"
 import { initReactI18next } from "react-i18next"
 import en from "@/locales/en.json"
+import de from "@/locales/de.json"
 
 let initalized: boolean = false
 let locales: string[] = ["en"]
@@ -20,6 +21,9 @@ i18n.use(initReactI18next)
 		resources: {
 			en: {
 				translation: en
+			},
+			de: {
+				translation: de
 			}
 		},
 		ns: ["translation"],
@@ -27,7 +31,7 @@ i18n.use(initReactI18next)
 		lng: locales[0] ?? "en",
 		debug: true,
 		fallbackLng: "en",
-		supportedLngs: ["en"],
+		supportedLngs: ["en", "de"],
 		interpolation: {
 			escapeValue: false
 		}

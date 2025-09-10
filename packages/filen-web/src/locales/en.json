@@ -42,5 +42,89 @@
 				}
 			}
 		}
+	},
+	"prompts": {
+		"contacts": {
+			"sendRequest": {
+				"title": "Send contact request",
+				"description": "Enter the Filen registered email address of the person you want to add as a contact.",
+				"placeholder": "Email address",
+				"cancel": "Cancel",
+				"confirm": "Send request",
+				"success": "Contact request sent"
+			},
+			"cancelRequest": {
+				"title": "Cancel contact request",
+				"description": "Are you sure you want to cancel this contact request?",
+				"cancel": "No",
+				"confirm": "Yes, cancel",
+				"success": "Contact request cancelled"
+			},
+			"deleteContact": {
+				"title": "Remove contact",
+				"description": "Are you sure you want to remove this contact?",
+				"cancel": "Cancel",
+				"confirm": "Remove",
+				"success": "Contact removed"
+			},
+			"unblockContact": {
+				"title": "Unblock contact",
+				"description": "Are you sure you want to unblock this contact?",
+				"cancel": "Cancel",
+				"confirm": "Unblock",
+				"success": "Contact unblocked"
+			},
+			"blockContact": {
+				"title": "Block contact",
+				"description": "Are you sure you want to block this contact?",
+				"cancel": "Cancel",
+				"confirm": "Block",
+				"success": "Contact blocked"
+			}
+		}
+	},
+	"sidebar": {
+		"inner": {
+			"contacts": {
+				"title": "Contacts",
+				"add": "Add"
+			}
+		}
+	},
+	"contacts": {
+		"list": {
+			"searchPlaceholder": "Search contacts...",
+			"all": "All",
+			"online": "Online",
+			"offline": "Offline",
+			"blocked": "Blocked",
+			"pending": "Pending",
+			"requests": "Requests",
+			"contact": {
+				"menu": {
+					"startChat": "Start chat",
+					"viewProfile": "View profile",
+					"block": "Block",
+					"unblock": "Unblock",
+					"remove": "Remove"
+				},
+				"tooltip": {
+					"actions": "More",
+					"unblock": "Unblock"
+				}
+			}
+		},
+		"requests": {
+			"list": {
+				"searchPlaceholder": "Search requests...",
+				"request": {
+					"tooltip": {
+						"accept": "Accept",
+						"deny": "Deny",
+						"cancel": "Cancel"
+					}
+				}
+			}
+		}
 	}
 }

@@ -14,7 +14,7 @@ import usePreviewStore from "@/stores/preview.store"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 import Thumbnail from "@/components/thumbnail"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { SelectDriveItemPromptTypes } from "@/components/prompts/selectDriveItem"
+import { useSelectDriveItemPromptStore } from "@/components/prompts/selectDriveItem"
 
 export type DriveListItemFrom = "drive" | "select" | "search"
 
@@ -57,10 +57,7 @@ export const DriveListItem = memo(
 		type,
 		from,
 		navigate,
-		path,
-		selected,
-		select,
-		selectTypes
+		path
 	}: {
 		item: DriveItem
 		isLast: boolean
@@ -70,14 +67,15 @@ export const DriveListItem = memo(
 		from: DriveListItemFrom
 		navigate: (newPath: string) => void
 		path: string
-		selected?: boolean
-		select?: (item: DriveItem) => void
-		selectTypes?: SelectDriveItemPromptTypes
 	}) => {
 		const contextMenuTriggerRef = useRef<HTMLDivElement>(null)
 		const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false)
 		const [draggingOver, setDraggingOver] = useState<boolean>(false)
 		const isSelectedDrive = useDriveStore(useShallow(state => state.selectedItems.some(i => i.data.uuid === item.data.uuid)))
+		const isSelectedPrompt = useSelectDriveItemPromptStore(
+			useShallow(state => state.selected.some(i => i.data.uuid === item.data.uuid))
+		)
+		const selectTypes = useSelectDriveItemPromptStore(useShallow(state => state.types))
 
 		const directorySizeQuery = useDirectorySizeQuery(
 			{
@@ -89,8 +87,8 @@ export const DriveListItem = memo(
 		)
 
 		const isSelected = useMemo(() => {
-			return selected ?? isSelectedDrive
-		}, [isSelectedDrive, selected])
+			return from === "drive" ? isSelectedDrive : isSelectedPrompt
+		}, [isSelectedDrive, isSelectedPrompt, from])
 
 		const openContextMenu = useCallback(
 			(e: React.MouseEvent) => {
@@ -120,37 +118,35 @@ export const DriveListItem = memo(
 		)
 
 		const onClick = useCallback(
-			(e: React.MouseEvent<HTMLDivElement>) => {
-				e.preventDefault()
-				e.stopPropagation()
+			(e?: React.MouseEvent<HTMLDivElement> | React.MouseEvent<HTMLButtonElement>) => {
+				e?.preventDefault()
+				e?.stopPropagation()
 
-				if (from === "select") {
-					select?.(item)
+				if (from === "select" && selectTypes && !selectTypes.includes(item.type)) {
+					return
+				}
+
+				const selectFn =
+					from === "select" ? useSelectDriveItemPromptStore.getState().setSelected : useDriveStore.getState().setSelectedItems
+
+				if (e && (e.ctrlKey || e.metaKey || e.altKey)) {
+					selectFn(prev =>
+						prev.some(i => i.data.uuid === item.data.uuid)
+							? prev.filter(i => i.data.uuid !== item.data.uuid)
+							: [...prev.filter(i => i.data.uuid !== item.data.uuid), item]
+					)
 
 					return
 				}
 
-				if (e.ctrlKey || e.metaKey || e.altKey) {
-					useDriveStore
-						.getState()
-						.setSelectedItems(prev =>
-							prev.some(i => i.data.uuid === item.data.uuid)
-								? prev.filter(i => i.data.uuid !== item.data.uuid)
-								: [...prev.filter(i => i.data.uuid !== item.data.uuid), item]
-						)
-
-					return
-				}
-
-				if (e.shiftKey) {
-					const currentSelectedItems = useDriveStore.getState().selectedItems
+				if (e && e.shiftKey) {
+					const currentSelectedItems =
+						from === "select" ? useSelectDriveItemPromptStore.getState().selected : useDriveStore.getState().selectedItems
 
 					if (currentSelectedItems.length === 0) {
-						useDriveStore
-							.getState()
-							.setSelectedItems(prev =>
-								prev.some(i => i.data.uuid === item.data.uuid) ? prev.filter(i => i.data.uuid !== item.data.uuid) : [item]
-							)
+						selectFn(prev =>
+							prev.some(i => i.data.uuid === item.data.uuid) ? prev.filter(i => i.data.uuid !== item.data.uuid) : [item]
+						)
 
 						return
 					}
@@ -165,23 +161,43 @@ export const DriveListItem = memo(
 					const end = Math.max(firstSelectedItemIndex, index)
 
 					if (start === end) {
-						useDriveStore
-							.getState()
-							.setSelectedItems(prev =>
-								prev.some(i => i.data.uuid === item.data.uuid) ? prev.filter(i => i.data.uuid !== item.data.uuid) : [item]
-							)
+						selectFn(prev =>
+							prev.some(i => i.data.uuid === item.data.uuid) ? prev.filter(i => i.data.uuid !== item.data.uuid) : [item]
+						)
 
 						return
 					}
 
-					useDriveStore.getState().setSelectedItems(items.slice(start, end + 1))
+					selectFn(items.slice(start, end + 1))
 
 					return
 				}
 
-				useDriveStore.getState().setSelectedItems(prev => (prev.some(i => i.data.uuid === item.data.uuid) ? [] : [item]))
+				if (from === "select") {
+					const multiple = useSelectDriveItemPromptStore.getState().multiple
+
+					selectFn(prev => {
+						const exists = prev.some(i => i.data.uuid === item.data.uuid)
+
+						if (multiple) {
+							if (exists) {
+								return prev.filter(i => i.data.uuid !== item.data.uuid)
+							} else {
+								return [...prev, item]
+							}
+						} else {
+							if (exists) {
+								return []
+							} else {
+								return [item]
+							}
+						}
+					})
+				} else {
+					selectFn(prev => (prev.some(i => i.data.uuid === item.data.uuid) ? [] : [item]))
+				}
 			},
-			[item, index, items, from, select]
+			[item, index, items, from, selectTypes]
 		)
 
 		const onDoubleClick = useCallback(
@@ -377,13 +393,7 @@ export const DriveListItem = memo(
 									{from === "select" && (
 										<Checkbox
 											checked={isSelected}
-											onClick={e => {
-												e.preventDefault()
-												e.stopPropagation()
-
-												select?.(item)
-											}}
-											onCheckedChange={() => select?.(item)}
+											onClick={onClick}
 											className="cursor-pointer"
 										/>
 									)}

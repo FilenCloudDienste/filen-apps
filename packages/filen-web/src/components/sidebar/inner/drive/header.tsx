@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { inputPrompt } from "@/components/prompts/input"
 import { selectDriveItemPrompt } from "@/components/prompts/selectDriveItem"
+import { selectContactPrompt } from "@/components/prompts/selectContact"
 
 export const InnerSidebarDriveHeader = memo(() => {
 	const driveParent = useDriveParent()
@@ -79,7 +80,21 @@ export const InnerSidebarDriveHeader = memo(() => {
 							New text file
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem>Upload files</DropdownMenuItem>
+						<DropdownMenuItem
+							onClick={() => {
+								selectContactPrompt({
+									title: "Select contacts",
+									description: "Select the contacts you want to upload files to",
+									confirmText: "Upload",
+									cancelText: "Cancel",
+									multiple: true
+								}).then(res => {
+									console.log(res)
+								})
+							}}
+						>
+							Upload files
+						</DropdownMenuItem>
 						<DropdownMenuItem>Upload directories</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>

@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useState } from "react"
 import type { DriveItem } from "@/queries/useDriveItems.query"
-import type { NonRootObject as FilenSdkRsNonRootObject } from "@filen/sdk-rs"
+import type { NonRootItemTagged as FilenSdkRsNonRootItemTagged } from "@filen/sdk-rs"
 import { useDriveStore } from "@/stores/drive.store"
 import serviceWorker from "@/lib/serviceWorker"
 import worker from "@/lib/worker"
@@ -61,7 +61,7 @@ export const DriveListItemMenu = memo(
 							meta: i.data.meta,
 							parent: i.data.parent,
 							favorited: i.data.favorited
-						} satisfies FilenSdkRsNonRootObject
+						} satisfies FilenSdkRsNonRootItemTagged
 					}
 
 					return {
@@ -75,9 +75,9 @@ export const DriveListItemMenu = memo(
 						bucket: i.data.bucket,
 						chunks: i.data.chunks,
 						canMakeThumbnail: i.data.canMakeThumbnail
-					} satisfies FilenSdkRsNonRootObject
+					} satisfies FilenSdkRsNonRootItemTagged
 				})
-			] satisfies FilenSdkRsNonRootObject[]
+			] satisfies FilenSdkRsNonRootItemTagged[]
 		}, [selectedItems])
 
 		const download = useCallback(() => {
@@ -137,7 +137,7 @@ export const DriveListItemMenu = memo(
 											meta: i.data.meta,
 											parent: i.data.parent,
 											favorited: i.data.favorited
-										} satisfies FilenSdkRsNonRootObject
+										} satisfies FilenSdkRsNonRootItemTagged
 									}
 
 									return {
@@ -151,9 +151,9 @@ export const DriveListItemMenu = memo(
 										bucket: i.data.bucket,
 										chunks: i.data.chunks,
 										canMakeThumbnail: i.data.canMakeThumbnail
-									} satisfies FilenSdkRsNonRootObject
+									} satisfies FilenSdkRsNonRootItemTagged
 								})
-							] satisfies FilenSdkRsNonRootObject[]
+							] satisfies FilenSdkRsNonRootItemTagged[]
 
 							console.log(
 								await worker.direct.compressItems({
@@ -270,7 +270,7 @@ export const DriveListItemMenu = memo(
 						type: "item",
 						text: t("drive.list.item.contextMenu.trash"),
 						inset: true,
-						destrcutive: true,
+						destructive: true,
 						onClick: () => {}
 					}
 				]}

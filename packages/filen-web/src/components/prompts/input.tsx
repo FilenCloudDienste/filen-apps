@@ -142,6 +142,23 @@ export const InputPrompt = memo(() => {
 		setValue(e.target.value)
 	}, [])
 
+	const keyDownListener = useCallback(
+		(e: KeyboardEvent) => {
+			if (e.key === "Enter" && open && !loading && value) {
+				submit(new MouseEvent("click") as unknown as React.MouseEvent<HTMLButtonElement, MouseEvent>)
+			}
+		},
+		[loading, open, submit, value]
+	)
+
+	useEffect(() => {
+		globalThis.addEventListener("keydown", keyDownListener)
+
+		return () => {
+			globalThis.removeEventListener("keydown", keyDownListener)
+		}
+	}, [keyDownListener])
+
 	useEffect(() => {
 		const subscription = events.subscribe("inputPrompt", e => {
 			if (e.type === "request") {

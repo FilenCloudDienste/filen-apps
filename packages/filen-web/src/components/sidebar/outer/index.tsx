@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import { Folder, NotebookIcon, Contact2Icon, MessageCircleIcon, ImagesIcon, HardDriveIcon, FolderSyncIcon } from "lucide-react"
 import {
 	Sidebar,
@@ -15,10 +15,22 @@ import {
 import { Link, useLocation } from "@tanstack/react-router"
 import { IS_DESKTOP } from "@/constants"
 import User from "./user"
+import useContactRequestsQuery from "@/queries/useContactRequests.query"
+import { Badge } from "@/components/ui/badge"
 
 export const OuterSidebar = memo(() => {
 	const { setOpen } = useSidebar()
 	const location = useLocation()
+
+	const contactRequestsQuery = useContactRequestsQuery()
+
+	const incomingContactRequestsCount = useMemo(() => {
+		if (contactRequestsQuery.status !== "success") {
+			return 0
+		}
+
+		return contactRequestsQuery.data.incoming.length
+	}, [contactRequestsQuery.data, contactRequestsQuery.status])
 
 	return (
 		<Sidebar
@@ -69,8 +81,9 @@ export const OuterSidebar = memo(() => {
 								},
 								{
 									title: "Contacts",
-									url: "/contacts",
-									icon: Contact2Icon
+									url: "/contacts/all",
+									icon: Contact2Icon,
+									badge: incomingContactRequestsCount
 								},
 								...(IS_DESKTOP
 									? [
@@ -104,6 +117,14 @@ export const OuterSidebar = memo(() => {
 										>
 											<item.icon />
 											<span>{item.title}</span>
+											{typeof item.badge === "number" && item.badge > 0 && (
+												<Badge
+													className="absolute size-3.5 rounded-full px-1 font-mono tabular-nums text-xs text-[10px] flex items-center justify-center top-0 right-0"
+													variant="destructive"
+												>
+													{item.badge > 9 ? "9+" : item.badge}
+												</Badge>
+											)}
 										</SidebarMenuButton>
 									</Link>
 								</SidebarMenuItem>

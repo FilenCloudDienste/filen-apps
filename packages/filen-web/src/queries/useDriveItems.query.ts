@@ -1,9 +1,12 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import worker from "@/lib/worker"
-import { DEFAULT_QUERY_OPTIONS } from "./client"
+import { DEFAULT_QUERY_OPTIONS, queryClient } from "./client"
 import type { File as FilenSdkRsFile, Dir as FilenSdkRsDir } from "@filen/sdk-rs"
 import pathModule from "path"
 import cacheMap from "@/lib/cacheMap"
+import queryUpdater from "./updater"
+
+export const BASE_QUERY_KEY = "useDriveItemsQuery"
 
 export type ExtraData = {
 	undecryptable: boolean
@@ -40,7 +43,7 @@ export async function fetchDriveItems(params: UseDriveItemsQueryParams): Promise
 			type: "directory",
 			data: {
 				...dir,
-				undecryptable: Boolean(dir.meta),
+				undecryptable: !dir.meta,
 				size: 0n
 			}
 		})
@@ -54,7 +57,7 @@ export async function fetchDriveItems(params: UseDriveItemsQueryParams): Promise
 			type: "file",
 			data: {
 				...file,
-				undecryptable: Boolean(file.meta)
+				undecryptable: !file.meta
 			}
 		})
 	}
@@ -69,11 +72,32 @@ export function useDriveItemsQuery(
 	const query = useQuery({
 		...(DEFAULT_QUERY_OPTIONS as Omit<UseQueryOptions, "queryKey" | "queryFn">),
 		...options,
-		queryKey: ["useDriveItemsQuery", params],
+		queryKey: [BASE_QUERY_KEY, params],
 		queryFn: () => fetchDriveItems(params)
 	})
 
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchDriveItems>>, Error>
+}
+
+export function driveItemsQueryUpdate({
+	updater,
+	...params
+}: Parameters<typeof fetchDriveItems>[0] & {
+	updater:
+		| Awaited<ReturnType<typeof fetchDriveItems>>
+		| ((prev: Awaited<ReturnType<typeof fetchDriveItems>>) => Awaited<ReturnType<typeof fetchDriveItems>>)
+}): void {
+	queryUpdater.set<Awaited<ReturnType<typeof fetchDriveItems>>>([BASE_QUERY_KEY, params], prev => {
+		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchDriveItems>>)
+
+		return typeof updater === "function" ? updater(currentData) : updater
+	})
+}
+
+export async function driveItemsQueryRefetch(params: Parameters<typeof fetchDriveItems>[0]): Promise<void> {
+	return await queryClient.refetchQueries({
+		queryKey: [BASE_QUERY_KEY, params]
+	})
 }
 
 export default useDriveItemsQuery

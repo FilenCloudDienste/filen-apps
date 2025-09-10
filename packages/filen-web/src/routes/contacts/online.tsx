@@ -5,7 +5,7 @@ import { memo } from "react"
 export const RouteComponent = memo(() => {
 	return (
 		<ContactsList
-			type="all"
+			type="online"
 			from="contacts"
 		/>
 	)
@@ -13,6 +13,6 @@ export const RouteComponent = memo(() => {
 
 RouteComponent.displayName = "RouteComponent"
 
-export const Route = createFileRoute("/contacts/all")({
+export const Route = createFileRoute("/contacts/online")({
 	component: RouteComponent
 })

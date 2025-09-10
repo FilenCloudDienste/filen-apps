@@ -1,6 +1,6 @@
 import Semaphore from "./semaphore"
 import idb from "./idb"
-import type { NonRootObject as FilenSdkRsNonRootObject } from "@filen/sdk-rs"
+import type { NonRootItemTagged as FilenSdkRsNonRootItemTagged } from "@filen/sdk-rs"
 import { pack } from "msgpackr"
 
 export type ServiceWorkerClientId = {
@@ -90,7 +90,7 @@ export class ServiceWorker {
 		type = "download",
 		name
 	}: {
-		items: FilenSdkRsNonRootObject[]
+		items: FilenSdkRsNonRootItemTagged[]
 		type?: "download" | "stream"
 		name?: string
 	}): string {

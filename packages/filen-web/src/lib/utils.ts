@@ -3,7 +3,8 @@ import { twMerge } from "tailwind-merge"
 import { t } from "@/lib/i18n"
 import type { DriveItem } from "@/queries/useDriveItems.query"
 import pathModule from "path"
-import type { Contact } from "@filen/sdk-rs"
+import type { ContactTagged } from "@/queries/useContacts.query"
+import type { ContactRequestIn, ContactRequestOut } from "@filen/sdk-rs"
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
@@ -385,7 +386,7 @@ export function getPreviewType(fileName: string): PreviewType {
 	}
 }
 
-export function contactDisplayName(contact: Contact): string {
+export function contactDisplayName(contact: ContactTagged | ContactRequestIn | ContactRequestOut): string {
 	const nickName = contact.nickName?.trim()
 
 	if (nickName && nickName.length > 0) {

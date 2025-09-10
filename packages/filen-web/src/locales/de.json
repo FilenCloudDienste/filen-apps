@@ -1,0 +1,114 @@
+{
+	"cloudDrive": "Cloud Drive",
+	"formatBytes": {
+		"b": "Bytes",
+		"kib": "KiB",
+		"mib": "MiB",
+		"gib": "GiB",
+		"tib": "TiB",
+		"pib": "PiB",
+		"eib": "EiB",
+		"zib": "ZiB",
+		"yib": "YiB"
+	},
+	"bpsToReadable": {
+		"b": "B/s",
+		"kib": "KiB/s",
+		"mib": "MiB/s",
+		"gib": "GiB/s",
+		"tib": "TiB/s",
+		"pib": "PiB/s",
+		"eib": "EiB/s",
+		"zib": "ZiB/s",
+		"yib": "YiB/s"
+	},
+	"drive": {
+		"list": {
+			"item": {
+				"contextMenu": {
+					"download": "Herunterladen",
+					"compress": "Komprimieren",
+					"select": "Auswählen",
+					"open": "Öffnen",
+					"publicLink": "Öffentlicher Link",
+					"share": "Teilen",
+					"favorited": "Favorisiert",
+					"color": "Farbe",
+					"rename": "Umbenennen",
+					"move": "Verschieben",
+					"copyId": "ID kopieren",
+					"trash": "Papierkorb",
+					"selectDestination": "Ziel auswählen"
+				}
+			}
+		}
+	},
+	"prompts": {
+		"contacts": {
+			"sendRequest": {
+				"title": "Kontaktanfrage senden",
+				"description": "Geben Sie die bei Filen registrierte E-Mail-Adresse der Person ein, die Sie als Kontakt hinzufügen möchten.",
+				"placeholder": "E-Mail-Adresse",
+				"cancel": "Abbrechen",
+				"confirm": "Anfrage senden",
+				"success": "Kontaktanfrage gesendet"
+			},
+			"cancelRequest": {
+				"title": "Kontaktanfrage abbrechen",
+				"description": "Sind Sie sicher, dass Sie diese Kontaktanfrage abbrechen möchten?",
+				"cancel": "Nein",
+				"confirm": "Ja, abbrechen",
+				"success": "Kontaktanfrage abgebrochen"
+			},
+			"deleteContact": {
+				"title": "Kontakt entfernen",
+				"description": "Sind Sie sicher, dass Sie diesen Kontakt entfernen möchten?",
+				"cancel": "Nein",
+				"confirm": "Entfernen",
+				"success": "Kontakt entfernt"
+			},
+			"unblockContact": {
+				"title": "Kontakt entblockieren",
+				"description": "Sind Sie sicher, dass Sie diesen Kontakt entblockieren möchten?",
+				"cancel": "Nein",
+				"confirm": "Ja, entblockieren",
+				"success": "Kontakt entblockiert"
+			},
+			"blockContact": {
+				"title": "Kontakt blockieren",
+				"description": "Sind Sie sicher, dass Sie diesen Kontakt blockieren möchten?",
+				"cancel": "Nein",
+				"confirm": "Ja, blockieren",
+				"success": "Kontakt blockiert"
+			}
+		}
+	},
+	"sidebar": {
+		"inner": {
+			"contacts": {
+				"title": "Kontakte",
+				"add": "Hinzufügen"
+			}
+		}
+	},
+	"contacts": {
+		"list": {
+			"searchPlaceholder": "Kontakte suchen...",
+			"all": "Alle",
+			"online": "Online",
+			"offline": "Offline",
+			"blocked": "Blockiert",
+			"pending": "Ausstehend",
+			"requests": "Anfragen",
+			"contact": {
+				"menu": {
+					"startChat": "Chat starten",
+					"viewProfile": "Profil anzeigen",
+					"block": "Blockieren",
+					"unblock": "Entblockieren",
+					"remove": "Entfernen"
+				}
+			}
+		}
+	}
+}

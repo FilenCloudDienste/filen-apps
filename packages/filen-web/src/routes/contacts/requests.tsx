@@ -1,18 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router"
-import ContactsList from "@/components/contacts/list"
+import ContactsRequestsList from "@/components/contacts/requests/list"
 import { memo } from "react"
 
 export const RouteComponent = memo(() => {
-	return (
-		<ContactsList
-			type="all"
-			from="contacts"
-		/>
-	)
+	return <ContactsRequestsList type="incoming" />
 })
 
 RouteComponent.displayName = "RouteComponent"
 
-export const Route = createFileRoute("/contacts/all")({
+export const Route = createFileRoute("/contacts/requests")({
 	component: RouteComponent
 })

@@ -11,14 +11,17 @@ import {
 import { memo, useState, useEffect, useCallback, useRef } from "react"
 import events from "@/lib/events"
 import { LoaderIcon } from "lucide-react"
-import type { Contact as FilenSdkRsContact } from "@filen/sdk-rs"
+import type { ContactTagged } from "@/queries/useContacts.query"
+import ContactsList from "../contacts/list"
+import { create } from "zustand"
+import { useShallow } from "zustand/shallow"
 
 export type SelectContactPromptParams = {
 	title?: string
 	description?: string
 	cancelText?: string
 	confirmText?: string
-	onSubmit?: () => Promise<void> | void
+	onSubmit?: (contacts: ContactTagged[]) => Promise<void> | void
 	multiple?: boolean
 }
 
@@ -28,7 +31,7 @@ export type SelectContactPromptResponse =
 	  }
 	| {
 			cancelled: false
-			contacts: FilenSdkRsContact[]
+			contacts: ContactTagged[]
 			usedOnSubmit: boolean
 	  }
 
@@ -43,6 +46,28 @@ export type SelectContactPromptEvent =
 			id: string
 			data: SelectContactPromptResponse
 	  }
+
+export type SelectContactPromptStore = {
+	selected: ContactTagged[]
+	multiple: boolean
+	setMultiple: (fn: boolean | ((prev: boolean) => boolean)) => void
+	setSelected: (fn: ContactTagged[] | ((prev: ContactTagged[]) => ContactTagged[])) => void
+}
+
+export const useSelectContactPromptStore = create<SelectContactPromptStore>(set => ({
+	selected: [],
+	multiple: false,
+	setMultiple(fn) {
+		set(state => ({
+			multiple: typeof fn === "function" ? fn(state.multiple) : fn
+		}))
+	},
+	setSelected(fn) {
+		set(state => ({
+			selected: typeof fn === "function" ? fn(state.selected) : fn
+		}))
+	}
+}))
 
 export async function selectContactPrompt(params: SelectContactPromptParams): Promise<SelectContactPromptResponse> {
 	return await new Promise<SelectContactPromptResponse>(resolve => {
@@ -70,7 +95,7 @@ export const SelectContactPrompt = memo(() => {
 	const [params, setParams] = useState<SelectContactPromptParams>({})
 	const [loading, setLoading] = useState<boolean>(false)
 	const [error, setError] = useState<string | null>(null)
-	const [selectedContacts, setSelectedContacts] = useState<FilenSdkRsContact[]>([])
+	const selected = useSelectContactPromptStore(useShallow(state => state.selected))
 
 	const submit = useCallback(
 		async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -81,7 +106,7 @@ export const SelectContactPrompt = memo(() => {
 				setLoading(true)
 
 				try {
-					await params.onSubmit()
+					await params.onSubmit(selected)
 				} catch (e) {
 					console.error(e)
 
@@ -102,14 +127,14 @@ export const SelectContactPrompt = memo(() => {
 				id: idRef.current,
 				data: {
 					cancelled: false,
-					contacts: selectedContacts,
+					contacts: selected,
 					usedOnSubmit: Boolean(params.onSubmit)
 				}
 			})
 
 			setOpen(false)
 		},
-		[params, selectedContacts]
+		[params, selected]
 	)
 
 	const cancel = useCallback(() => {
@@ -142,9 +167,11 @@ export const SelectContactPrompt = memo(() => {
 			if (e.type === "request") {
 				idRef.current = e.id
 
+				useSelectContactPromptStore.getState().setSelected([])
+				useSelectContactPromptStore.getState().setMultiple(e.params?.multiple ?? false)
+
 				setParams(e.params ?? {})
 				setError(null)
-				setSelectedContacts([])
 				setLoading(false)
 				setOpen(true)
 			}
@@ -165,7 +192,13 @@ export const SelectContactPrompt = memo(() => {
 					{params.title && <AlertDialogTitle>{params.title}</AlertDialogTitle>}
 					{params.description && <AlertDialogDescription>{params.description}</AlertDialogDescription>}
 				</AlertDialogHeader>
-				{error && <p className="text-sm text-red-500">{error}</p>}
+				<div className="w-full h-[calc(50dvh)] flex flex-1 flex-col overflow-hidden">
+					<ContactsList
+						from="select"
+						type="all"
+					/>
+				</div>
+				{error && <p className="text-sm text-red-500 mt-4">{error}</p>}
 				{(params.cancelText || params.confirmText) && (
 					<AlertDialogFooter>
 						{params.cancelText && (
@@ -179,7 +212,7 @@ export const SelectContactPrompt = memo(() => {
 						{params.confirmText && (
 							<AlertDialogAction
 								onClick={submit}
-								disabled={loading || selectedContacts.length === 0}
+								disabled={loading || selected.length === 0}
 							>
 								{loading ? <LoaderIcon className="animate-spin" /> : params.confirmText}
 							</AlertDialogAction>
