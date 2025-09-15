@@ -11,6 +11,7 @@ import { VitePWA } from "vite-plugin-pwa"
 import wasm from "vite-plugin-wasm"
 import { nodePolyfills } from "vite-plugin-node-polyfills"
 import topLevelAwait from "vite-plugin-top-level-await"
+import legacy from "@vitejs/plugin-legacy"
 
 export const now = Date.now()
 export const require = createRequire(import.meta.url)
@@ -56,7 +57,7 @@ export default defineConfig({
 		}),
 		wasm(),
 		tanstackRouter({
-			autoCodeSplitting: true,
+			autoCodeSplitting: false,
 			target: "react",
 			semicolons: false,
 			quoteStyle: "double"
@@ -68,6 +69,12 @@ export default defineConfig({
 		}),
 		tailwindcss(),
 		comlink(),
+		legacy({
+			targets: ["> 1%", "last 2 versions", "not dead", "Chrome >= 87", "Firefox >= 78", "Safari >= 14", "Edge >= 88"],
+			modernTargets: ["Chrome >= 87", "Firefox >= 78", "Safari >= 14", "Edge >= 88"],
+			modernPolyfills: true,
+			renderLegacyChunks: true
+		}),
 		VitePWA({
 			srcDir: "src/lib/sw",
 			filename: "sw.ts",
@@ -83,6 +90,7 @@ export default defineConfig({
 				rollupFormat: "iife",
 				minify: true,
 				sourcemap: true,
+				target: "es2018",
 				buildPlugins: {
 					vite: [
 						nodePolyfills({
@@ -153,9 +161,11 @@ export default defineConfig({
 		cors: true
 	},
 	build: {
+		target: "esnext",
 		sourcemap: true,
 		cssMinify: "esbuild",
 		minify: "esbuild",
+		chunkSizeWarningLimit: Infinity,
 		rollupOptions: {
 			output: {
 				chunkFileNames() {
