@@ -88,8 +88,8 @@ export const ContactsList = memo(({ type, from }: { type: "online" | "all" | "of
 	}, [])
 
 	return (
-		<div className={cn("flex flex-1 h-full flex-col gap-4", from === "select" ? "w-full" : "w-full xl:w-[75%]")}>
-			<div className={cn("flex flex-row items-center pb-0 w-full", from === "select" ? "p-0" : "p-4")}>
+		<div className={cn("flex flex-1 h-full flex-col gap-4", from === "select" ? "w-full pt-0.5 px-0.5" : "w-full xl:w-[75%]")}>
+			<div className={cn("flex flex-row items-center w-full", from === "select" ? "p-0" : "p-4 pb-0")}>
 				<Input
 					placeholder={t("contacts.list.searchPlaceholder")}
 					value={search}

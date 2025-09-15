@@ -69,7 +69,7 @@ export const Root = memo(() => {
 								)}
 							>
 								<div className="flex flex-row w-full h-full gap-4">
-									<SidebarInset className="z-50 rounded-xl shadow-sm">
+									<SidebarInset className="z-50 rounded-xl shadow-sm dark:border dark:border-border">
 										<Outlet />
 									</SidebarInset>
 									<DriveInfo />

@@ -17,7 +17,7 @@ export const DriveInfo = memo(({ className }: { className?: string }) => {
 			data-slot="sidebar-inset-right-sidebar"
 			data-dragselectallowed={true}
 			className={cn(
-				"w-[calc((var(--sidebar-width)+var(--sidebar-width-icon))/1.5)] flex-col bg-background rounded-xl hidden lg:flex shadow-sm",
+				"w-[calc((var(--sidebar-width)+var(--sidebar-width-icon))/1.5)] flex-col bg-background rounded-xl hidden lg:flex shadow-sm dark:border dark:border-border",
 				className
 			)}
 		>

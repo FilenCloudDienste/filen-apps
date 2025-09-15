@@ -159,7 +159,7 @@ export const Preview = memo(() => {
 								>
 									{item.previewType === "image" ? (
 										<img
-											className="w-full h-full object-contain"
+											className="w-full h-full object-contain rounded-b-lg"
 											src={serviceWorker.buildDownloadUrl({
 												items: [
 													{
@@ -173,7 +173,7 @@ export const Preview = memo(() => {
 										/>
 									) : item.previewType === "video" ? (
 										<video
-											className="w-full h-full object-contain"
+											className="w-full h-full object-contain rounded-b-lg"
 											controls={true}
 											autoPlay={true}
 											loop={true}
@@ -204,7 +204,7 @@ export const Preview = memo(() => {
 											title={item.meta?.name ?? "PDF Preview"}
 											width="100%"
 											height="100%"
-											className="object-contain"
+											className="object-contain rounded-b-lg"
 										/>
 									) : (
 										<div>

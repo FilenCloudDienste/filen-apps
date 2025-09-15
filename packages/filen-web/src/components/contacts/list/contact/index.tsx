@@ -119,7 +119,7 @@ export const ContactsListContact = memo(
 							contextMenuOpen && "bg-sidebar text-sidebar-foreground"
 						)}
 					>
-						<div className="flex flex-row items-center gap-4">
+						<div className="flex flex-row items-center gap-4 overflow-hidden">
 							{from === "select" && (
 								<Checkbox
 									checked={selected}
@@ -129,7 +129,7 @@ export const ContactsListContact = memo(
 
 										handleSelect()
 									}}
-									className="cursor-pointer"
+									className="cursor-pointer ml-2"
 								/>
 							)}
 							<Avatar
@@ -137,13 +137,13 @@ export const ContactsListContact = memo(
 								src={contact.avatar}
 								lastActive={contact.type === "contact" ? Number(contact.lastActive) : undefined}
 							/>
-							<div className="flex flex-col">
+							<div className="flex flex-col overflow-hidden">
 								<p className="text-sm text-ellipsis truncate">{contactDisplayName(contact)}</p>
 								<p className="text-xs text-muted-foreground text-ellipsis truncate">{contact.email}</p>
 							</div>
 						</div>
 						{from !== "select" && (
-							<Fragment>
+							<div className="flex flex-row items-center gap-2 shrink-0">
 								{contactType === "normal" ? (
 									<Tooltip delayDuration={1000}>
 										<TooltipTrigger asChild={true}>
@@ -184,7 +184,7 @@ export const ContactsListContact = memo(
 										</TooltipContent>
 									</Tooltip>
 								)}
-							</Fragment>
+							</div>
 						)}
 					</div>
 				</div>

@@ -3,6 +3,7 @@ import useDriveItemsQuery from "@/queries/useDriveItems.query"
 import { useDriveStore } from "@/stores/drive.store"
 import useDrivePath from "@/hooks/useDrivePath"
 import { useLocation } from "@tanstack/react-router"
+import { useDialogOrSheetOpen } from "@/hooks/useDialogOrSheetOpen"
 
 export type XY = {
 	x: number
@@ -25,6 +26,7 @@ export const DragSelect = memo(() => {
 	})
 	const dragAreaRef = useRef<HTMLDivElement>(null)
 	const drivePath = useDrivePath()
+	const dialogOrSheetOpen = useDialogOrSheetOpen()
 	const { pathname } = useLocation()
 
 	const driveItemsQuery = useDriveItemsQuery(
@@ -46,6 +48,7 @@ export const DragSelect = memo(() => {
 
 	const show = useMemo(() => {
 		return (
+			!dialogOrSheetOpen &&
 			pathname.startsWith("/drive") &&
 			items.length > 0 &&
 			isDragging &&
@@ -54,7 +57,7 @@ export const DragSelect = memo(() => {
 			endPos.x !== 0 &&
 			endPos.y !== 0
 		)
-	}, [isDragging, startPos, endPos, items.length, pathname])
+	}, [isDragging, startPos, endPos, items.length, pathname, dialogOrSheetOpen])
 
 	const selectionBoxStyle = useMemo(() => {
 		return {

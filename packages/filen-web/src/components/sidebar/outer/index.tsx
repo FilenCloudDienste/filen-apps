@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react"
-import { Folder, NotebookIcon, Contact2Icon, MessageCircleIcon, ImagesIcon, HardDriveIcon, FolderSyncIcon } from "lucide-react"
+import { Folder, NotebookIcon, Contact2Icon, MessageCircleIcon, ImagesIcon, HardDriveIcon, FolderSyncIcon, MusicIcon } from "lucide-react"
 import {
 	Sidebar,
 	SidebarContent,
@@ -46,7 +46,7 @@ export const OuterSidebar = memo(() => {
 							className="md:h-8 md:p-0"
 						>
 							<Link to="/drive">
-								<div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg p-[6px]">
+								<div className="bg-[#1447e6] text-white flex aspect-square size-8 items-center justify-center rounded-lg p-[6px]">
 									<img src="/img/light_logo.svg" />
 								</div>
 							</Link>
@@ -81,9 +81,14 @@ export const OuterSidebar = memo(() => {
 								},
 								{
 									title: "Contacts",
-									url: "/contacts/all",
+									url: "/contacts",
 									icon: Contact2Icon,
 									badge: incomingContactRequestsCount
+								},
+								{
+									title: "Playlists",
+									url: "/playlists",
+									icon: MusicIcon
 								},
 								...(IS_DESKTOP
 									? [
