@@ -26,6 +26,23 @@ function deepMergeImmutable(target, source) {
 	return result
 }
 
+function getFlattenedKeys(obj, prefix = "", keys = []) {
+	for (const key in obj) {
+		// eslint-disable-next-line no-prototype-builtins
+		if (obj.hasOwnProperty(key)) {
+			const fullKey = prefix ? `${prefix}.${key}` : key
+
+			if (typeof obj[key] === "object" && obj[key] !== null && !Array.isArray(obj[key])) {
+				getFlattenedKeys(obj[key], fullKey, keys)
+			} else {
+				keys.push(fullKey)
+			}
+		}
+	}
+
+	return keys
+}
+
 const prompts = {
 	translate: `You are a professional translator for the Filen (https://filen.io) encrypted cloud storage platform.
 
@@ -122,6 +139,8 @@ const lastEn = await fs
 	.then(data => JSON.parse(data))
 	.catch(() => ({}))
 
+const currentEnKeys = getFlattenedKeys(currentEn)
+
 for (const lang of langs) {
 	const outPath = path.join(path.resolve(), "src", "locales", `${lang}.json`)
 
@@ -157,10 +176,20 @@ for (const lang of langs) {
 			}
 		})
 
-		if (!translated || Object.keys(translated).length === 0) {
+		const resultKeys = getFlattenedKeys(translated)
+
+		if (!translated || Object.keys(translated).length === 0 || resultKeys.length === 0) {
 			globalThis.console.warn(`No translations for ${lang}, skipping file write.`)
 
 			continue
+		}
+
+		const missingKeys = currentEnKeys.filter(key => !resultKeys.includes(key))
+
+		if (missingKeys.length > 0 || resultKeys.length !== currentEnKeys.length) {
+			globalThis.console.error(`Error: Missing keys in ${lang} translation:`, missingKeys)
+
+			globalThis.process.exit(1)
 		}
 
 		await fs.writeFile(outPath, JSON.stringify(translated, null, 4) + "\n", {
@@ -205,11 +234,20 @@ for (const lang of langs) {
 		})
 
 		const result = deepMergeImmutable(currentLang, translated[lang])
+		const resultKeys = getFlattenedKeys(result)
 
-		if (!result || Object.keys(result).length === 0) {
+		if (!result || Object.keys(result).length === 0 || resultKeys.length === 0) {
 			globalThis.console.warn(`No translations for ${lang}, skipping file write.`)
 
 			continue
+		}
+
+		const missingKeys = currentEnKeys.filter(key => !resultKeys.includes(key))
+
+		if (missingKeys.length > 0 || resultKeys.length !== currentEnKeys.length) {
+			globalThis.console.error(`Error: Missing keys in ${lang} translation:`, missingKeys)
+
+			globalThis.process.exit(1)
 		}
 
 		await fs.writeFile(outPath, JSON.stringify(result, null, 4) + "\n", {
