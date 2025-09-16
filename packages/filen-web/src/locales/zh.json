@@ -131,7 +131,12 @@
                 "search": "搜索...",
                 "sharedWithOthers": "与他人共享",
                 "sharedWithYou": "与您共享",
-                "trash": "回收站"
+                "trash": "回收站",
+                "favorites": "收藏夹",
+                "links": "链接",
+                "publicLinks": "公开链接",
+                "recents": "最近",
+                "shared": "已共享"
             }
         }
     }

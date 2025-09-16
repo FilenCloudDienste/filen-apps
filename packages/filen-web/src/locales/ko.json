@@ -131,7 +131,12 @@
                 "search": "검색...",
                 "sharedWithOthers": "다른 사람과 공유됨",
                 "sharedWithYou": "나와 공유됨",
-                "trash": "휴지통"
+                "trash": "휴지통",
+                "favorites": "즐겨찾기",
+                "links": "링크",
+                "publicLinks": "공개 링크",
+                "recents": "최근",
+                "shared": "공유됨"
             }
         }
     }

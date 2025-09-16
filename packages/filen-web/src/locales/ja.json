@@ -131,7 +131,12 @@
                 "search": "検索...",
                 "sharedWithOthers": "他のユーザーと共有中",
                 "sharedWithYou": "あなたと共有中",
-                "trash": "ゴミ箱"
+                "trash": "ゴミ箱",
+                "favorites": "お気に入り",
+                "links": "リンク",
+                "publicLinks": "公開リンク",
+                "recents": "最近",
+                "shared": "共有"
             }
         }
     }

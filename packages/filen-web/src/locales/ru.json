@@ -131,7 +131,12 @@
                 "search": "Поиск...",
                 "sharedWithOthers": "Доступно другим",
                 "sharedWithYou": "Доступно вам",
-                "trash": "Корзина"
+                "trash": "Корзина",
+                "favorites": "Избранное",
+                "links": "Ссылки",
+                "publicLinks": "Публичные ссылки",
+                "recents": "Недавние",
+                "shared": "Общие"
             }
         }
     }

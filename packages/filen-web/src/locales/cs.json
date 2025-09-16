@@ -131,7 +131,12 @@
                 "search": "Hledat...",
                 "sharedWithOthers": "Sdíleno s ostatními",
                 "sharedWithYou": "Sdíleno s vámi",
-                "trash": "Koš"
+                "trash": "Koš",
+                "favorites": "Oblíbené",
+                "links": "Odkazy",
+                "publicLinks": "Veřejné odkazy",
+                "recents": "Nedávné",
+                "shared": "Sdílené"
             }
         }
     }

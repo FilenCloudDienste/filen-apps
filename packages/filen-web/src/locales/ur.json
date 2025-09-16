@@ -131,7 +131,12 @@
                 "search": "تلاش...",
                 "sharedWithOthers": "دوسروں کے ساتھ شیئر کیا گیا",
                 "sharedWithYou": "آپ کے ساتھ شیئر کیا گیا",
-                "trash": "ردی کی ٹوکری"
+                "trash": "ردی کی ٹوکری",
+                "favorites": "پسندیدہ",
+                "links": "لنکس",
+                "publicLinks": "عوامی لنکس",
+                "recents": "حالیہ",
+                "shared": "شیئر شدہ"
             }
         }
     }

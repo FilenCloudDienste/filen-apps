@@ -131,7 +131,12 @@
                 "search": "Suchen...",
                 "sharedWithOthers": "Mit anderen geteilt",
                 "sharedWithYou": "Mit dir geteilt",
-                "trash": "Papierkorb"
+                "trash": "Papierkorb",
+                "favorites": "Favoriten",
+                "links": "Links",
+                "publicLinks": "Öffentliche Links",
+                "recents": "Zuletzt verwendet",
+                "shared": "Geteilt"
             }
         }
     }

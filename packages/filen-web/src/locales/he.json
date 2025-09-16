@@ -131,7 +131,12 @@
                 "search": "חיפוש...",
                 "sharedWithOthers": "משותף עם אחרים",
                 "sharedWithYou": "משותף איתך",
-                "trash": "סל מחזור"
+                "trash": "סל מחזור",
+                "favorites": "מועדפים",
+                "links": "קישורים",
+                "publicLinks": "קישורים ציבוריים",
+                "recents": "אחרונים",
+                "shared": "משותפים"
             }
         }
     }
