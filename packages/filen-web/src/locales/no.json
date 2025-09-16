@@ -131,7 +131,12 @@
                 "search": "Søk...",
                 "sharedWithOthers": "Delt med andre",
                 "sharedWithYou": "Delt med deg",
-                "trash": "Papirkurv"
+                "trash": "Papirkurv",
+                "favorites": "Favoritter",
+                "links": "Lenker",
+                "publicLinks": "Offentlige lenker",
+                "recents": "Nylige",
+                "shared": "Delt"
             }
         }
     }

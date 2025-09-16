@@ -131,7 +131,12 @@
                 "search": "Пошук...",
                 "sharedWithOthers": "Доступні іншим",
                 "sharedWithYou": "Доступні вам",
-                "trash": "Кошик"
+                "trash": "Кошик",
+                "favorites": "Обране",
+                "links": "Посилання",
+                "publicLinks": "Публічні посилання",
+                "recents": "Нещодавні",
+                "shared": "Спільні"
             }
         }
     }

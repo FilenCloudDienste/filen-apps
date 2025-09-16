@@ -131,7 +131,12 @@
                 "search": "Sök...",
                 "sharedWithOthers": "Delat med andra",
                 "sharedWithYou": "Delat med dig",
-                "trash": "Papperskorg"
+                "trash": "Papperskorg",
+                "favorites": "Favoriter",
+                "links": "Länkar",
+                "publicLinks": "Publika länkar",
+                "recents": "Senaste",
+                "shared": "Delat"
             }
         }
     }

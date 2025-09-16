@@ -131,7 +131,12 @@
                 "search": "Tìm kiếm...",
                 "sharedWithOthers": "Được chia sẻ với người khác",
                 "sharedWithYou": "Được chia sẻ với bạn",
-                "trash": "Thùng rác"
+                "trash": "Thùng rác",
+                "favorites": "Yêu thích",
+                "links": "Liên kết",
+                "publicLinks": "Liên kết công khai",
+                "recents": "Gần đây",
+                "shared": "Đã chia sẻ"
             }
         }
     }

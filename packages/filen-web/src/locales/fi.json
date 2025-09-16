@@ -131,7 +131,12 @@
                 "search": "Hae...",
                 "sharedWithOthers": "Jaettu muiden kanssa",
                 "sharedWithYou": "Jaettu kanssasi",
-                "trash": "Roskakori"
+                "trash": "Roskakori",
+                "favorites": "Suosikit",
+                "links": "Linkit",
+                "publicLinks": "Julkiset linkit",
+                "recents": "Viimeisimmät",
+                "shared": "Jaetut"
             }
         }
     }

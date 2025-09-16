@@ -131,7 +131,12 @@
                 "search": "Cari...",
                 "sharedWithOthers": "Dibagikan dengan orang lain",
                 "sharedWithYou": "Dibagikan dengan Anda",
-                "trash": "Sampah"
+                "trash": "Sampah",
+                "favorites": "Favorit",
+                "links": "Tautan",
+                "publicLinks": "Tautan Publik",
+                "recents": "Terkini",
+                "shared": "Dibagikan"
             }
         }
     }

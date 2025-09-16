@@ -131,7 +131,12 @@
                 "search": "Căutare...",
                 "sharedWithOthers": "Partajat cu alții",
                 "sharedWithYou": "Partajat cu tine",
-                "trash": "Coș de gunoi"
+                "trash": "Coș de gunoi",
+                "favorites": "Favorite",
+                "links": "Linkuri",
+                "publicLinks": "Linkuri publice",
+                "recents": "Recente",
+                "shared": "Partajate"
             }
         }
     }

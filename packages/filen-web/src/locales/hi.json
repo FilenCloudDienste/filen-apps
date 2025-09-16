@@ -131,7 +131,12 @@
                 "search": "खोजें...",
                 "sharedWithOthers": "दूसरों के साथ साझा",
                 "sharedWithYou": "आपके साथ साझा",
-                "trash": "ट्रैश"
+                "trash": "ट्रैश",
+                "favorites": "पसंदीदा",
+                "links": "लिंक्स",
+                "publicLinks": "पब्लिक लिंक्स",
+                "recents": "हाल के",
+                "shared": "शेयर्ड"
             }
         }
     }

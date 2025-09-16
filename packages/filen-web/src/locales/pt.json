@@ -131,7 +131,12 @@
                 "search": "Pesquisar...",
                 "sharedWithOthers": "Partilhado com outros",
                 "sharedWithYou": "Partilhado consigo",
-                "trash": "Lixo"
+                "trash": "Lixo",
+                "favorites": "Favoritos",
+                "links": "Links",
+                "publicLinks": "Links Públicos",
+                "recents": "Recentes",
+                "shared": "Partilhados"
             }
         }
     }

@@ -131,7 +131,12 @@
                 "search": "Keresés...",
                 "sharedWithOthers": "Másokkal megosztva",
                 "sharedWithYou": "Veled megosztva",
-                "trash": "Kuka"
+                "trash": "Kuka",
+                "favorites": "Kedvencek",
+                "links": "Linkek",
+                "publicLinks": "Nyilvános linkek",
+                "recents": "Legutóbbiak",
+                "shared": "Megosztott"
             }
         }
     }

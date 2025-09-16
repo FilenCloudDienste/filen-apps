@@ -131,7 +131,12 @@
                 "search": "Zoeken...",
                 "sharedWithOthers": "Met anderen gedeeld",
                 "sharedWithYou": "Met jou gedeeld",
-                "trash": "Prullenbak"
+                "trash": "Prullenbak",
+                "favorites": "Favorieten",
+                "links": "Links",
+                "publicLinks": "Publieke links",
+                "recents": "Recente",
+                "shared": "Gedeeld"
             }
         }
     }

@@ -131,7 +131,12 @@
                 "search": "ค้นหา...",
                 "sharedWithOthers": "แชร์กับผู้อื่น",
                 "sharedWithYou": "แชร์กับคุณ",
-                "trash": "ถังขยะ"
+                "trash": "ถังขยะ",
+                "favorites": "รายการโปรด",
+                "links": "ลิงก์",
+                "publicLinks": "ลิงก์สาธารณะ",
+                "recents": "ล่าสุด",
+                "shared": "ที่แชร์"
             }
         }
     }
