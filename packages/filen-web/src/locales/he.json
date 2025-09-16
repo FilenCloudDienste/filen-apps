@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "הוסף",
                 "title": "אנשי קשר"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "חדש",
+                "search": "חיפוש...",
+                "sharedWithOthers": "משותף עם אחרים",
+                "sharedWithYou": "משותף איתך",
+                "trash": "סל מחזור"
             }
         }
     }

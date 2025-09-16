@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Додати",
                 "title": "Контакти"
+            },
+            "drive": {
+                "cloudDrive": "Хмарний диск",
+                "new": "Новий",
+                "search": "Пошук...",
+                "sharedWithOthers": "Доступні іншим",
+                "sharedWithYou": "Доступні вам",
+                "trash": "Кошик"
             }
         }
     }

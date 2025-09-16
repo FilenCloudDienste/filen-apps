@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Hozzáadás",
                 "title": "Kapcsolatok"
+            },
+            "drive": {
+                "cloudDrive": "Felhőtárhely",
+                "new": "Új",
+                "search": "Keresés...",
+                "sharedWithOthers": "Másokkal megosztva",
+                "sharedWithYou": "Veled megosztva",
+                "trash": "Kuka"
             }
         }
     }

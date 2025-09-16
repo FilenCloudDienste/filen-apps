@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Lisää",
                 "title": "Yhteystiedot"
+            },
+            "drive": {
+                "cloudDrive": "Pilviasema",
+                "new": "Uusi",
+                "search": "Hae...",
+                "sharedWithOthers": "Jaettu muiden kanssa",
+                "sharedWithYou": "Jaettu kanssasi",
+                "trash": "Roskakori"
             }
         }
     }

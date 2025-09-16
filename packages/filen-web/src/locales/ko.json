@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "추가",
                 "title": "연락처"
+            },
+            "drive": {
+                "cloudDrive": "클라우드 드라이브",
+                "new": "새로 만들기",
+                "search": "검색...",
+                "sharedWithOthers": "다른 사람과 공유됨",
+                "sharedWithYou": "나와 공유됨",
+                "trash": "휴지통"
             }
         }
     }

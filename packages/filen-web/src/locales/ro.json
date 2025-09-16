@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Adaugă",
                 "title": "Contacte"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "Nou",
+                "search": "Căutare...",
+                "sharedWithOthers": "Partajat cu alții",
+                "sharedWithYou": "Partajat cu tine",
+                "trash": "Coș de gunoi"
             }
         }
     }

@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "เพิ่ม",
                 "title": "ผู้ติดต่อ"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "ใหม่",
+                "search": "ค้นหา...",
+                "sharedWithOthers": "แชร์กับผู้อื่น",
+                "sharedWithYou": "แชร์กับคุณ",
+                "trash": "ถังขยะ"
             }
         }
     }

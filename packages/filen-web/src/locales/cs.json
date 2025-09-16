@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Přidat",
                 "title": "Kontakty"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "Nové",
+                "search": "Hledat...",
+                "sharedWithOthers": "Sdíleno s ostatními",
+                "sharedWithYou": "Sdíleno s vámi",
+                "trash": "Koš"
             }
         }
     }

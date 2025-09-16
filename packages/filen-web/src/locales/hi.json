@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "जोड़ें",
                 "title": "संपर्क"
+            },
+            "drive": {
+                "cloudDrive": "क्लाउड ड्राइव",
+                "new": "नया",
+                "search": "खोजें...",
+                "sharedWithOthers": "दूसरों के साथ साझा",
+                "sharedWithYou": "आपके साथ साझा",
+                "trash": "ट्रैश"
             }
         }
     }

@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Hinzufügen",
                 "title": "Kontakte"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "Neu",
+                "search": "Suchen...",
+                "sharedWithOthers": "Mit anderen geteilt",
+                "sharedWithYou": "Mit dir geteilt",
+                "trash": "Papierkorb"
             }
         }
     }

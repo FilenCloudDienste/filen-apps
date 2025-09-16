@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Toevoegen",
                 "title": "Contacten"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "Nieuw",
+                "search": "Zoeken...",
+                "sharedWithOthers": "Met anderen gedeeld",
+                "sharedWithYou": "Met jou gedeeld",
+                "trash": "Prullenbak"
             }
         }
     }

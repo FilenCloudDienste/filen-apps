@@ -8,7 +8,7 @@ on:
 
   push:
     paths:
-      - 'src/locales/en.json'
+      - 'packages/filen-web/src/locales/en.json'
 
 jobs:
   translate-web:

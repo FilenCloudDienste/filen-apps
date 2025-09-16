@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Tilføj",
                 "title": "Kontakter"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drev",
+                "new": "Ny",
+                "search": "Søg...",
+                "sharedWithOthers": "Delt med andre",
+                "sharedWithYou": "Delt med dig",
+                "trash": "Papirkurv"
             }
         }
     }

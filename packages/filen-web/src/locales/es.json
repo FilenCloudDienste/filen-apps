@@ -13,7 +13,7 @@
     "cloudDrive": "Cloud Drive",
     "contacts": {
         "list": {
-            "all": "Todos",
+            "all": "Todo",
             "blocked": "Bloqueado",
             "contact": {
                 "menu": {
@@ -28,7 +28,7 @@
                     "unblock": "Desbloquear"
                 }
             },
-            "offline": "Desconectado",
+            "offline": "Sin conexión",
             "online": "En línea",
             "pending": "Pendiente",
             "requests": "Solicitudes",
@@ -105,7 +105,7 @@
             "sendRequest": {
                 "cancel": "Cancelar",
                 "confirm": "Enviar solicitud",
-                "description": "Ingresa la dirección de correo electrónico registrada en Filen de la persona que quieres agregar como contacto.",
+                "description": "Introduce la dirección de correo electrónico registrada en Filen de la persona que quieres añadir como contacto.",
                 "placeholder": "Dirección de correo electrónico",
                 "success": "Solicitud de contacto enviada",
                 "title": "Enviar solicitud de contacto"
@@ -122,8 +122,16 @@
     "sidebar": {
         "inner": {
             "contacts": {
-                "add": "Agregar",
+                "add": "Añadir",
                 "title": "Contactos"
+            },
+            "drive": {
+                "cloudDrive": "Unidad en la nube",
+                "new": "Nuevo",
+                "search": "Buscar...",
+                "sharedWithOthers": "Compartido con otros",
+                "sharedWithYou": "Compartido contigo",
+                "trash": "Papelera"
             }
         }
     }

@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "追加",
                 "title": "連絡先"
+            },
+            "drive": {
+                "cloudDrive": "クラウドドライブ",
+                "new": "新規",
+                "search": "検索...",
+                "sharedWithOthers": "他のユーザーと共有中",
+                "sharedWithYou": "あなたと共有中",
+                "trash": "ゴミ箱"
             }
         }
     }

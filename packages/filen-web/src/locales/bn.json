@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "যোগ করুন",
                 "title": "পরিচিতিসমূহ"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "নতুন",
+                "search": "অনুসন্ধান...",
+                "sharedWithOthers": "অন্যদের সাথে শেয়ার করা",
+                "sharedWithYou": "আপনার সাথে শেয়ার করা",
+                "trash": "ট্র্যাশ"
             }
         }
     }

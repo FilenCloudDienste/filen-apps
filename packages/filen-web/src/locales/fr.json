@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Ajouter",
                 "title": "Contacts"
+            },
+            "drive": {
+                "cloudDrive": "Lecteur Cloud",
+                "new": "Nouveau",
+                "search": "Rechercher...",
+                "sharedWithOthers": "Partagé avec d'autres",
+                "sharedWithYou": "Partagé avec vous",
+                "trash": "Corbeille"
             }
         }
     }

@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Lägg till",
                 "title": "Kontakter"
+            },
+            "drive": {
+                "cloudDrive": "Molnlagring",
+                "new": "Ny",
+                "search": "Sök...",
+                "sharedWithOthers": "Delat med andra",
+                "sharedWithYou": "Delat med dig",
+                "trash": "Papperskorg"
             }
         }
     }

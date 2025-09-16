@@ -1,7 +1,30 @@
 import "dotenv/config"
-import { translateDiff } from "i18n-ai-translate"
+import { translateDiff, translate } from "i18n-ai-translate"
 import path from "node:path"
 import fs from "node:fs/promises"
+
+function deepMergeImmutable(target, source) {
+	const result = {
+		...target
+	}
+
+	for (const key in source) {
+		// eslint-disable-next-line no-prototype-builtins
+		if (source.hasOwnProperty(key)) {
+			if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+				if (result[key] && typeof result[key] === "object" && !Array.isArray(result[key])) {
+					result[key] = deepMergeImmutable(result[key], source[key])
+				} else {
+					result[key] = deepMergeImmutable({}, source[key])
+				}
+			} else {
+				result[key] = source[key]
+			}
+		}
+	}
+
+	return result
+}
 
 const prompts = {
 	translate: `You are a professional translator for the Filen (https://filen.io) encrypted cloud storage platform.
@@ -53,7 +76,6 @@ Only reply with ACK/NAK.
 
 const langs = [
 	// 🌎 Americas
-	"en", // English (US, Canada)
 	"es", // Spanish (LatAm + US Hispanics + Spain if fallback)
 	"pt", // Portuguese (Europe)
 	"fr", // French (Quebec, Caribbean, Europe)
@@ -93,58 +115,107 @@ const currentEn = await fs
 	.then(data => JSON.parse(data))
 	.catch(() => ({}))
 
+const lastEn = await fs
+	.readFile(path.join(path.resolve(), "src", "locales", "en.json.last"), {
+		encoding: "utf-8"
+	})
+	.then(data => JSON.parse(data))
+	.catch(() => ({}))
+
 for (const lang of langs) {
 	const outPath = path.join(path.resolve(), "src", "locales", `${lang}.json`)
 
-	const translated = await translateDiff({
-		inputLanguage: "en",
-		outputLanguage: lang,
-		engine: "claude",
-		model: "claude-opus-4-1-20250805",
-		apiKey: globalThis.process.env.ANTHROPIC_API_KEY,
-		verbose: true,
-		promptMode: "csv",
-		skipTranslationVerification: true,
-		skipStylingVerification: true,
-		rateLimitMs: 3000,
-		batchMaxTokens: 200000,
-		batchSize: 200000,
-		inputJSONBefore: await fs
-			.readFile(path.join(path.resolve(), "src", "locales", "en.json.last"), {
+	if (
+		!(await fs
+			.stat(outPath)
+			.then(() => true)
+			.catch(() => false))
+	) {
+		const translated = await translate({
+			inputJSON: currentEn,
+			inputLanguage: "en",
+			outputLanguage: lang,
+			engine: "claude",
+			model: "claude-opus-4-1-20250805",
+			apiKey: globalThis.process.env.ANTHROPIC_API_KEY,
+			verbose: true,
+			promptMode: "csv",
+			skipTranslationVerification: true,
+			skipStylingVerification: true,
+			rateLimitMs: 3000,
+			batchMaxTokens: 200000,
+			batchSize: 200000,
+			templatedStringSuffix: "}}",
+			templatedStringPrefix: "{{",
+			overridePrompt: {
+				generationPrompt: prompts.translate,
+				verificationPrompt: prompts.verify,
+				stylePrompt: prompts.style
+			},
+			chatParams: {
+				messages: []
+			}
+		})
+
+		if (!translated || Object.keys(translated).length === 0) {
+			globalThis.console.warn(`No translations for ${lang}, skipping file write.`)
+
+			continue
+		}
+
+		await fs.writeFile(outPath, JSON.stringify(translated, null, 4) + "\n", {
+			encoding: "utf-8"
+		})
+	} else {
+		const currentLang = await fs
+			.readFile(outPath, {
 				encoding: "utf-8"
 			})
 			.then(data => JSON.parse(data))
-			.catch(() => ({})),
-		inputJSONAfter: currentEn,
-		templatedStringSuffix: "}}",
-		templatedStringPrefix: "{{",
-		overridePrompt: {
-			generationPrompt: prompts.translate,
-			verificationPrompt: prompts.verify,
-			stylePrompt: prompts.style
-		},
-		chatParams: {
-			messages: []
-		},
-		toUpdateJSONs: {
-			[lang]: await fs
-				.readFile(outPath, {
-					encoding: "utf-8"
-				})
-				.then(data => JSON.parse(data))
-				.catch(() => ({}))
+			.catch(() => ({}))
+
+		const translated = await translateDiff({
+			inputLanguage: "en",
+			outputLanguage: lang,
+			engine: "claude",
+			model: "claude-opus-4-1-20250805",
+			apiKey: globalThis.process.env.ANTHROPIC_API_KEY,
+			verbose: true,
+			promptMode: "csv",
+			skipTranslationVerification: true,
+			skipStylingVerification: true,
+			rateLimitMs: 3000,
+			batchMaxTokens: 200000,
+			batchSize: 200000,
+			inputJSONBefore: lastEn,
+			inputJSONAfter: currentEn,
+			templatedStringSuffix: "}}",
+			templatedStringPrefix: "{{",
+			overridePrompt: {
+				generationPrompt: prompts.translate,
+				verificationPrompt: prompts.verify,
+				stylePrompt: prompts.style
+			},
+			chatParams: {
+				messages: []
+			},
+			toUpdateJSONs: {
+				[lang]: currentLang
+			}
+		})
+
+		const result = deepMergeImmutable(currentLang, translated[lang])
+
+		if (!result || Object.keys(result).length === 0) {
+			globalThis.console.warn(`No translations for ${lang}, skipping file write.`)
+
+			continue
 		}
-	})
 
-	if (!translated[lang]["en"]) {
-		globalThis.console.warn(`No translations for ${lang}, skipping file write.`)
-
-		continue
+		await fs.writeFile(outPath, JSON.stringify(result, null, 4) + "\n", {
+			encoding: "utf-8"
+		})
 	}
-
-	await fs.writeFile(outPath, JSON.stringify(translated[lang]["en"], null, 4) + "\n", {
-		encoding: "utf-8"
-	})
 }
 
 await fs.writeFile(path.join(path.resolve(), "src", "locales", "en.json.last"), JSON.stringify(currentEn, null, 4) + "\n", {

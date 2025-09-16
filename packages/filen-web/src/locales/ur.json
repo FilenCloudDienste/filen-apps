@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "شامل کریں",
                 "title": "رابطے"
+            },
+            "drive": {
+                "cloudDrive": "کلاؤڈ ڈرائیو",
+                "new": "نیا",
+                "search": "تلاش...",
+                "sharedWithOthers": "دوسروں کے ساتھ شیئر کیا گیا",
+                "sharedWithYou": "آپ کے ساتھ شیئر کیا گیا",
+                "trash": "ردی کی ٹوکری"
             }
         }
     }

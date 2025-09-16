@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "添加",
                 "title": "联系人"
+            },
+            "drive": {
+                "cloudDrive": "云盘",
+                "new": "新建",
+                "search": "搜索...",
+                "sharedWithOthers": "与他人共享",
+                "sharedWithYou": "与您共享",
+                "trash": "回收站"
             }
         }
     }

@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Tambah",
                 "title": "Kontak"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "Baru",
+                "search": "Cari...",
+                "sharedWithOthers": "Dibagikan dengan orang lain",
+                "sharedWithYou": "Dibagikan dengan Anda",
+                "trash": "Sampah"
             }
         }
     }

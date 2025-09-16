@@ -124,6 +124,14 @@
             "contacts": {
                 "add": "Thêm",
                 "title": "Danh bạ"
+            },
+            "drive": {
+                "cloudDrive": "Cloud Drive",
+                "new": "Mới",
+                "search": "Tìm kiếm...",
+                "sharedWithOthers": "Được chia sẻ với người khác",
+                "sharedWithYou": "Được chia sẻ với bạn",
+                "trash": "Thùng rác"
             }
         }
     }
