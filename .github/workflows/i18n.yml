@@ -3,9 +3,6 @@ name: Auto i18n Translation
 on:
   workflow_dispatch:
 
-  schedule:
-    - cron: '0 2 * * *'
-
   push:
     paths:
       - 'packages/filen-web/src/locales/en.json'
