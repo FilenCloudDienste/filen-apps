@@ -137,6 +137,10 @@
                 "publicLinks": "Publika länkar",
                 "recents": "Senaste",
                 "shared": "Delat"
+            },
+            "notes": {
+                "new": "Ny",
+                "title": "Anteckningar"
             }
         }
     }

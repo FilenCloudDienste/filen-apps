@@ -137,6 +137,10 @@
                 "sharedWithOthers": "Başkalarıyla paylaşıldı",
                 "sharedWithYou": "Sizinle paylaşıldı",
                 "trash": "Çöp Kutusu"
+            },
+            "notes": {
+                "new": "Yeni",
+                "title": "Notlar"
             }
         }
     }

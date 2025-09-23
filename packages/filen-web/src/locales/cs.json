@@ -137,6 +137,10 @@
                 "publicLinks": "Veřejné odkazy",
                 "recents": "Nedávné",
                 "shared": "Sdílené"
+            },
+            "notes": {
+                "new": "Nový",
+                "title": "Poznámky"
             }
         }
     }

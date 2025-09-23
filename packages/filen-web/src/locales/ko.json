@@ -137,6 +137,10 @@
                 "publicLinks": "공개 링크",
                 "recents": "최근",
                 "shared": "공유됨"
+            },
+            "notes": {
+                "new": "새로움",
+                "title": "노트"
             }
         }
     }

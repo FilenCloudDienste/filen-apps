@@ -137,6 +137,10 @@
                 "publicLinks": "公開リンク",
                 "recents": "最近",
                 "shared": "共有"
+            },
+            "notes": {
+                "new": "新規",
+                "title": "メモ"
             }
         }
     }

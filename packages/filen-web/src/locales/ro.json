@@ -137,6 +137,10 @@
                 "publicLinks": "Linkuri publice",
                 "recents": "Recente",
                 "shared": "Partajate"
+            },
+            "notes": {
+                "new": "Nou",
+                "title": "Note"
             }
         }
     }
