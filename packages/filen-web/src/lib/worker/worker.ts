@@ -47,7 +47,7 @@ let filenSdkRsClient: FilenSdkRsClient | null = null
 let messageHandlerForMainThread: ((message: WorkerToMainMessage) => void) | null = null
 let filenSdkRsWasmInitialized: boolean = false
 const initMutex: Semaphore = new Semaphore(1)
-const generateThumbnailSemaphore: Semaphore = new Semaphore(3)
+const generateThumbnailSemaphore: Semaphore = new Semaphore(1)
 
 export async function waitForFilenSdkRsWasmInit(): Promise<void> {
 	await initMutex.acquire()
@@ -88,8 +88,8 @@ export async function setClient(stringifiedClient: FilenSdkRsStringifiedClient):
 
 	filenSdkRsClient = filenSdkRsFromStringified({
 		...stringifiedClient,
-		maxIoMemoryUsage: 1024 * 1024 * 32,
-		maxParallelRequests: 32
+		maxIoMemoryUsage: 1024 * 1024 * 16,
+		maxParallelRequests: 16
 	})
 
 	return filenSdkRsClient

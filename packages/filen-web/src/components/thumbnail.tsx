@@ -26,7 +26,8 @@ export const Thumbnail = memo(({ item, width, height }: { item: DriveItem; width
 				region: item.data.region,
 				bucket: item.data.bucket,
 				chunks: item.data.chunks,
-				canMakeThumbnail: item.data.canMakeThumbnail
+				canMakeThumbnail: item.data.canMakeThumbnail,
+				timestamp: item.data.timestamp
 			})
 
 			cacheMap.thumbnails.set(item.data.uuid, urlObject)

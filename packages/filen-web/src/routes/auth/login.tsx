@@ -6,22 +6,26 @@ import authService from "@/services/auth.service"
 import { memo, useState, useCallback } from "react"
 import { LoaderCircleIcon } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { arktypeResolver } from "@hookform/resolvers/arktype"
+import { type } from "arktype"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { toast } from "sonner"
 
-export const formSchema = z.object({
-	email: z.email(),
-	password: z.string().min(1).max(Number.MAX_SAFE_INTEGER)
+export const formSchema = type({
+	email: type("string.email").describe("tba").configure({
+		message: "tba"
+	}),
+	password: type("string").atLeastLength(1).atMostLength(65536).describe("tba").configure({
+		message: "tba"
+	})
 })
 
 export const Login = memo(() => {
 	const navigate = useNavigate()
 	const [loggingIn, setLoggingIn] = useState<boolean>(false)
 
-	const form = useForm<z.infer<typeof formSchema>>({
-		resolver: zodResolver(formSchema),
+	const form = useForm<typeof formSchema.infer>({
+		resolver: arktypeResolver(formSchema),
 		defaultValues: {
 			email: "",
 			password: ""
@@ -29,7 +33,7 @@ export const Login = memo(() => {
 	})
 
 	const onSubmit = useCallback(
-		async (values: z.infer<typeof formSchema>) => {
+		async (values: typeof formSchema.infer) => {
 			setLoggingIn(true)
 
 			try {
@@ -45,7 +49,7 @@ export const Login = memo(() => {
 					if (e.includes("email_or_password_wrong")) {
 						form.reset()
 
-						toast.error("Email or password is incorrect")
+						toast.error("tba")
 					}
 				}
 			} finally {
@@ -70,8 +74,8 @@ export const Login = memo(() => {
 				<div className="flex flex-col gap-6">
 					<Card>
 						<CardHeader className="text-center">
-							<CardTitle className="text-xl">Welcome back</CardTitle>
-							<CardDescription>Login to your Filen account</CardDescription>
+							<CardTitle className="text-xl">tba</CardTitle>
+							<CardDescription>tba</CardDescription>
 						</CardHeader>
 						<CardContent>
 							<Form {...form}>
@@ -88,7 +92,7 @@ export const Login = memo(() => {
 												<FormLabel>Email</FormLabel>
 												<FormControl>
 													<Input
-														placeholder="email@filen.io"
+														placeholder="tba"
 														{...field}
 													/>
 												</FormControl>
@@ -126,7 +130,7 @@ export const Login = memo(() => {
 						</CardContent>
 					</Card>
 					<div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-						By logging in you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+						tba <a href="#">tba</a> tba <a href="#">tba</a>.
 					</div>
 				</div>
 			</div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type RefObject } from "react"
+import { useState, useLayoutEffect, useRef, type RefObject } from "react"
 
 export type Dimensions = {
 	width: number
@@ -12,7 +12,7 @@ export function useElementDimensions<T extends HTMLElement = HTMLDivElement>(): 
 		height: 0
 	})
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const element = ref.current
 
 		if (!element) {

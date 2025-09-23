@@ -5,7 +5,7 @@ import type { DriveItem } from "./useDriveItems.query"
 import cacheMap from "@/lib/cacheMap"
 import { pack, unpack } from "msgpackr"
 
-export const UNCACHED_QUERY_KEYS: string[] = ["thumbnailObjectUrl"]
+export const UNCACHED_QUERY_KEYS: string[] = ["thumbnailObjectUrl", "textPreviewQuery"]
 export const CACHE_TIME: number = 86400 * 1000 * 365
 
 export const shouldPersistQuery = (queryKey: unknown[]) => {

@@ -18,7 +18,7 @@ export const DriveListHeader = memo(() => {
 						className="flex flex-1 flex-row items-center w-[60%] overflow-hidden gap-4"
 						data-dragselectallowed={true}
 					>
-						<p className="text-ellipsis truncate select-none">Name</p>
+						<p className="text-ellipsis truncate select-none">tbd</p>
 					</div>
 					<div
 						className="flex flex-row items-center w-[40%] justify-between overflow-hidden gap-8"
@@ -28,13 +28,13 @@ export const DriveListHeader = memo(() => {
 							className="flex flex-row items-center overflow-hidden w-[25%]"
 							data-dragselectallowed={true}
 						>
-							<p className="text-ellipsis truncate select-none">Size</p>
+							<p className="text-ellipsis truncate select-none">tbd</p>
 						</div>
 						<div
 							className="flex flex-1 flex-row items-center overflow-hidden"
 							data-dragselectallowed={true}
 						>
-							<p className="text-ellipsis truncate select-none">Modified</p>
+							<p className="text-ellipsis truncate select-none">tbd</p>
 						</div>
 						<div
 							className="flex flex-row items-center overflow-hidden pr-4"

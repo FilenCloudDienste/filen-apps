@@ -12,6 +12,7 @@ import type { StringifiedClient } from "@filen/sdk-rs"
 export type UseAuth =
 	| {
 			authed: false
+			client: null
 	  }
 	| {
 			authed: true
@@ -25,7 +26,8 @@ export function useAuth(): UseAuth {
 	const state = useMemo((): UseAuth => {
 		if (!activeSession) {
 			return {
-				authed: false
+				authed: false,
+				client: null
 			}
 		}
 
@@ -33,7 +35,8 @@ export function useAuth(): UseAuth {
 
 		if (!session) {
 			return {
-				authed: false
+				authed: false,
+				client: null
 			}
 		}
 

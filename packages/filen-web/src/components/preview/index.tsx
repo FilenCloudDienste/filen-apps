@@ -1,20 +1,16 @@
-import { memo, useCallback, useEffect, useRef } from "react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
+import { memo, useCallback } from "react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import usePreviewStore from "@/stores/preview.store"
 import { useShallow } from "zustand/shallow"
-import { Virtuoso, type VirtuosoHandle } from "react-virtuoso"
-import serviceWorker from "@/lib/serviceWorker"
 import { XIcon, EllipsisVerticalIcon } from "lucide-react"
 import { Button } from "../ui/button"
 import DriveListItemMenu from "../drive/list/item/menu"
 import { IS_DESKTOP } from "@/constants"
 import { cn } from "@/lib/utils"
+import PreviewList from "./list"
 
 export const Preview = memo(() => {
 	const open = usePreviewStore(useShallow(state => state.open))
-	const items = usePreviewStore(useShallow(state => state.items))
-	const initialIndex = usePreviewStore(useShallow(state => state.initialIndex))
-	const virtuosoRef = useRef<VirtuosoHandle>(null)
 	const currentItem = usePreviewStore(useShallow(state => state.items.at(state.currentIndex) ?? null))
 
 	const close = useCallback(() => {
@@ -30,60 +26,11 @@ export const Preview = memo(() => {
 		[close]
 	)
 
-	const keyDownListener = useCallback(
-		(e: KeyboardEvent) => {
-			if (!open) {
-				return
-			}
-
-			e.preventDefault()
-			e.stopPropagation()
-
-			if (e.key === "ArrowLeft") {
-				const currentIndex = usePreviewStore.getState().currentIndex
-				const previousIndex = currentIndex - 1 < 0 ? 0 : currentIndex - 1
-
-				virtuosoRef?.current?.scrollToIndex({
-					align: "center",
-					behavior: "smooth",
-					index: previousIndex
-				})
-
-				usePreviewStore.getState().setCurrentIndex(previousIndex)
-
-				return
-			}
-
-			if (e.key === "ArrowRight") {
-				const currentIndex = usePreviewStore.getState().currentIndex
-				const nextIndex = currentIndex + 1 > items.length - 1 ? items.length - 1 : currentIndex + 1
-
-				virtuosoRef?.current?.scrollToIndex({
-					align: "center",
-					behavior: "smooth",
-					index: nextIndex
-				})
-
-				usePreviewStore.getState().setCurrentIndex(nextIndex)
-
-				return
-			}
-		},
-		[open, items]
-	)
-
-	useEffect(() => {
-		window.addEventListener("keydown", keyDownListener)
-
-		return () => {
-			window.removeEventListener("keydown", keyDownListener)
-		}
-	}, [keyDownListener])
-
 	return (
 		<Sheet
 			open={open}
 			onOpenChange={onOpenChange}
+			modal={true}
 		>
 			<SheetContent
 				side="center"
@@ -126,96 +73,7 @@ export const Preview = memo(() => {
 						</Button>
 					</div>
 				</SheetHeader>
-				<SheetDescription
-					className="flex flex-1 w-full h-full overflow-hidden text-base"
-					asChild={true}
-				>
-					<div className="flex flex-1 w-full h-full">
-						<Virtuoso
-							ref={virtuosoRef}
-							className="flex flex-1 w-full h-full"
-							horizontalDirection={true}
-							data={items}
-							initialTopMostItemIndex={initialIndex}
-							overscan={0}
-							increaseViewportBy={0}
-							components={{
-								Scroller: props => (
-									<div
-										{...props}
-										style={{
-											...props.style,
-											overflow: "hidden"
-										}}
-									/>
-								)
-							}}
-							itemContent={(_, item) => (
-								<div
-									className="flex flex-1 h-full items-center justify-center overflow-hidden"
-									style={{
-										width: "calc(100dvw - 32px)"
-									}}
-								>
-									{item.previewType === "image" ? (
-										<img
-											className="w-full h-full object-contain rounded-b-lg"
-											src={serviceWorker.buildDownloadUrl({
-												items: [
-													{
-														type: "file",
-														...item
-													}
-												],
-												type: "stream",
-												name: item.meta?.name
-											})}
-										/>
-									) : item.previewType === "video" ? (
-										<video
-											className="w-full h-full object-contain rounded-b-lg"
-											controls={true}
-											autoPlay={true}
-											loop={true}
-											src={serviceWorker.buildDownloadUrl({
-												items: [
-													{
-														type: "file",
-														...item
-													}
-												],
-												type: "stream",
-												name: item.meta?.name
-											})}
-											controlsList="nodownload"
-										/>
-									) : item.previewType === "pdf" ? (
-										<iframe
-											src={serviceWorker.buildDownloadUrl({
-												items: [
-													{
-														type: "file",
-														...item
-													}
-												],
-												type: "stream",
-												name: item.meta?.name
-											})}
-											title={item.meta?.name ?? "PDF Preview"}
-											width="100%"
-											height="100%"
-											className="object-contain rounded-b-lg"
-										/>
-									) : (
-										<div>
-											Preview {item.meta?.name ?? ""} {item.previewType}
-										</div>
-									)}
-								</div>
-							)}
-						/>
-					</div>
-				</SheetDescription>
+				<PreviewList />
 			</SheetContent>
 		</Sheet>
 	)

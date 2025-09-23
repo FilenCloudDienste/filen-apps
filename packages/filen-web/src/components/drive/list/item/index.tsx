@@ -435,7 +435,11 @@ export const DriveListItem = memo(
 									</div>
 									<div className="flex flex-1 flex-row items-center overflow-hidden">
 										<p className="text-ellipsis truncate select-none text-sm">
-											{item.type === "directory" ? "-" : simpleDate(Number(item.data.meta?.modified ?? Date.now()))}
+											{item.type === "directory"
+												? simpleDate(Number(item.data.timestamp))
+												: item.data.meta?.modified
+													? simpleDate(Number(item.data.meta?.modified))
+													: simpleDate(Number(item.data.timestamp))}
 										</p>
 									</div>
 									{from === "drive" && (

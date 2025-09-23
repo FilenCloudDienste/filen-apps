@@ -60,7 +60,9 @@ export const DriveListItemMenu = memo(
 							uuid: i.data.uuid,
 							meta: i.data.meta,
 							parent: i.data.parent,
-							favorited: i.data.favorited
+							favorited: i.data.favorited,
+							color: i.data.color,
+							timestamp: i.data.timestamp
 						} satisfies FilenSdkRsNonRootItemTagged
 					}
 
@@ -74,7 +76,8 @@ export const DriveListItemMenu = memo(
 						region: i.data.region,
 						bucket: i.data.bucket,
 						chunks: i.data.chunks,
-						canMakeThumbnail: i.data.canMakeThumbnail
+						canMakeThumbnail: i.data.canMakeThumbnail,
+						timestamp: i.data.timestamp
 					} satisfies FilenSdkRsNonRootItemTagged
 				})
 			] satisfies FilenSdkRsNonRootItemTagged[]
@@ -136,7 +139,9 @@ export const DriveListItemMenu = memo(
 											uuid: i.data.uuid,
 											meta: i.data.meta,
 											parent: i.data.parent,
-											favorited: i.data.favorited
+											favorited: i.data.favorited,
+											color: i.data.color,
+											timestamp: i.data.timestamp
 										} satisfies FilenSdkRsNonRootItemTagged
 									}
 
@@ -150,7 +155,8 @@ export const DriveListItemMenu = memo(
 										region: i.data.region,
 										bucket: i.data.bucket,
 										chunks: i.data.chunks,
-										canMakeThumbnail: i.data.canMakeThumbnail
+										canMakeThumbnail: i.data.canMakeThumbnail,
+										timestamp: i.data.timestamp
 									} satisfies FilenSdkRsNonRootItemTagged
 								})
 							] satisfies FilenSdkRsNonRootItemTagged[]

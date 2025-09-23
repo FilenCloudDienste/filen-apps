@@ -137,6 +137,10 @@
 				"shared": "Shared",
 				"links": "Links",
 				"publicLinks": "Public Links"
+			},
+			"notes": {
+				"title": "Notes",
+				"new": "New"
 			}
 		}
 	}

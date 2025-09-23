@@ -36,8 +36,8 @@ export async function waitForFilenSdkRsWasmInit(): Promise<void> {
 
 			filenSdkRsClient = filenSdkRsFromStringified({
 				...client,
-				maxIoMemoryUsage: 1024 * 1024 * 32,
-				maxParallelRequests: 32
+				maxIoMemoryUsage: 1024 * 1024 * 16,
+				maxParallelRequests: 16
 			})
 
 			filenSdkRsWasmInitialized = true
@@ -220,7 +220,7 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		e.request.headers.get("Content-Range") ??
 		null
 	let start = 0
-	let end = totalSize
+	let end = totalSize - 1
 	const parsedRange = parseByteRange(range, totalSize)
 
 	responseHeaders.set(
@@ -232,10 +232,19 @@ export async function stream(e: FetchEvent): Promise<Response> {
 		start = parsedRange.start
 		end = parsedRange.end
 
+		if (start >= totalSize || end >= totalSize || start > end || totalSize === 0) {
+			responseHeaders.set("Content-Range", `bytes */${totalSize}`)
+
+			return new Response("Range Not Satisfiable", {
+				status: 416,
+				headers: responseHeaders
+			})
+		}
+
 		responseStatus = 206
 
 		responseHeaders.set("Accept-Ranges", "bytes")
-		responseHeaders.set("Content-Length", (end - start).toString())
+		responseHeaders.set("Content-Length", (end - start + 1).toString())
 		responseHeaders.set("Content-Range", `bytes ${start}-${end}/${totalSize}`)
 	} else {
 		responseStatus = 200
@@ -261,7 +270,7 @@ export async function stream(e: FetchEvent): Promise<Response> {
 				abortSignal: e.request.signal
 			},
 			start: BigInt(start),
-			end: BigInt(end)
+			end: BigInt(end + 1)
 		})
 		.catch(err => {
 			transformer.writable.abort(err).catch(() => {})

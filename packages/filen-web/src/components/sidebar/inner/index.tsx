@@ -5,6 +5,9 @@ import InnerSidebarDriveHeader from "./drive/header"
 import InnerSidebarDriveContent from "./drive/content"
 import InnerSidebarContactsHeader from "./contacts/header"
 import InnerSidebarContactsContent from "./contacts/content"
+import InnerSidebarNotesHeader from "./notes/header"
+import InnerSidebarNotesContent from "./notes/content"
+import { Tabs } from "@/components/ui/tabs"
 
 export const InnerSidebar = memo(() => {
 	const { pathname } = useLocation()
@@ -25,6 +28,15 @@ export const InnerSidebar = memo(() => {
 					<InnerSidebarContactsHeader />
 					<InnerSidebarContactsContent />
 				</Fragment>
+			)}
+			{pathname.startsWith("/notes") && (
+				<Tabs
+					defaultValue="account"
+					className="w-full overflow-hidden"
+				>
+					<InnerSidebarNotesHeader />
+					<InnerSidebarNotesContent />
+				</Tabs>
 			)}
 		</Sidebar>
 	)
