@@ -137,6 +137,10 @@
                 "publicLinks": "Öffentliche Links",
                 "recents": "Zuletzt verwendet",
                 "shared": "Geteilt"
+            },
+            "notes": {
+                "new": "Neu",
+                "title": "Notizen"
             }
         }
     }

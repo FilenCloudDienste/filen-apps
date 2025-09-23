@@ -137,6 +137,10 @@
                 "publicLinks": "Liên kết công khai",
                 "recents": "Gần đây",
                 "shared": "Đã chia sẻ"
+            },
+            "notes": {
+                "new": "Mới",
+                "title": "Ghi chú"
             }
         }
     }

@@ -137,6 +137,10 @@
                 "publicLinks": "公开链接",
                 "recents": "最近",
                 "shared": "已共享"
+            },
+            "notes": {
+                "new": "新建",
+                "title": "笔记"
             }
         }
     }

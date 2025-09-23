@@ -137,6 +137,10 @@
                 "publicLinks": "Offentlige lenker",
                 "recents": "Nylige",
                 "shared": "Delt"
+            },
+            "notes": {
+                "new": "Ny",
+                "title": "Notater"
             }
         }
     }

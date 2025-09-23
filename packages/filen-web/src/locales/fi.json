@@ -137,6 +137,10 @@
                 "publicLinks": "Julkiset linkit",
                 "recents": "Viimeisimmät",
                 "shared": "Jaetut"
+            },
+            "notes": {
+                "new": "Uusi",
+                "title": "Muistiinpanot"
             }
         }
     }

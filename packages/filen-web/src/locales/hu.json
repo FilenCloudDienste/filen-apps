@@ -137,6 +137,10 @@
                 "publicLinks": "Nyilvános linkek",
                 "recents": "Legutóbbiak",
                 "shared": "Megosztott"
+            },
+            "notes": {
+                "new": "Új",
+                "title": "Jegyzetek"
             }
         }
     }

@@ -137,6 +137,10 @@
                 "publicLinks": "Offentlige links",
                 "recents": "Seneste",
                 "shared": "Delt"
+            },
+            "notes": {
+                "new": "Ny",
+                "title": "Noter"
             }
         }
     }

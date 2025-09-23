@@ -137,6 +137,10 @@
                 "publicLinks": "Tautan Publik",
                 "recents": "Terkini",
                 "shared": "Dibagikan"
+            },
+            "notes": {
+                "new": "Baru",
+                "title": "Catatan"
             }
         }
     }
