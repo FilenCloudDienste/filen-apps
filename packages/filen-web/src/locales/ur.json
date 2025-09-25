@@ -143,5 +143,41 @@
                 "title": "نوٹس"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "سب",
+            "archived": "آرکائیو کیا گیا",
+            "favorited": "پسندیدہ",
+            "pinned": "پن کیا ہوا",
+            "shared": "مشترکہ",
+            "trash": "ردی",
+            "untagged": "بغیر ٹیگز"
+        },
+        "menu": {
+            "addParticipants": "شرکاء کو شامل کریں",
+            "archive": "آرکائیو",
+            "createNote": "نوٹ بنائیں",
+            "delete": "حذف کریں",
+            "duplicate": "نقل کریں",
+            "export": "برآمد کریں",
+            "favorited": "پسندیدہ",
+            "history": "تاریخچہ",
+            "leave": "چھوڑ دیں",
+            "participants": "شرکاء",
+            "pinned": "پن کیا ہوا",
+            "rename": "نام تبدیل کریں",
+            "restore": "بحال کریں",
+            "share": "شیئر کریں",
+            "tags": "ٹیگز",
+            "trash": "ردی",
+            "type": "قسم",
+            "typeChecklist": "فہرست چیک کریں",
+            "typeCode": "کوڈ",
+            "typeMarkdown": "مارک ڈاؤن",
+            "typeRichtext": "رچ ٹیکسٹ",
+            "typeText": "متن"
+        },
+        "tag": "ٹیگ لگائیں"
     }
 }
