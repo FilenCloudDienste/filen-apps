@@ -143,5 +143,41 @@
                 "title": "Catatan"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Semua",
+            "archived": "Telah Diarsipkan",
+            "favorited": "Favorit",
+            "pinned": "Disematkan",
+            "shared": "Tersharing",
+            "trash": "Sampah",
+            "untagged": "Tidak Berlabel"
+        },
+        "menu": {
+            "addParticipants": "Tambahkan Peserta",
+            "archive": "Arsip",
+            "createNote": "Buat Catatan",
+            "delete": "Hapus",
+            "duplicate": "Duplikat",
+            "export": "Ekspor",
+            "favorited": "Favorit",
+            "history": "Riwayat",
+            "leave": "Tinggalkan",
+            "participants": "Peserta",
+            "pinned": "Disematkan",
+            "rename": "Ganti Nama",
+            "restore": "Pulihkan",
+            "share": "Bagikan",
+            "tags": "Label",
+            "trash": "Sampah",
+            "type": "Tipe",
+            "typeChecklist": "Daftar Periksa",
+            "typeCode": "Kode",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Teks Kaya",
+            "typeText": "Teks"
+        },
+        "tag": "Label"
     }
 }

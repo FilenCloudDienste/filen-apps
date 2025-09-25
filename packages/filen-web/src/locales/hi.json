@@ -143,5 +143,41 @@
                 "title": "नोट्स"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "सभी",
+            "archived": "आर्काइव्ड",
+            "favorited": "पसंदीदा",
+            "pinned": "पिन किया गया",
+            "shared": "साझा किया गया",
+            "trash": "कचरा",
+            "untagged": "अनटैग्ड"
+        },
+        "menu": {
+            "addParticipants": "प्रतिभागियों को जोड़ें",
+            "archive": "आर्काइव करें",
+            "createNote": "नोट बनाएं",
+            "delete": "हटाएं",
+            "duplicate": "डुप्लिकेट",
+            "export": "निर्यात करें",
+            "favorited": "पसंदीदा",
+            "history": "इतिहास",
+            "leave": "छोड़ें",
+            "participants": "प्रतिभागी",
+            "pinned": "पिन किया गया",
+            "rename": "नाम बदलें",
+            "restore": "पुनर्स्थापित करें",
+            "share": "शेयर करें",
+            "tags": "टैग्स",
+            "trash": "कचरा",
+            "type": "प्रकार",
+            "typeChecklist": "चेकलिस्ट",
+            "typeCode": "कोड",
+            "typeMarkdown": "मार्कडाउन",
+            "typeRichtext": "रिच टेक्स्ट",
+            "typeText": "पाठ"
+        },
+        "tag": "टैग"
     }
 }

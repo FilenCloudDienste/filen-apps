@@ -143,5 +143,41 @@
                 "title": "Notities"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Alles",
+            "archived": "Gearchiveerd",
+            "favorited": "Favoriet",
+            "pinned": "Vastgezet",
+            "shared": "Gedeeld",
+            "trash": "Prullenbak",
+            "untagged": "Ongemarkeerd"
+        },
+        "menu": {
+            "addParticipants": "Deelnemers toevoegen",
+            "archive": "Archiveren",
+            "createNote": "Maak notitie",
+            "delete": "Verwijderen",
+            "duplicate": "Dupliceren",
+            "export": "Exporteren",
+            "favorited": "Favoriet",
+            "history": "Geschiedenis",
+            "leave": "Verlaten",
+            "participants": "Deelnemers",
+            "pinned": "Vastgezet",
+            "rename": "Hernoemen",
+            "restore": "Herstellen",
+            "share": "Delen",
+            "tags": "Labels",
+            "trash": "Prullenbak",
+            "type": "Type",
+            "typeChecklist": "Checklist",
+            "typeCode": "Code",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Opmaaktekst",
+            "typeText": "Tekst"
+        },
+        "tag": "Label"
     }
 }

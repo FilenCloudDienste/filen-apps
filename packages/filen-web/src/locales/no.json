@@ -143,5 +143,41 @@
                 "title": "Notater"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Alle",
+            "archived": "Arkivert",
+            "favorited": "Favoritt",
+            "pinned": "Festet",
+            "shared": "Delt",
+            "trash": "Papirkurv",
+            "untagged": "Uten merkelapp"
+        },
+        "menu": {
+            "addParticipants": "Legg til deltakere",
+            "archive": "Arkiv",
+            "createNote": "Opprett notat",
+            "delete": "Slett",
+            "duplicate": "Dupliser",
+            "export": "Eksporter",
+            "favorited": "Favoritt",
+            "history": "Historikk",
+            "leave": "Forlat",
+            "participants": "Deltakere",
+            "pinned": "Festet",
+            "rename": "Endre navn",
+            "restore": "Gjenopprett",
+            "share": "Del",
+            "tags": "Merkelapper",
+            "trash": "Papirkurv",
+            "type": "Type",
+            "typeChecklist": "Sjekkliste",
+            "typeCode": "Kode",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Rik tekst",
+            "typeText": "Tekst"
+        },
+        "tag": "Merkelapp"
     }
 }

@@ -143,5 +143,41 @@
                 "title": "笔记"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "全部",
+            "archived": "已存档",
+            "favorited": "已收藏",
+            "pinned": "已置顶",
+            "shared": "已分享",
+            "trash": "垃圾箱",
+            "untagged": "未标记"
+        },
+        "menu": {
+            "addParticipants": "添加参与者",
+            "archive": "存档",
+            "createNote": "创建笔记",
+            "delete": "删除",
+            "duplicate": "复制",
+            "export": "导出",
+            "favorited": "已收藏",
+            "history": "历史记录",
+            "leave": "离开",
+            "participants": "参与者",
+            "pinned": "已置顶",
+            "rename": "重命名",
+            "restore": "恢复",
+            "share": "分享",
+            "tags": "标签集",
+            "trash": "垃圾箱",
+            "type": "类型",
+            "typeChecklist": "清单",
+            "typeCode": "代码",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "富文本",
+            "typeText": "文本"
+        },
+        "tag": "标签"
     }
 }

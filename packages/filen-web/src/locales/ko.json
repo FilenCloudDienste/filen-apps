@@ -143,5 +143,41 @@
                 "title": "노트"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "모두",
+            "archived": "보관됨",
+            "favorited": "즐겨찾기됨",
+            "pinned": "고정됨",
+            "shared": "공유됨",
+            "trash": "휴지통",
+            "untagged": "태그 없음"
+        },
+        "menu": {
+            "addParticipants": "참여자 추가",
+            "archive": "보관",
+            "createNote": "노트 생성",
+            "delete": "삭제",
+            "duplicate": "복제",
+            "export": "내보내기",
+            "favorited": "즐겨찾기됨",
+            "history": "기록",
+            "leave": "떠나기",
+            "participants": "참여자",
+            "pinned": "고정됨",
+            "rename": "이름 변경",
+            "restore": "복원",
+            "share": "공유",
+            "tags": "태그",
+            "trash": "휴지통",
+            "type": "유형",
+            "typeChecklist": "체크리스트",
+            "typeCode": "코드",
+            "typeMarkdown": "마크다운",
+            "typeRichtext": "리치 텍스트",
+            "typeText": "텍스트"
+        },
+        "tag": "태그"
     }
 }

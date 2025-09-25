@@ -143,5 +143,41 @@
                 "title": "Muistiinpanot"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Kaikki",
+            "archived": "Arkistoitu",
+            "favorited": "Suosikit",
+            "pinned": "Kiinnitetty",
+            "shared": "Jaettu",
+            "trash": "Roskakori",
+            "untagged": "Ilman tunnistetta"
+        },
+        "menu": {
+            "addParticipants": "Lisää osallistujia",
+            "archive": "Arkistoi",
+            "createNote": "Luo muistiinpano",
+            "delete": "Poista",
+            "duplicate": "Kaksoiskappale",
+            "export": "Vie",
+            "favorited": "Suosikit",
+            "history": "Historia",
+            "leave": "Poistu",
+            "participants": "Osallistujat",
+            "pinned": "Kiinnitetty",
+            "rename": "Nimeä uudelleen",
+            "restore": "Palauta",
+            "share": "Jaa",
+            "tags": "Tunnisteet",
+            "trash": "Roskakori",
+            "type": "Tyyppi",
+            "typeChecklist": "Tarkistuslista",
+            "typeCode": "Koodi",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Muotoiltu teksti",
+            "typeText": "Teksti"
+        },
+        "tag": "Tunniste"
     }
 }

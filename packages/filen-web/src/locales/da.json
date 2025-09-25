@@ -143,5 +143,41 @@
                 "title": "Noter"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Alle",
+            "archived": "Arkiveret",
+            "favorited": "Foretrukne",
+            "pinned": "Fastgjort",
+            "shared": "Delt",
+            "trash": "Papirkurv",
+            "untagged": "Uden mærke"
+        },
+        "menu": {
+            "addParticipants": "Tilføj deltagere",
+            "archive": "Arkiv",
+            "createNote": "Opret note",
+            "delete": "Slet",
+            "duplicate": "Duplikat",
+            "export": "Eksporter",
+            "favorited": "Foretrukne",
+            "history": "Historik",
+            "leave": "Forlad",
+            "participants": "Deltagere",
+            "pinned": "Fastgjort",
+            "rename": "Omdøb",
+            "restore": "Gendan",
+            "share": "Del",
+            "tags": "Mærker",
+            "trash": "Papirkurv",
+            "type": "Type",
+            "typeChecklist": "Tjekliste",
+            "typeCode": "Kode",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Rich Text",
+            "typeText": "Tekst"
+        },
+        "tag": "Mærke"
     }
 }
