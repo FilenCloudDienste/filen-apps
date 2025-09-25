@@ -4,7 +4,8 @@ import { t } from "@/lib/i18n"
 import type { DriveItem } from "@/queries/useDriveItems.query"
 import pathModule from "path"
 import type { ContactTagged } from "@/queries/useContacts.query"
-import type { ContactRequestIn, ContactRequestOut } from "@filen/sdk-rs"
+import type { ContactRequestIn, ContactRequestOut, NoteType, NoteParticipant, ChatParticipant } from "@filen/sdk-rs"
+import DOMPurify from "dompurify"
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
@@ -386,7 +387,9 @@ export function getPreviewType(fileName: string): PreviewType {
 	}
 }
 
-export function contactDisplayName(contact: ContactTagged | ContactRequestIn | ContactRequestOut): string {
+export function contactDisplayName(
+	contact: ContactTagged | ContactRequestIn | ContactRequestOut | NoteParticipant | ChatParticipant
+): string {
 	const nickName = contact.nickName?.trim()
 
 	if (nickName && nickName.length > 0) {
@@ -394,4 +397,116 @@ export function contactDisplayName(contact: ContactTagged | ContactRequestIn | C
 	}
 
 	return contact.email.trim()
+}
+
+export function sanitizeFileName(filename: string, replacement: string = "_"): string {
+	const illegalCharsWindows = /[<>:"/\\|?*]/g
+	const illegalCharsUnix = /\//g
+	const reservedNamesWindows: Set<string> = new Set([
+		"CON",
+		"PRN",
+		"AUX",
+		"NUL",
+		"COM1",
+		"COM2",
+		"COM3",
+		"COM4",
+		"COM5",
+		"COM6",
+		"COM7",
+		"COM8",
+		"COM9",
+		"LPT1",
+		"LPT2",
+		"LPT3",
+		"LPT4",
+		"LPT5",
+		"LPT6",
+		"LPT7",
+		"LPT8",
+		"LPT9"
+	])
+
+	let sanitizedFilename = filename.replace(illegalCharsWindows, replacement)
+
+	sanitizedFilename = sanitizedFilename.replace(illegalCharsUnix, replacement)
+	sanitizedFilename = sanitizedFilename.replace(/[. ]+$/, "")
+	sanitizedFilename = sanitizedFilename.split(" ").join(replacement)
+
+	if (reservedNamesWindows.has(sanitizedFilename.toUpperCase())) {
+		sanitizedFilename += replacement
+	}
+
+	const maxLength = 255
+
+	if (sanitizedFilename.length > maxLength) {
+		sanitizedFilename = sanitizedFilename.substring(0, maxLength)
+	}
+
+	if (!sanitizedFilename) {
+		return "file"
+	}
+
+	return sanitizedFilename
+}
+
+export function createNotePreviewFromContentText(type: NoteType, content?: string): string {
+	try {
+		if (!content || content.length === 0) {
+			return ""
+		}
+
+		if (type === "rich") {
+			if (content.indexOf("<p><br></p>") === -1) {
+				return DOMPurify.sanitize(content.split("\n")[0] ?? "").slice(0, 128)
+			}
+
+			return DOMPurify.sanitize(content.split("<p><br></p>")[0] ?? "").slice(0, 128)
+		}
+
+		if (type === "checklist") {
+			const ex = content
+				// eslint-disable-next-line quotes
+				.split('<ul data-checked="false">')
+				.join("")
+				// eslint-disable-next-line quotes
+				.split('<ul data-checked="true">')
+				.join("")
+				.split("\n")
+				.join("")
+				.split("<li>")
+
+			for (const listPoint of ex) {
+				const listPointEx = listPoint.split("</li>")
+
+				if (!listPointEx[0]) {
+					continue
+				}
+
+				if (listPointEx[0].trim().length > 0) {
+					return DOMPurify.sanitize(listPointEx[0].trim())
+				}
+			}
+
+			return ""
+		}
+
+		return DOMPurify.sanitize(content.split("\n")[0]!.slice(0, 128))
+	} catch {
+		return ""
+	}
+}
+
+export function createExecutableTimeout(callback: () => void, delay?: number) {
+	const timeoutId = globalThis.window.setTimeout(callback, delay)
+
+	return {
+		id: timeoutId,
+		execute: () => {
+			globalThis.window.clearTimeout(timeoutId)
+
+			callback()
+		},
+		cancel: () => globalThis.window.clearTimeout(timeoutId)
+	}
 }

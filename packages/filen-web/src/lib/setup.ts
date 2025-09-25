@@ -1,6 +1,6 @@
 import idb from "./idb"
 import worker from "@/lib/worker"
-import authService from "@/services/auth.service"
+import auth from "@/lib/auth"
 import serviceWorker from "./serviceWorker"
 import cacheMap from "./cacheMap"
 import { restoreQueries } from "@/queries/client"
@@ -69,13 +69,13 @@ export async function setup(): Promise<
 
 	await restoreQueries()
 
-	const authed = await authService.isAuthed()
+	const authed = await auth.isAuthed()
 
 	if (authed) {
-		const client = await authService.getClient()
+		const client = await auth.getClient()
 
 		if (!client) {
-			await authService.logout()
+			await auth.logout()
 
 			return {
 				success: false,

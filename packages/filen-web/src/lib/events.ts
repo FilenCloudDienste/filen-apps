@@ -18,6 +18,9 @@ export type Events = {
 	selectDriveItemPrompt: SelectDriveItemsEvent
 	confirmPrompt: ConfirmPromptEvent
 	selectContactPrompt: SelectContactPromptEvent
+	focusNotesChecklistItem: {
+		id: string
+	}
 }
 
 export class TypedEventEmitter<T> {

@@ -2,14 +2,14 @@ import { memo, useCallback } from "react"
 import { PlusIcon } from "lucide-react"
 import { SidebarHeader } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
-import contactsService from "@/services/contacts.service"
+import contacts from "@/lib/contacts"
 import { useTranslation } from "react-i18next"
 
 export const InnerSidebarContactsHeader = memo(() => {
 	const { t } = useTranslation()
 
 	const add = useCallback(() => {
-		contactsService.sendContactRequest().catch(console.error)
+		contacts.sendRequest().catch(console.error)
 	}, [])
 
 	return (

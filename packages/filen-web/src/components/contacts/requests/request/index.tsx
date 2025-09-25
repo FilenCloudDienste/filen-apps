@@ -3,7 +3,7 @@ import { contactDisplayName } from "@/lib/utils"
 import { XIcon, CheckIcon, LoaderIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Avatar from "@/components/avatar"
-import contactsService from "@/services/contacts.service"
+import contacts from "@/lib/contacts"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTranslation } from "react-i18next"
 import type { ContactRequestIn, ContactRequestOut } from "@filen/sdk-rs"
@@ -22,7 +22,7 @@ export const ContactsRequestsListRequest = memo(
 			setAccepting(true)
 
 			try {
-				await contactsService.acceptContactRequest(request.uuid)
+				await contacts.acceptRequest(request.uuid)
 			} catch (err) {
 				console.error(err)
 			} finally {
@@ -34,7 +34,7 @@ export const ContactsRequestsListRequest = memo(
 			setDenying(true)
 
 			try {
-				await contactsService.denyContactRequest(request.uuid)
+				await contacts.denyRequest(request.uuid)
 			} catch (err) {
 				console.error(err)
 			} finally {
@@ -44,7 +44,7 @@ export const ContactsRequestsListRequest = memo(
 
 		const cancel = useCallback(async () => {
 			try {
-				await contactsService.cancelContactRequest(request.uuid)
+				await contacts.cancelRequest(request.uuid)
 			} catch (err) {
 				console.error(err)
 			}

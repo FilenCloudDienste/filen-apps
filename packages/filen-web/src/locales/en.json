@@ -143,5 +143,41 @@
 				"new": "New"
 			}
 		}
+	},
+	"notes": {
+		"tag": "Tag",
+		"menu": {
+			"history": "History",
+			"share": "Share",
+			"participants": "Participants",
+			"type": "Type",
+			"typeText": "Text",
+			"typeChecklist": "Checklist",
+			"typeMarkdown": "Markdown",
+			"typeRichtext": "Rich Text",
+			"typeCode": "Code",
+			"pinned": "Pinned",
+			"favorited": "Favorited",
+			"tags": "Tags",
+			"rename": "Rename",
+			"duplicate": "Duplicate",
+			"export": "Export",
+			"archive": "Archive",
+			"restore": "Restore",
+			"delete": "Delete",
+			"trash": "Trash",
+			"addParticipants": "Add participants",
+			"createNote": "Create note",
+			"leave": "Leave"
+		},
+		"defaultTags": {
+			"all": "All",
+			"archived": "Archived",
+			"favorited": "Favorited",
+			"pinned": "Pinned",
+			"trash": "Trash",
+			"untagged": "Untagged",
+			"shared": "Shared"
+		}
 	}
 }

@@ -2,6 +2,9 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import idb from "@/lib/idb"
 import events from "@/lib/events"
 import cacheMap from "@/lib/cacheMap"
+import Semaphore from "@/lib/semaphore"
+
+const flushMutex = new Semaphore(1)
 
 export function useIdb<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T) => void)) => void, boolean] {
 	const kvValueRef = useRef<T | null>(cacheMap.kv.get(key) ?? null)
@@ -11,12 +14,16 @@ export function useIdb<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T)
 
 	const flush = useCallback(
 		async (before: T, now: T) => {
+			await flushMutex.acquire()
+
 			try {
 				await idb.set(key, now)
 			} catch (e) {
 				console.error("Error setting value in IndexedDB:", e)
 
 				setState(before)
+			} finally {
+				flushMutex.release()
 			}
 		},
 		[key]
@@ -29,6 +36,8 @@ export function useIdb<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T)
 
 		didRetrieveRef.current = true
 
+		await flushMutex.acquire()
+
 		try {
 			const value = await idb.get<T>(key)
 
@@ -38,6 +47,8 @@ export function useIdb<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T)
 			}
 		} catch (e) {
 			console.error("Error fetching value from IndexedDB:", e)
+		} finally {
+			flushMutex.release()
 		}
 	}, [key])
 

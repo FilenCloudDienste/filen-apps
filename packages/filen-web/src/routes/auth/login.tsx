@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import authService from "@/services/auth.service"
+import auth from "@/lib/auth"
 import { memo, useState, useCallback } from "react"
 import { LoaderCircleIcon } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -37,7 +37,7 @@ export const Login = memo(() => {
 			setLoggingIn(true)
 
 			try {
-				await authService.login(values.email, values.password)
+				await auth.login(values.email, values.password)
 
 				navigate({
 					to: "/drive/$"

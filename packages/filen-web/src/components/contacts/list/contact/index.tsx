@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import type { ContactTagged } from "@/queries/useContacts.query"
 import Avatar from "@/components/avatar"
 import ContactListContactMenu from "./menu"
-import contactsService from "@/services/contacts.service"
+import contacts from "@/lib/contacts"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTranslation } from "react-i18next"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -55,7 +55,7 @@ export const ContactsListContact = memo(
 		const selected = useSelectContactPromptStore(useShallow(state => state.selected.some(c => c.uuid === contact.uuid)))
 
 		const unblock = useCallback(() => {
-			contactsService.unblockContact(contact.uuid).catch(console.error)
+			contacts.unblock(contact.uuid).catch(console.error)
 		}, [contact])
 
 		const openContextMenu = useCallback((e: React.MouseEvent) => {

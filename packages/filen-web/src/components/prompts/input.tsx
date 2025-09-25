@@ -198,7 +198,7 @@ export const InputPrompt = memo(() => {
 					value={value}
 					onChange={onChange}
 				/>
-				{error && <p className="text-sm text-red-500">{error}</p>}
+				{error && <p className="text-sm text-destructive">{error}</p>}
 				{(params.cancelText || params.confirmText) && (
 					<AlertDialogFooter>
 						{params.cancelText && (

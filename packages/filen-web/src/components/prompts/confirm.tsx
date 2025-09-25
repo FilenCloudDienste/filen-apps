@@ -17,6 +17,7 @@ export type ConfirmPromptParams = {
 	description?: string
 	cancelText?: string
 	confirmText?: string
+	confirmDestructive?: boolean
 	onSubmit?: () => Promise<void> | void
 }
 
@@ -159,7 +160,7 @@ export const ConfirmPrompt = memo(() => {
 					{params.title && <AlertDialogTitle>{params.title}</AlertDialogTitle>}
 					{params.description && <AlertDialogDescription>{params.description}</AlertDialogDescription>}
 				</AlertDialogHeader>
-				{error && <p className="text-sm text-red-500">{error}</p>}
+				{error && <p className="text-sm text-destructive">{error}</p>}
 				{(params.cancelText || params.confirmText) && (
 					<AlertDialogFooter>
 						{params.cancelText && (
@@ -174,6 +175,7 @@ export const ConfirmPrompt = memo(() => {
 							<AlertDialogAction
 								onClick={submit}
 								disabled={loading}
+								variant={params.confirmDestructive ? "destructive" : "default"}
 							>
 								{loading ? <LoaderIcon className="animate-spin" /> : params.confirmText}
 							</AlertDialogAction>

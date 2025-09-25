@@ -16,7 +16,7 @@ export type SessionIdb = {
 export const SESSIONS_KEY_IDB: string = "sessions"
 export const ACTIVE_SESSION_KEY_LOCAL_STORAGE: string = "activeSession"
 
-export class AuthService {
+export class Auth {
 	public getActiveSession(): ActiveSessionLocalStorage | null {
 		return JSON.parse(globalThis.localStorage.getItem(ACTIVE_SESSION_KEY_LOCAL_STORAGE) || "null")
 	}
@@ -101,6 +101,6 @@ export class AuthService {
 	}
 }
 
-export const authService = new AuthService()
+export const auth = new Auth()
 
-export default authService
+export default auth

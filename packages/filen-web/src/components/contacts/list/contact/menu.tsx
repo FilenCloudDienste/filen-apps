@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react"
 import Menu from "@/components/menu"
 import type { ContactTagged } from "@/queries/useContacts.query"
-import contactsService from "@/services/contacts.service"
+import contacts from "@/lib/contacts"
 import { useTranslation } from "react-i18next"
 
 export const ContactListContactMenu = memo(
@@ -28,15 +28,15 @@ export const ContactListContactMenu = memo(
 		)
 
 		const block = useCallback(() => {
-			contactsService.blockContact(contact.email).catch(console.error)
+			contacts.block(contact.email).catch(console.error)
 		}, [contact])
 
 		const remove = useCallback(() => {
-			contactsService.deleteContact(contact.uuid).catch(console.error)
+			contacts.delete(contact.uuid).catch(console.error)
 		}, [contact])
 
 		const unblock = useCallback(() => {
-			contactsService.unblockContact(contact.uuid).catch(console.error)
+			contacts.unblock(contact.uuid).catch(console.error)
 		}, [contact])
 
 		return (

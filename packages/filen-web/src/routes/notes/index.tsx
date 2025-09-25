@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
+import NotesIndex from "@/components/notes"
 
 export const Route = createFileRoute("/notes/")({
-	component: RouteComponent
+	component: NotesIndex
 })
-
-function RouteComponent() {
-	return <div>Hello notes!</div>
-}

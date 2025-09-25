@@ -23,10 +23,6 @@ export const Avatar = memo(
 			return typeof lastActive === "number" && lastActive > Date.now() - ONLINE_TIMEOUT
 		}, [lastActive])
 
-		const displayName = useMemo(() => {
-			return name.substring(0, 2).toUpperCase()
-		}, [name])
-
 		const style = useMemo(() => {
 			return {
 				width: width ?? 36,
@@ -46,7 +42,14 @@ export const Avatar = memo(
 						alt={name}
 						className="rounded-full"
 					/>
-					<AvatarFallback className="rounded-full">{displayName}</AvatarFallback>
+					<AvatarFallback className="rounded-full">
+						<img
+							crossOrigin="anonymous"
+							src="/img/fallbackAvatar.webp"
+							alt={name}
+							className="rounded-full"
+						/>
+					</AvatarFallback>
 				</UiAvatar>
 				{typeof lastActive === "number" && (
 					<div

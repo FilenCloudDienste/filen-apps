@@ -198,7 +198,7 @@ export const SelectContactPrompt = memo(() => {
 						type="all"
 					/>
 				</div>
-				{error && <p className="text-sm text-red-500 mt-4">{error}</p>}
+				{error && <p className="text-sm text-destructive mt-4">{error}</p>}
 				{(params.cancelText || params.confirmText) && (
 					<AlertDialogFooter>
 						{params.cancelText && (

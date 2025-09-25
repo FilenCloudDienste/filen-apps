@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect, useRef, type RefObject } from "react"
+import { useState, useLayoutEffect, useRef, type RefObject, useEffect } from "react"
 
 export type Dimensions = {
 	width: number
@@ -11,6 +11,29 @@ export function useElementDimensions<T extends HTMLElement = HTMLDivElement>(): 
 		width: 0,
 		height: 0
 	})
+
+	useEffect(() => {
+		const listener = () => {
+			const element = ref.current
+
+			if (!element) {
+				return
+			}
+
+			const { width, height } = element.getBoundingClientRect()
+
+			setDimensions({
+				width,
+				height
+			})
+		}
+
+		globalThis.window.addEventListener("resize", listener)
+
+		return () => {
+			globalThis.window.removeEventListener("resize", listener)
+		}
+	}, [])
 
 	useLayoutEffect(() => {
 		const element = ref.current

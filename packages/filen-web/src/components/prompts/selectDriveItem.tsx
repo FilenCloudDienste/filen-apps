@@ -389,7 +389,7 @@ export const SelectDriveItemPrompt = memo(() => {
 							itemContent={itemContent}
 						/>
 					</div>
-					{error && <p className="text-sm text-red-500">{error}</p>}
+					{error && <p className="text-sm text-destructive">{error}</p>}
 					{(params.cancelText || params.confirmText) && (
 						<AlertDialogFooter className="flex flex-1 flex-row items-center justify-between!">
 							{params.types && params.types.includes("directory") && (

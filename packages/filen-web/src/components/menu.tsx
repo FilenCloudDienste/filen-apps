@@ -34,16 +34,18 @@ import { cn } from "@/lib/utils"
 export type MenuItemType =
 	| {
 			type: "label"
-			text: string
+			text: string | React.ReactNode
+			className?: string
 	  }
 	| {
 			type: "separator"
+			className?: string
 	  }
 	| {
 			type: "item"
-			text: string
+			text: string | React.ReactNode
 			inset?: boolean
-			onClick?: () => void | Promise<void>
+			onClick?: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => void | Promise<void>
 			shortcut?: string
 			className?: string
 			destructive?: boolean
@@ -51,10 +53,12 @@ export type MenuItemType =
 	| {
 			type: "shortcut"
 			text: string
+			className?: string
 	  }
 	| {
 			type: "group"
 			items: MenuItemType[]
+			className?: string
 	  }
 	| {
 			type: "submenu"
@@ -63,13 +67,16 @@ export type MenuItemType =
 			triggerInset?: boolean
 			content: MenuItemType[] | React.ReactNode
 			contentClassName?: string
+			triggerClassName?: string
 	  }
 	| {
 			type: "checkbox"
-			text: string
+			text: string | React.ReactNode
 			checked: boolean
 			onCheckedChange: (checked: boolean) => void
 			shortcut?: string
+			className?: string
+			destructive?: boolean
 	  }
 
 export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "context" | "dropdown" }) => {
@@ -115,8 +122,8 @@ export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "conte
 
 	return (
 		<Fragment>
-			{item.type === "label" && <Label>{item.text}</Label>}
-			{item.type === "separator" && <Separator />}
+			{item.type === "label" && <Label className={item.className}>{item.text}</Label>}
+			{item.type === "separator" && <Separator className={item.className} />}
 			{item.type === "item" && (
 				<Item
 					inset={item.inset}
@@ -124,16 +131,16 @@ export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "conte
 					className={cn(
 						"cursor-pointer flex flex-row items-center gap-8",
 						item.className,
-						item.destructive && "text-red-500 hover:text-red-500 focus:text-red-500"
+						item.destructive && "text-destructive hover:text-destructive focus:text-destructive"
 					)}
 				>
 					{item.text}
 					{item.shortcut && <Shortcut>{item.shortcut}</Shortcut>}
 				</Item>
 			)}
-			{item.type === "shortcut" && <Shortcut>{item.text}</Shortcut>}
+			{item.type === "shortcut" && <Shortcut className={item.className}>{item.text}</Shortcut>}
 			{item.type === "group" && (
-				<Group>
+				<Group className={item.className}>
 					{item.items.map((child, childIndex) => (
 						<MenuItem
 							key={childIndex}
@@ -148,6 +155,7 @@ export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "conte
 					<SubMenuTrigger
 						asChild={item.triggerAsChild}
 						inset={item.triggerInset}
+						className={cn("cursor-pointer flex flex-row items-center gap-8", item.triggerClassName)}
 					>
 						{item.trigger}
 					</SubMenuTrigger>
@@ -170,6 +178,11 @@ export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "conte
 				<CheckboxItem
 					checked={item.checked}
 					onCheckedChange={item.onCheckedChange}
+					className={cn(
+						"cursor-pointer flex flex-row items-center gap-8",
+						item.className,
+						item.destructive && "text-destructive hover:text-destructive focus:text-destructive"
+					)}
 				>
 					{item.text}
 					{item.shortcut && <Shortcut>{item.shortcut}</Shortcut>}
@@ -189,7 +202,8 @@ export const Menu = memo(
 		defaultOpen,
 		children,
 		triggerAsChild,
-		items
+		items,
+		disabled
 	}: {
 		type: "context" | "dropdown"
 		onOpenChange?: (open: boolean) => void
@@ -198,6 +212,7 @@ export const Menu = memo(
 		children: React.ReactNode
 		triggerAsChild?: boolean
 		items: MenuItemType[]
+		disabled?: boolean
 	}) => {
 		const Parent = useMemo(() => {
 			return type === "context" ? ContextMenu : DropdownMenu
@@ -210,6 +225,10 @@ export const Menu = memo(
 		const Content = useMemo(() => {
 			return type === "context" ? ContextMenuContent : DropdownMenuContent
 		}, [type])
+
+		if (disabled || items.length === 0) {
+			return <Fragment>{children}</Fragment>
+		}
 
 		return (
 			<Parent

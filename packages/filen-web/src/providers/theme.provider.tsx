@@ -11,11 +11,13 @@ export type ThemeProviderProps = {
 export type ThemeProviderState = {
 	theme: Theme
 	setTheme: (theme: Theme) => void
+	dark: boolean
 }
 
 export const initialState: ThemeProviderState = {
 	theme: "system",
-	setTheme: () => null
+	setTheme: () => null,
+	dark: globalThis.window.matchMedia("(prefers-color-scheme: dark)").matches
 }
 
 export const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -30,7 +32,8 @@ export const ThemeProvider = memo(({ children, defaultTheme = "system", storageK
 				globalThis.localStorage.setItem(storageKey, theme)
 
 				setTheme(theme)
-			}
+			},
+			dark: theme === "system" ? globalThis.window.matchMedia("(prefers-color-scheme: dark)").matches : theme === "dark"
 		}),
 		[theme, storageKey]
 	)

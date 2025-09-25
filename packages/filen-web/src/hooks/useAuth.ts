@@ -1,9 +1,4 @@
-import {
-	ACTIVE_SESSION_KEY_LOCAL_STORAGE,
-	type ActiveSessionLocalStorage,
-	SESSIONS_KEY_IDB,
-	type SessionIdb
-} from "@/services/auth.service"
+import { ACTIVE_SESSION_KEY_LOCAL_STORAGE, type ActiveSessionLocalStorage, SESSIONS_KEY_IDB, type SessionIdb } from "@/lib/auth"
 import useIdb from "./useIdb"
 import { useLocalStorage } from "@uidotdev/usehooks"
 import { useMemo } from "react"

@@ -8,9 +8,11 @@ import InnerSidebarContactsContent from "./contacts/content"
 import InnerSidebarNotesHeader from "./notes/header"
 import InnerSidebarNotesContent from "./notes/content"
 import { Tabs } from "@/components/ui/tabs"
+import useIdb from "@/hooks/useIdb"
 
 export const InnerSidebar = memo(() => {
 	const { pathname } = useLocation()
+	const [notesSidebarDefaultTab, setNotesSidebarDefaultTab] = useIdb<"all" | "tags">("notesSidebarDefaultTab", "all")
 
 	return (
 		<Sidebar
@@ -31,8 +33,9 @@ export const InnerSidebar = memo(() => {
 			)}
 			{pathname.startsWith("/notes") && (
 				<Tabs
-					defaultValue="account"
-					className="w-full overflow-hidden"
+					defaultValue={notesSidebarDefaultTab}
+					className="w-full overflow-hidden h-full"
+					onValueChange={setNotesSidebarDefaultTab as (value: string) => void}
 				>
 					<InnerSidebarNotesHeader />
 					<InnerSidebarNotesContent />

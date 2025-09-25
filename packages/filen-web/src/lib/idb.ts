@@ -86,7 +86,9 @@ export class Idb {
 
 		const parsed = unpack(item.value)
 
-		cacheMap.kv.set(key, parsed)
+		if (!key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX) && !UNCACHED_KEYS.includes(key)) {
+			cacheMap.kv.set(key, parsed)
+		}
 
 		return parsed as T
 	}
@@ -99,7 +101,9 @@ export class Idb {
 			value: pack(value)
 		})
 
-		cacheMap.kv.set(key, value)
+		if (!key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX) && !UNCACHED_KEYS.includes(key)) {
+			cacheMap.kv.set(key, value)
+		}
 
 		events.emit("kvChange", {
 			key,

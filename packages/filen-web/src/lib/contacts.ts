@@ -3,11 +3,10 @@ import worker from "@/lib/worker"
 import { contactRequestsQueryRefetch } from "@/queries/useContactRequests.query"
 import { contactsQueryRefetch } from "@/queries/useContacts.query"
 import { confirmPrompt } from "@/components/prompts/confirm"
-import { toast } from "sonner"
 import { t } from "@/lib/i18n"
 
-export class ContactsService {
-	public async sendContactRequest(): Promise<void> {
+export class Contacts {
+	public async sendRequest(): Promise<void> {
 		return await new Promise<void>((resolve, reject) => {
 			inputPrompt({
 				title: t("prompts.contacts.sendRequest.title"),
@@ -29,18 +28,8 @@ export class ContactsService {
 
 						await contactRequestsQueryRefetch()
 
-						toast.success(t("prompts.contacts.sendRequest.success"))
-
 						resolve()
 					} catch (e) {
-						console.error(e)
-
-						console.log(typeof e, e instanceof Error)
-
-						if (e instanceof String) {
-							toast.error(e)
-						}
-
 						reject(e)
 					}
 				}
@@ -52,13 +41,13 @@ export class ContactsService {
 						return
 					}
 
-					resolve()
+					reject(new Error("onSubmit not called"))
 				})
 				.catch(reject)
 		})
 	}
 
-	public async cancelContactRequest(uuid: string): Promise<void> {
+	public async cancelRequest(uuid: string): Promise<void> {
 		return await new Promise<void>((resolve, reject) => {
 			confirmPrompt({
 				title: t("prompts.contacts.cancelRequest.title"),
@@ -84,13 +73,13 @@ export class ContactsService {
 						return
 					}
 
-					resolve()
+					reject(new Error("onSubmit not called"))
 				})
 				.catch(reject)
 		})
 	}
 
-	public async acceptContactRequest(uuid: string): Promise<void> {
+	public async acceptRequest(uuid: string): Promise<void> {
 		await worker.sdk("acceptContactRequest", uuid)
 
 		await Promise.all([
@@ -101,13 +90,13 @@ export class ContactsService {
 		])
 	}
 
-	public async denyContactRequest(uuid: string): Promise<void> {
+	public async denyRequest(uuid: string): Promise<void> {
 		await worker.sdk("denyContactRequest", uuid)
 
 		await contactRequestsQueryRefetch()
 	}
 
-	public async deleteContact(uuid: string): Promise<void> {
+	public async delete(uuid: string): Promise<void> {
 		return await new Promise<void>((resolve, reject) => {
 			confirmPrompt({
 				title: t("prompts.contacts.deleteContact.title"),
@@ -135,13 +124,13 @@ export class ContactsService {
 						return
 					}
 
-					resolve()
+					reject(new Error("onSubmit not called"))
 				})
 				.catch(reject)
 		})
 	}
 
-	public async unblockContact(uuid: string): Promise<void> {
+	public async unblock(uuid: string): Promise<void> {
 		return await new Promise<void>((resolve, reject) => {
 			confirmPrompt({
 				title: t("prompts.contacts.unblockContact.title"),
@@ -174,13 +163,13 @@ export class ContactsService {
 						return
 					}
 
-					resolve()
+					reject(new Error("onSubmit not called"))
 				})
 				.catch(reject)
 		})
 	}
 
-	public async blockContact(email: string): Promise<void> {
+	public async block(email: string): Promise<void> {
 		return await new Promise<void>((resolve, reject) => {
 			confirmPrompt({
 				title: t("prompts.contacts.blockContact.title"),
@@ -213,13 +202,13 @@ export class ContactsService {
 						return
 					}
 
-					resolve()
+					reject(new Error("onSubmit not called"))
 				})
 				.catch(reject)
 		})
 	}
 }
 
-export const contactsService = new ContactsService()
+export const contacts = new Contacts()
 
-export default contactsService
+export default contacts

@@ -44,9 +44,9 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	| "retry"
 	| "retryDelay"
 > = {
-	refetchOnMount: true,
-	refetchOnReconnect: true,
-	refetchOnWindowFocus: true,
+	refetchOnMount: "always",
+	refetchOnReconnect: "always",
+	refetchOnWindowFocus: "always",
 	staleTime: 0,
 	gcTime: CACHE_TIME,
 	refetchInterval: false,
