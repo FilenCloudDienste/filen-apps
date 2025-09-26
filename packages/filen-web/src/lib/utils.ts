@@ -5,7 +5,7 @@ import type { DriveItem } from "@/queries/useDriveItems.query"
 import pathModule from "path"
 import type { ContactTagged } from "@/queries/useContacts.query"
 import type { ContactRequestIn, ContactRequestOut, NoteType, NoteParticipant, ChatParticipant } from "@filen/sdk-rs"
-import DOMPurify from "dompurify"
+import striptags from "striptags"
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
@@ -458,10 +458,10 @@ export function createNotePreviewFromContentText(type: NoteType, content?: strin
 
 		if (type === "rich") {
 			if (content.indexOf("<p><br></p>") === -1) {
-				return DOMPurify.sanitize(content.split("\n")[0] ?? "").slice(0, 128)
+				return striptags(content.split("\n")[0] ?? "").slice(0, 128)
 			}
 
-			return DOMPurify.sanitize(content.split("<p><br></p>")[0] ?? "").slice(0, 128)
+			return striptags(content.split("<p><br></p>")[0] ?? "").slice(0, 128)
 		}
 
 		if (type === "checklist") {
@@ -484,14 +484,14 @@ export function createNotePreviewFromContentText(type: NoteType, content?: strin
 				}
 
 				if (listPointEx[0].trim().length > 0) {
-					return DOMPurify.sanitize(listPointEx[0].trim())
+					return striptags(listPointEx[0].trim()).slice(0, 128)
 				}
 			}
 
 			return ""
 		}
 
-		return DOMPurify.sanitize(content.split("\n")[0]!.slice(0, 128))
+		return striptags(content.split("\n")[0]!).slice(0, 128)
 	} catch {
 		return ""
 	}

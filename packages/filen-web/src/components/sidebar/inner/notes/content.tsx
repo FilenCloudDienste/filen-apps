@@ -32,7 +32,7 @@ import {
 	ClockIcon,
 	EditIcon,
 	PlusIcon,
-	SendIcon,
+	DownloadIcon,
 	ArchiveIcon,
 	TrashIcon,
 	LoaderIcon,
@@ -40,13 +40,14 @@ import {
 	DeleteIcon,
 	EllipsisVerticalIcon,
 	User2Icon,
-	RefreshCcwIcon
+	RefreshCcwIcon,
+	CopyIcon
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { TabsContent } from "@/components/ui/tabs"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import type { NoteTag, Note, NoteType } from "@filen/sdk-rs"
+import type { NoteTag, Note, NoteType, NoteParticipant } from "@filen/sdk-rs"
 import useIdb from "@/hooks/useIdb"
 import useNoteUuidFromPathname from "@/hooks/useNoteUuidFromPathname"
 import { Virtuoso } from "react-virtuoso"
@@ -56,6 +57,10 @@ import toasts from "@/lib/toasts"
 import { useTranslation } from "react-i18next"
 import useNotesStore from "@/stores/notes.store"
 import { useShallow } from "zustand/shallow"
+import useNoteHistoryQuery from "@/queries/useNoteHistory.query"
+import TextEditor from "@/components/textEditor"
+import Checklist from "@/components/notes/checklist"
+import { Button } from "@/components/ui/button"
 
 export type DefaultTags = "favorited" | "pinned" | "archived" | "shared" | "trash"
 
@@ -121,18 +126,20 @@ export const Tree = memo(({ tag, notes }: { tag: NoteTag | DefaultTags; notes: N
 				return
 			}
 
-			e.preventDefault()
-
 			const draggingNotes = useNotesStore.getState().draggingNotes
-			const alreadyTagged = notes.some(n => draggingNotes.map(d => d.uuid).includes(n.uuid))
 
-			if (alreadyTagged) {
+			if (
+				draggingNotes.length === 0 ||
+				draggingNotes.some(n => n.tags.map(t => t.uuid).includes(typeof tag === "string" ? tag : tag.uuid))
+			) {
 				return
 			}
 
+			e.preventDefault()
+
 			setDraggingOver(true)
 		},
-		[notes, tag]
+		[tag]
 	)
 
 	const onDragLeave = useCallback((e: React.DragEvent) => {
@@ -154,7 +161,10 @@ export const Tree = memo(({ tag, notes }: { tag: NoteTag | DefaultTags; notes: N
 
 				const draggingNotes = useNotesStore.getState().draggingNotes
 
-				if (draggingNotes.length === 0) {
+				if (
+					draggingNotes.length === 0 ||
+					draggingNotes.some(n => n.tags.map(t => t.uuid).includes(typeof tag === "string" ? tag : tag.uuid))
+				) {
 					return
 				}
 
@@ -193,22 +203,30 @@ export const Tree = memo(({ tag, notes }: { tag: NoteTag | DefaultTags; notes: N
 						}
 					}
 
-					if (notes.some(n => draggingNotes.map(d => d.uuid).includes(n.uuid))) {
-						return
-					}
+					await Promise.all(
+						draggingNotes.map(async n => {
+							await Promise.all(
+								n.tags.map(async t => {
+									n = await libNotes.removeTag(n, t)
+								})
+							)
 
-					await Promise.all(draggingNotes.map(n => libNotes.tag(n, tag)))
+							await libNotes.tag(n, tag)
+						})
+					)
 				} catch (e) {
 					console.error(e)
 					toast.error(e)
 				} finally {
 					toast.dismiss()
+
+					useNotesStore.getState().setDraggingNotes([])
 				}
 			} finally {
 				useNotesStore.getState().setDraggingNotes([])
 			}
 		},
-		[tag, notes]
+		[tag]
 	)
 
 	const menuItems = useMemo(() => {
@@ -379,7 +397,7 @@ export const Tree = memo(({ tag, notes }: { tag: NoteTag | DefaultTags; notes: N
 							<SidebarMenuButton
 								className={cn(
 									"cursor-pointer flex flex-1 flex-row items-center justify-between gap-2 w-full overflow-hidden pr-0",
-									contextMenuOpen || (draggingOver && "bg-muted"),
+									(contextMenuOpen || draggingOver) && "bg-muted",
 									draggingOver ? "border-1 border-blue-500" : "border-1 border-transparent"
 								)}
 								onDragOver={onDragOver}
@@ -476,6 +494,17 @@ export const NoteMenu = memo(
 		const navigate = useNavigate()
 		const { t } = useTranslation()
 		const { client } = useAuth()
+		const [open, setOpen] = useState<boolean>(false)
+		const [settingParticipantPermissions, setSettingParticipantPermissions] = useState<NoteParticipant | null>()
+
+		const noteHistoryQuery = useNoteHistoryQuery(
+			{
+				uuid: note.uuid
+			},
+			{
+				enabled: open
+			}
+		)
 
 		const notesTagsQuery = useNotesTagsQuery({
 			enabled: false
@@ -493,6 +522,14 @@ export const NoteMenu = memo(
 			)
 		}, [notesTagsQuery.data, notesTagsQuery.status])
 
+		const noteHistory = useMemo(() => {
+			if (noteHistoryQuery.status !== "success") {
+				return []
+			}
+
+			return noteHistoryQuery.data.sort((a, b) => Number(b.editedTimestamp) - Number(a.editedTimestamp))
+		}, [noteHistoryQuery.data, noteHistoryQuery.status])
+
 		const noteParticipants = useMemo(() => {
 			return note.participants.filter(participant => participant.userId !== client?.userId)
 		}, [note.participants, client])
@@ -503,16 +540,87 @@ export const NoteMenu = memo(
 
 		const items = useMemo(() => {
 			return [
-				{
-					type: "item",
-					text: (
-						<div className="flex flex-row items-center gap-8 w-full justify-between">
-							{t("notes.menu.history")}
-							<ClockIcon className="size-[14px]" />
-						</div>
-					),
-					inset: true
-				},
+				...(noteHistoryQuery.status === "success"
+					? [
+							{
+								type: "submenu",
+								trigger: t("notes.menu.history"),
+								triggerInset: true,
+								content: [
+									{
+										type: "label",
+										text: t("notes.menu.history")
+									},
+									{
+										type: "separator"
+									},
+									...noteHistory.map(
+										history =>
+											({
+												type: "submenu",
+												trigger: simpleDate(Number(history.editedTimestamp)),
+												contentClassName: "p-0",
+												content: (
+													<div className="flex flex-1 flex-col h-[50dvh] w-[50dvh]">
+														<div className="flex flex-1 flex-row overflow-x-hidden overflow-y-auto h-full w-full select-text">
+															{history.noteType === "checklist" && (
+																<Checklist
+																	editable={false}
+																	initialValue={history.content ?? ""}
+																/>
+															)}
+															{(history.noteType === "text" ||
+																history.noteType === "md" ||
+																history.noteType === "code" ||
+																history.noteType === "rich") && (
+																<TextEditor
+																	editable={false}
+																	initialValue={history.content ?? ""}
+																/>
+															)}
+														</div>
+														<div className="flex flex-row items-center justify-between gap-4 p-2 border-t border-border">
+															<p className="truncate text-sm text-muted-foreground">
+																{simpleDate(Number(history.editedTimestamp))}
+															</p>
+															<Button
+																variant="default"
+																size="sm"
+																onClick={async () => {
+																	try {
+																		await libNotes.restoreHistory(note, history)
+																	} catch (e) {
+																		console.error(e)
+																		toasts.error(e)
+																	}
+																}}
+															>
+																tbd
+															</Button>
+														</div>
+													</div>
+												)
+											}) satisfies MenuItemType
+									)
+								]
+							} satisfies MenuItemType
+						]
+					: [
+							{
+								type: "item",
+								text: (
+									<div className="flex flex-row items-center gap-8 w-full justify-between">
+										<p>{t("notes.menu.history")}</p>
+										{noteHistory.length === 0 ? (
+											<ClockIcon className="size-[14px] shrink-0" />
+										) : (
+											<LoaderIcon className="size-[14px] animate-spin shrink-0" />
+										)}
+									</div>
+								),
+								inset: true
+							} satisfies MenuItemType
+						]),
 				...(isOwner || noteParticipants.length > 0
 					? [
 							{
@@ -559,25 +667,43 @@ export const NoteMenu = memo(
 																		e.preventDefault()
 																		e.stopPropagation()
 
-																		const toast = toasts.loading()
+																		if (settingParticipantPermissions?.userId === participant.userId) {
+																			return
+																		}
+
+																		setSettingParticipantPermissions(participant)
 
 																		try {
-																			throw new Error("Not implemented yet")
+																			await libNotes.setParticipantsPermissions(note, [
+																				{
+																					participant,
+																					permissionsWrite: !participant.permissionsWrite
+																				}
+																			])
 																		} catch (e) {
 																			console.error(e)
-																			toast.error(e)
+																			toasts.error(e)
 																		} finally {
-																			toast.dismiss()
+																			setSettingParticipantPermissions(null)
 																		}
 																	}}
 																>
 																	<Tooltip>
 																		<TooltipTrigger asChild={true}>
-																			{participant.permissionsWrite ? (
-																				<EyeIcon className="size-[14px] cursor-pointer" />
-																			) : (
-																				<EditIcon className="size-[14px] cursor-pointer" />
-																			)}
+																			<div>
+																				{settingParticipantPermissions?.userId ===
+																				participant.userId ? (
+																					<LoaderIcon className="size-[14px] animate-spin shrink-0" />
+																				) : (
+																					<Fragment>
+																						{participant.permissionsWrite ? (
+																							<EyeIcon className="size-[14px] cursor-pointer shrink-0" />
+																						) : (
+																							<EditIcon className="size-[14px] cursor-pointer shrink-0" />
+																						)}
+																					</Fragment>
+																				)}
+																			</div>
 																		</TooltipTrigger>
 																		<TooltipContent>
 																			{participant.permissionsWrite ? "tdb" : "tdb"}
@@ -591,21 +717,19 @@ export const NoteMenu = memo(
 																		e.preventDefault()
 																		e.stopPropagation()
 
-																		const toast = toasts.loading()
-
 																		try {
-																			throw new Error("Not implemented yet")
+																			await libNotes.removeParticipants(note, [participant])
 																		} catch (e) {
 																			console.error(e)
-																			toast.error(e)
-																		} finally {
-																			toast.dismiss()
+																			toasts.error(e)
 																		}
 																	}}
 																>
 																	<Tooltip>
 																		<TooltipTrigger asChild={true}>
-																			<DeleteIcon className="size-[14px] cursor-pointer" />
+																			<div>
+																				<DeleteIcon className="size-[14px] cursor-pointer" />
+																			</div>
 																		</TooltipTrigger>
 																		<TooltipContent>tdb</TooltipContent>
 																	</Tooltip>
@@ -852,31 +976,65 @@ export const NoteMenu = memo(
 					text: (
 						<div className="flex flex-row items-center gap-8 w-full justify-between">
 							{t("notes.menu.duplicate")}
-							<PlusIcon className="size-[14px]" />
+							<CopyIcon className="size-[14px]" />
 						</div>
 					)
 				},
 				{
-					type: "item",
-					inset: true,
-					onClick: async () => {
-						const toast = toasts.loading()
+					type: "submenu",
+					trigger: t("notes.menu.export"),
+					triggerInset: true,
+					content: [
+						{
+							type: "label",
+							text: t("notes.menu.export")
+						},
+						{
+							type: "separator"
+						},
+						{
+							type: "item",
+							onClick: async () => {
+								const toast = toasts.loading()
 
-						try {
-							await libNotes.export(note)
-						} catch (e) {
-							console.error(e)
-							toast.error(e)
-						} finally {
-							toast.dismiss()
+								try {
+									await libNotes.export(note)
+								} catch (e) {
+									console.error(e)
+									toast.error(e)
+								} finally {
+									toast.dismiss()
+								}
+							},
+							text: (
+								<div className="flex flex-row items-center gap-8 w-full justify-between">
+									{t("notes.menu.export")}
+									<DownloadIcon className="size-[14px]" />
+								</div>
+							)
+						},
+						{
+							type: "item",
+							onClick: async () => {
+								const toast = toasts.loading()
+
+								try {
+									await libNotes.exportAll()
+								} catch (e) {
+									console.error(e)
+									toast.error(e)
+								} finally {
+									toast.dismiss()
+								}
+							},
+							text: (
+								<div className="flex flex-row items-center gap-8 w-full justify-between">
+									{t("notes.menu.exportAll")}
+									<DownloadIcon className="size-[14px]" />
+								</div>
+							)
 						}
-					},
-					text: (
-						<div className="flex flex-row items-center gap-8 w-full justify-between">
-							{t("notes.menu.export")}
-							<SendIcon className="size-[14px]" />
-						</div>
-					)
+					]
 				},
 				...(isOwner && !note.trash && !note.archive
 					? [
@@ -993,7 +1151,7 @@ export const NoteMenu = memo(
 									const toast = toasts.loading()
 
 									try {
-										await libNotes.leave(note, Number(client.userId))
+										await libNotes.leave(note, client.userId)
 
 										navigate({
 											to: "/notes"
@@ -1016,11 +1174,30 @@ export const NoteMenu = memo(
 						]
 					: [])
 			] satisfies MenuItemType[]
-		}, [note, notesTags, navigate, t, noteParticipants, isOwner, client])
+		}, [
+			note,
+			notesTags,
+			navigate,
+			t,
+			noteParticipants,
+			isOwner,
+			client,
+			noteHistory,
+			noteHistoryQuery.status,
+			settingParticipantPermissions
+		])
+
+		const onChangeOpen = useCallback(
+			(isOpen: boolean) => {
+				setOpen(isOpen)
+				onOpenChange?.(isOpen)
+			},
+			[onOpenChange]
+		)
 
 		return (
 			<Menu
-				onOpenChange={onOpenChange}
+				onOpenChange={onChangeOpen}
 				triggerAsChild={true}
 				type={type}
 				items={items}
@@ -1065,7 +1242,7 @@ export const NoteComp = memo(({ note, fromTree }: { note: Note; fromTree?: boole
 						className={cn(
 							"cursor-pointer flex flex-1 flex-col px-4 h-auto items-start data-[active=true]:font-normal",
 							!fromTree && "rounded-none",
-							activeLink === note.uuid || contextMenuOpen ? "border-l-2 border-blue-500" : "border-l-2 border-transparent"
+							activeLink === note.uuid ? "border-l-2 border-blue-500" : "border-l-2 border-transparent"
 						)}
 						draggable={true}
 						onDragStart={onDragStart}

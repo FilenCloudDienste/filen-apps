@@ -2,11 +2,16 @@ import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/r
 import worker from "@/lib/worker"
 import { DEFAULT_QUERY_OPTIONS, queryClient } from "./client"
 import queryUpdater from "./updater"
+import cacheMap from "@/lib/cacheMap"
 
 export const BASE_QUERY_KEY = "useNotesQuery"
 
 export async function fetchNotes() {
 	const notes = await worker.sdk("listNotes")
+
+	for (const note of notes) {
+		cacheMap.noteUuidToNote.set(note.uuid, note)
+	}
 
 	return notes
 }
@@ -24,14 +29,14 @@ export function useNotesQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchNotes>>, Error>
 }
 
-export function notesQueryUpdate({
+export async function notesQueryUpdate({
 	updater
 }: {
 	updater:
 		| Awaited<ReturnType<typeof fetchNotes>>
 		| ((prev: Awaited<ReturnType<typeof fetchNotes>>) => Awaited<ReturnType<typeof fetchNotes>>)
-}): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchNotes>>>([BASE_QUERY_KEY], prev => {
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchNotes>>>([BASE_QUERY_KEY], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchNotes>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater

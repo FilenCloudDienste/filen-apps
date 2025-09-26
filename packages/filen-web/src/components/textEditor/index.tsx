@@ -67,7 +67,7 @@ export const TextEditor = memo(
 		autoFocus
 	}: {
 		initialValue: string
-		onValueChange: (value: string) => void
+		onValueChange?: (value: string) => void
 		width?: number
 		height?: number
 		fileName?: string
@@ -87,6 +87,14 @@ export const TextEditor = memo(
 		const type = useMemo(() => {
 			return getPreviewType(fileName ?? "file.tsx")
 		}, [fileName])
+
+		const canEdit = useMemo(() => {
+			if (typeof editable === "undefined") {
+				return true
+			}
+
+			return editable
+		}, [editable])
 
 		const isTextFile = useMemo(() => {
 			return type === "text" || pathModule.posix.extname(fileName ?? "file.tsx") === ".txt"
@@ -157,14 +165,14 @@ export const TextEditor = memo(
 
 		const onChangeValue = useCallback(
 			(val?: string) => {
-				onValueChange(val ?? "")
 				setValue(val ?? "")
+				onValueChange?.(val ?? "")
 			},
 			[onValueChange]
 		)
 
 		useEffect(() => {
-			if (!codeMirrorRef.current || !editable || value.length === 0 || !autoFocus) {
+			if (!codeMirrorRef.current || !canEdit || value.length === 0 || !autoFocus) {
 				return
 			}
 
@@ -177,7 +185,7 @@ export const TextEditor = memo(
 
 				codeMirrorRef.current?.view?.focus()
 			}, 1)
-		}, [value, editable, autoFocus])
+		}, [value, canEdit, autoFocus])
 
 		useEffect(() => {
 			if (!richText || !quillEditorRef.current || quillRef.current) {
@@ -185,7 +193,7 @@ export const TextEditor = memo(
 			}
 
 			const quillOptions = {
-				readOnly: editable === false,
+				readOnly: !canEdit,
 				modules: {
 					toolbar: [
 						[
@@ -285,7 +293,7 @@ export const TextEditor = memo(
 			if (autoFocus) {
 				quillRef.current.setSelection(sanitized.length, 0)
 			}
-		}, [quillEditorRef, placeholder, value, onChangeValue, type, editable, richText, autoFocus])
+		}, [quillEditorRef, placeholder, value, onChangeValue, type, canEdit, richText, autoFocus])
 
 		useEffect(() => {
 			if (!quillRef.current) {
@@ -299,7 +307,7 @@ export const TextEditor = memo(
 			quillCustomThemeRef.current = new QuillThemeCustomizer()
 
 			quillCustomThemeRef.current.apply(quillEditorRef.current?.id)
-		}, [colorScheme, dark, editable])
+		}, [colorScheme, dark])
 
 		if (richText) {
 			return (
@@ -353,11 +361,9 @@ export const TextEditor = memo(
 							placeholder,
 							style: {
 								fontFamily: "var(--font-mono)",
-								fontSize: 14,
-								opacity: editable === false ? 0.6 : 1,
-								cursor: editable === false ? "not-allowed" : "text"
+								fontSize: 14
 							},
-							readOnly: editable === false,
+							readOnly: !canEdit,
 							id: "md-editor-textarea"
 						}}
 						className="text-sm select-text"
@@ -368,9 +374,7 @@ export const TextEditor = memo(
 							borderTopRightRadius: "0px",
 							borderTop: "none",
 							fontFamily: "var(--font-mono)",
-							fontSize: 14,
-							opacity: editable === false ? 0.6 : 1,
-							cursor: editable === false ? "not-allowed" : "text"
+							fontSize: 14
 						}}
 					/>
 				</div>
@@ -391,7 +395,7 @@ export const TextEditor = memo(
 					onChange={onChangeValue}
 					extensions={extensions}
 					theme={codeMirrorTheme}
-					editable={editable}
+					editable={canEdit}
 					placeholder={placeholder}
 					autoFocus={autoFocus}
 					className={cn("text-sm select-text", !isTextFile && "font-mono", isTextFile && "text-base")}

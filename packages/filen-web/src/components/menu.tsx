@@ -160,7 +160,7 @@ export const MenuItem = memo(({ item, type }: { item: MenuItemType; type: "conte
 						{item.trigger}
 					</SubMenuTrigger>
 					<SubMenuPortal>
-						<SubMenuContent className={item.contentClassName}>
+						<SubMenuContent className={cn("max-h-[90dvh] overflow-x-hidden overflow-y-auto", item.contentClassName)}>
 							{Array.isArray(item.content)
 								? item.content.map((child, childIndex) => (
 										<MenuItem
@@ -203,7 +203,9 @@ export const Menu = memo(
 		children,
 		triggerAsChild,
 		items,
-		disabled
+		disabled,
+		triggerClassName,
+		contentClassName
 	}: {
 		type: "context" | "dropdown"
 		onOpenChange?: (open: boolean) => void
@@ -211,6 +213,8 @@ export const Menu = memo(
 		defaultOpen?: boolean
 		children: React.ReactNode
 		triggerAsChild?: boolean
+		triggerClassName?: string
+		contentClassName?: string
 		items: MenuItemType[]
 		disabled?: boolean
 	}) => {
@@ -236,8 +240,13 @@ export const Menu = memo(
 				open={open}
 				defaultOpen={defaultOpen}
 			>
-				<Trigger asChild={triggerAsChild}>{children}</Trigger>
-				<Content>
+				<Trigger
+					asChild={triggerAsChild}
+					className={triggerClassName}
+				>
+					{children}
+				</Trigger>
+				<Content className={cn("max-h-[90dvh] overflow-x-hidden overflow-y-auto", contentClassName)}>
 					{items.map((item, index) => (
 						<MenuItem
 							key={index}

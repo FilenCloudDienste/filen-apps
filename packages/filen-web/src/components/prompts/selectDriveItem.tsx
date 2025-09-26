@@ -137,7 +137,7 @@ export const Crumb = memo(
 				return t("cloudDrive")
 			}
 
-			return cacheMap.directoryUUIDToName.get(component) ?? component
+			return cacheMap.directoryUuidToName.get(component) ?? component
 		}, [component, t])
 
 		return (

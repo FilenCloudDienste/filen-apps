@@ -215,9 +215,20 @@ export const DriveListItem = memo(
 					return
 				}
 
+				if (getPreviewType(item.data.meta?.name ?? "") === "unknown") {
+					openContextMenu(e)
+
+					return
+				}
+
 				const previewItems = items
 					.map(i => (i.type === "file" ? i.data : null))
 					.filter(i => Boolean(i) && getPreviewType(i?.meta?.name ?? "") !== "unknown") as DriveItemFile[]
+
+				if (previewItems.length === 0) {
+					return
+				}
+
 				const initialIndex = previewItems.findIndex(i => i.uuid === item.data.uuid)
 
 				if (initialIndex === -1) {
@@ -229,7 +240,7 @@ export const DriveListItem = memo(
 					initialIndex
 				})
 			},
-			[item, navigate, items, path, from]
+			[item, navigate, items, path, from, openContextMenu]
 		)
 
 		const onContextMenuOpenChange = useCallback(
@@ -267,6 +278,12 @@ export const DriveListItem = memo(
 		const onDragOver = useCallback(
 			(e: React.DragEvent) => {
 				if (item.type !== "directory" || from !== "drive") {
+					return
+				}
+
+				const draggingItems = useDriveStore.getState().draggingItems
+
+				if (draggingItems.some(i => i.data.uuid === item.data.uuid)) {
 					return
 				}
 
@@ -381,7 +398,11 @@ export const DriveListItem = memo(
 								className={cn(
 									"flex flex-row w-full gap-8 justify-between overflow-hidden px-4 py-2 hover:bg-sidebar hover:text-sidebar-foreground",
 									(contextMenuOpen || isSelected || draggingOver) && "bg-sidebar text-sidebar-foreground",
-									draggingOver && "animate-pulse"
+									draggingOver && item.type === "directory"
+										? "animate-pulse border-1 border-blue-500 border-l-2 border-l-blue-500 rounded-lg"
+										: isSelected
+											? "border-1 border-transparent border-l-2 border-l-blue-500"
+											: "border-1 border-l-2 border-transparent"
 								)}
 							>
 								<div

@@ -1,12 +1,14 @@
 import { inputPrompt } from "@/components/prompts/input"
 import worker from "@/lib/worker"
-import type { NoteType, Note, NoteTag, Contact, NoteHistory } from "@filen/sdk-rs"
+import type { NoteType, Note, NoteTag, Contact, NoteHistory, NoteParticipant } from "@filen/sdk-rs"
 import { notesQueryUpdate } from "@/queries/useNotes.query"
 import { noteContentQueryUpdate } from "@/queries/useNoteContent.query"
 import { sanitizeFileName, createNotePreviewFromContentText } from "./utils"
 import { notesTagsQueryUpdate } from "@/queries/useNotesTags.query"
 import { selectContactPrompt } from "@/components/prompts/selectContact"
 import { confirmPrompt } from "@/components/prompts/confirm"
+import * as zip from "@zip.js/zip.js"
+import { noteHistoryQueryRefetch } from "@/queries/useNoteHistory.query"
 
 export class Notes {
 	public async create(type?: NoteType): Promise<Note> {
@@ -32,14 +34,17 @@ export class Notes {
 							note = await worker.sdk("setNoteType", note, type, "")
 						}
 
-						notesQueryUpdate({
-							updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
-						})
-
-						noteContentQueryUpdate({
-							note,
-							updater: () => ""
-						})
+						await Promise.all([
+							notesQueryUpdate({
+								updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+							}),
+							noteContentQueryUpdate({
+								params: {
+									uuid: note.uuid
+								},
+								updater: () => ""
+							})
+						])
 
 						resolve(note)
 					} catch (e) {
@@ -60,19 +65,12 @@ export class Notes {
 		})
 	}
 
-	public async edit(note: Note, content: string, updateNoteContentQuery: boolean = true): Promise<Note> {
+	public async setContent(note: Note, content: string): Promise<Note> {
 		note = await worker.sdk("setNoteContent", note, content, createNotePreviewFromContentText(note.noteType, content))
 
-		if (updateNoteContentQuery) {
-			notesQueryUpdate({
-				updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
-			})
-
-			noteContentQueryUpdate({
-				note,
-				updater: () => content
-			})
-		}
+		await notesQueryUpdate({
+			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+		})
 
 		return note
 	}
@@ -89,14 +87,17 @@ export class Notes {
 					try {
 						await worker.sdk("deleteNote", note)
 
-						notesQueryUpdate({
-							updater: prev => prev.filter(n => n.uuid !== note.uuid)
-						})
-
-						noteContentQueryUpdate({
-							note,
-							updater: () => undefined
-						})
+						await Promise.all([
+							notesQueryUpdate({
+								updater: prev => prev.filter(n => n.uuid !== note.uuid)
+							}),
+							noteContentQueryUpdate({
+								params: {
+									uuid: note.uuid
+								},
+								updater: () => undefined
+							})
+						])
 
 						resolve()
 					} catch (e) {
@@ -128,7 +129,8 @@ export class Notes {
 					autoFocus: true,
 					required: true,
 					maxLength: 254,
-					minLength: 1
+					minLength: 1,
+					value: note.title ?? note.uuid
 				},
 				cancelText: "tbd",
 				confirmText: "tbd",
@@ -136,7 +138,7 @@ export class Notes {
 					try {
 						note = await worker.sdk("setNoteTitle", note, value)
 
-						notesQueryUpdate({
+						await notesQueryUpdate({
 							updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 						})
 
@@ -163,14 +165,17 @@ export class Notes {
 		const content = await worker.sdk("getNoteContent", note)
 		const { duplicated } = await worker.sdk("duplicateNote", note)
 
-		notesQueryUpdate({
-			updater: prev => [...prev.filter(n => n.uuid !== duplicated.uuid), duplicated]
-		})
-
-		noteContentQueryUpdate({
-			note: duplicated,
-			updater: () => content
-		})
+		await Promise.all([
+			notesQueryUpdate({
+				updater: prev => [...prev.filter(n => n.uuid !== duplicated.uuid), duplicated]
+			}),
+			noteContentQueryUpdate({
+				params: {
+					uuid: duplicated.uuid
+				},
+				updater: () => content
+			})
+		])
 
 		return duplicated
 	}
@@ -178,7 +183,7 @@ export class Notes {
 	public async archive(note: Note): Promise<Note> {
 		note = await worker.sdk("archiveNote", note)
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
@@ -188,7 +193,7 @@ export class Notes {
 	public async trash(note: Note): Promise<Note> {
 		note = await worker.sdk("trashNote", note)
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
@@ -198,7 +203,7 @@ export class Notes {
 	public async restore(note: Note): Promise<Note> {
 		note = await worker.sdk("restoreNote", note)
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
@@ -210,14 +215,17 @@ export class Notes {
 
 		note = await worker.sdk("setNoteType", note, type, content)
 
-		notesQueryUpdate({
-			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
-		})
-
-		noteContentQueryUpdate({
-			note,
-			updater: () => content
-		})
+		await Promise.all([
+			notesQueryUpdate({
+				updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+			}),
+			noteContentQueryUpdate({
+				params: {
+					uuid: note.uuid
+				},
+				updater: () => content
+			})
+		])
 
 		return note
 	}
@@ -225,7 +233,7 @@ export class Notes {
 	public async pin(note: Note, pinned: boolean): Promise<Note> {
 		note = await worker.sdk("setNotePinned", note, pinned)
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
@@ -235,25 +243,54 @@ export class Notes {
 	public async favorite(note: Note, favorite: boolean): Promise<Note> {
 		note = await worker.sdk("setNoteFavorited", note, favorite)
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
 		return note
 	}
 
+	public async removeTag(note: Note, tag: NoteTag): Promise<Note> {
+		note = await worker.sdk("removeTagFromNote", note, tag)
+
+		await notesQueryUpdate({
+			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+		})
+
+		return note
+	}
+
+	public async addTag(note: Note, tag: NoteTag): Promise<Note> {
+		const [noteEdited, tagEdited] = await worker.sdk("addTagToNote", note, tag)
+
+		await Promise.all([
+			notesQueryUpdate({
+				updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+			}),
+			notesTagsQueryUpdate({
+				updater: prev => prev.map(t => (t.uuid === tag.uuid ? tagEdited : t))
+			})
+		])
+
+		return noteEdited
+	}
+
 	public async tag(note: Note, tag: NoteTag): Promise<Note> {
 		const exists = note.tags.some(t => t.uuid === tag.uuid)
 
 		if (!exists) {
-			const result = await worker.sdk("addTagToNote", note, tag)
+			const [noteEdited, tagEdited] = await worker.sdk("addTagToNote", note, tag)
 
-			note = result[0]
+			note = noteEdited
+
+			await notesTagsQueryUpdate({
+				updater: prev => prev.map(t => (t.uuid === tag.uuid ? tagEdited : t))
+			})
 		} else {
 			note = await worker.sdk("removeTagFromNote", note, tag)
 		}
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
@@ -272,6 +309,43 @@ export class Notes {
 
 		a.href = url
 		a.download = sanitizeFileName(`${sanitizeFileName(note.title ?? note.uuid)}.txt`)
+
+		document.body.appendChild(a)
+
+		a.click()
+
+		document.body.removeChild(a)
+
+		globalThis.window.URL.revokeObjectURL(url)
+	}
+
+	public async exportAll(): Promise<void> {
+		const notes = await worker.sdk("listNotes")
+
+		if (notes.length === 0) {
+			return
+		}
+
+		const zipWriter = new zip.ZipWriter(new zip.BlobWriter("application/zip"))
+
+		await Promise.all(
+			notes.map(async note => {
+				const content = await worker.sdk("getNoteContent", note)
+
+				await zipWriter.add(
+					sanitizeFileName(`${sanitizeFileName(note.title ?? note.uuid)}_${note.uuid}.txt`),
+					new zip.TextReader(content ?? "")
+				)
+			})
+		)
+
+		const blob = await zipWriter.close()
+
+		const url = globalThis.window.URL.createObjectURL(blob)
+		const a = document.createElement("a")
+
+		a.href = url
+		a.download = "tbd.zip"
 
 		document.body.appendChild(a)
 
@@ -302,7 +376,7 @@ export class Notes {
 							})
 						)
 
-						notesQueryUpdate({
+						await notesQueryUpdate({
 							updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 						})
 
@@ -325,7 +399,7 @@ export class Notes {
 		})
 	}
 
-	public async removeParticipants(note: Note, contacts: Contact[]): Promise<Note> {
+	public async removeParticipants(note: Note, participants: NoteParticipant[]): Promise<Note> {
 		return await new Promise<Note>((resolve, reject) => {
 			confirmPrompt({
 				title: "tbd",
@@ -336,12 +410,12 @@ export class Notes {
 				async onSubmit() {
 					try {
 						await Promise.all(
-							contacts.map(async contact => {
-								note = await worker.sdk("removeNoteParticipant", note, contact)
+							participants.map(async participant => {
+								note = await worker.sdk("removeNoteParticipant", note, participant.userId)
 							})
 						)
 
-						notesQueryUpdate({
+						await notesQueryUpdate({
 							updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 						})
 
@@ -366,18 +440,23 @@ export class Notes {
 
 	public async setParticipantsPermissions(
 		note: Note,
-		contacts: {
-			contact: Contact
-			write: boolean
+		participants: {
+			participant: NoteParticipant
+			permissionsWrite: boolean
 		}[]
 	): Promise<Note> {
 		await Promise.all(
-			contacts.map(async ({ contact, write }) => {
-				note = await worker.sdk("setNoteParticipantPermission", note, contact, write)
+			participants.map(async ({ participant, permissionsWrite }) => {
+				const modifiedParticipant = await worker.sdk("setNoteParticipantPermission", note.uuid, participant, permissionsWrite)
+
+				note = {
+					...note,
+					participants: note.participants.map(p => (p.userId === modifiedParticipant.userId ? modifiedParticipant : p))
+				}
 			})
 		)
 
-		notesQueryUpdate({
+		await notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
@@ -391,19 +470,24 @@ export class Notes {
 				description: "tbd",
 				cancelText: "tbd",
 				confirmText: "tbd",
-				confirmDestructive: true,
 				async onSubmit() {
 					try {
 						note = await worker.sdk("restoreNoteFromHistory", note, history)
 
-						notesQueryUpdate({
-							updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
-						})
-
-						noteContentQueryUpdate({
-							note,
-							updater: () => history.content
-						})
+						await Promise.all([
+							notesQueryUpdate({
+								updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+							}),
+							noteContentQueryUpdate({
+								params: {
+									uuid: note.uuid
+								},
+								updater: () => history.content
+							}),
+							noteHistoryQueryRefetch({
+								uuid: note.uuid
+							})
+						])
 
 						resolve(note)
 					} catch (e) {
@@ -424,7 +508,7 @@ export class Notes {
 		})
 	}
 
-	public async leave(note: Note, myUserId: number): Promise<void> {
+	public async leave(note: Note, myUserId: bigint): Promise<void> {
 		return await new Promise<void>((resolve, reject) => {
 			confirmPrompt({
 				title: "tbd",
@@ -434,24 +518,19 @@ export class Notes {
 				confirmDestructive: true,
 				async onSubmit() {
 					try {
-						await worker.sdk("removeNoteParticipant", note, {
-							uuid: "",
-							userId: BigInt(myUserId),
-							email: "",
-							nickName: "",
-							lastActive: BigInt(0),
-							timestamp: BigInt(0),
-							publicKey: ""
-						} satisfies Contact)
+						await worker.sdk("removeNoteParticipant", note, myUserId)
 
-						notesQueryUpdate({
-							updater: prev => prev.filter(n => n.uuid !== note.uuid)
-						})
-
-						noteContentQueryUpdate({
-							note,
-							updater: () => undefined
-						})
+						await Promise.all([
+							notesQueryUpdate({
+								updater: prev => prev.filter(n => n.uuid !== note.uuid)
+							}),
+							noteContentQueryUpdate({
+								params: {
+									uuid: note.uuid
+								},
+								updater: () => undefined
+							})
+						])
 
 						resolve()
 					} catch (e) {
@@ -492,7 +571,7 @@ export class Notes {
 						try {
 							const tag = await worker.sdk("createNoteTag", value)
 
-							notesTagsQueryUpdate({
+							await notesTagsQueryUpdate({
 								updater: prev => [...prev.filter(t => t.uuid !== tag.uuid), tag]
 							})
 
@@ -526,7 +605,7 @@ export class Notes {
 						try {
 							await worker.sdk("deleteNoteTag", tag)
 
-							notesTagsQueryUpdate({
+							await notesTagsQueryUpdate({
 								updater: prev => prev.filter(t => t.uuid !== tag.uuid)
 							})
 
@@ -559,7 +638,8 @@ export class Notes {
 						autoFocus: true,
 						required: true,
 						maxLength: 254,
-						minLength: 1
+						minLength: 1,
+						value: tag.name
 					},
 					cancelText: "tbd",
 					confirmText: "tbd",
@@ -567,7 +647,7 @@ export class Notes {
 						try {
 							tag = await worker.sdk("renameNoteTag", tag, value)
 
-							notesTagsQueryUpdate({
+							await notesTagsQueryUpdate({
 								updater: prev => [...prev.filter(t => t.uuid !== tag.uuid), tag]
 							})
 
@@ -592,7 +672,7 @@ export class Notes {
 		favorite: async (tag: NoteTag, favorite: boolean): Promise<NoteTag> => {
 			tag = await worker.sdk("setNoteTagFavorited", tag, favorite)
 
-			notesTagsQueryUpdate({
+			await notesTagsQueryUpdate({
 				updater: prev => [...prev.filter(t => t.uuid !== tag.uuid), tag]
 			})
 

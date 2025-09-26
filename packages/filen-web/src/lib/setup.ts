@@ -3,7 +3,6 @@ import worker from "@/lib/worker"
 import auth from "@/lib/auth"
 import serviceWorker from "./serviceWorker"
 import cacheMap from "./cacheMap"
-import { restoreQueries } from "@/queries/client"
 
 export function checkOpfsAvailable(): boolean {
 	return (
@@ -66,8 +65,6 @@ export async function setup(): Promise<
 	}
 
 	await idb.waitForInit()
-
-	await restoreQueries()
 
 	const authed = await auth.isAuthed()
 

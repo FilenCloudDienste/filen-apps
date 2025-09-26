@@ -24,14 +24,14 @@ export function useNotesTagsQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchNotesTags>>, Error>
 }
 
-export function notesTagsQueryUpdate({
+export async function notesTagsQueryUpdate({
 	updater
 }: {
 	updater:
 		| Awaited<ReturnType<typeof fetchNotesTags>>
 		| ((prev: Awaited<ReturnType<typeof fetchNotesTags>>) => Awaited<ReturnType<typeof fetchNotesTags>>)
-}): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchNotesTags>>>([BASE_QUERY_KEY], prev => {
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchNotesTags>>>([BASE_QUERY_KEY], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchNotesTags>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater

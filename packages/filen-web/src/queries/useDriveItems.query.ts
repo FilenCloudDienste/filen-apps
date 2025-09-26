@@ -34,7 +34,7 @@ export async function fetchDriveItems(params: UseDriveItemsQueryParams): Promise
 	const parsedPath = pathModule.parse(params.path)
 	const root = await worker.sdk("root")
 	const dir =
-		parsedPath.base.length === 0 || parsedPath.base === "/" ? root : (cacheMap.directoryUUIDToDirEnum.get(parsedPath.base) ?? root)
+		parsedPath.base.length === 0 || parsedPath.base === "/" ? root : (cacheMap.directoryUuidToDirEnum.get(parsedPath.base) ?? root)
 	const [dirs, files] = await worker.sdk("listDir", dir)
 	const items: DriveItem[] = []
 
@@ -48,8 +48,8 @@ export async function fetchDriveItems(params: UseDriveItemsQueryParams): Promise
 			}
 		})
 
-		cacheMap.directoryUUIDToDirEnum.set(dir.uuid, dir)
-		cacheMap.directoryUUIDToName.set(dir.uuid, dir.meta?.name ?? dir.uuid)
+		cacheMap.directoryUuidToDirEnum.set(dir.uuid, dir)
+		cacheMap.directoryUuidToName.set(dir.uuid, dir.meta?.name ?? dir.uuid)
 	}
 
 	for (const file of files) {
@@ -79,15 +79,17 @@ export function useDriveItemsQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchDriveItems>>, Error>
 }
 
-export function driveItemsQueryUpdate({
+export async function driveItemsQueryUpdate({
 	updater,
-	...params
-}: Parameters<typeof fetchDriveItems>[0] & {
+	params
+}: {
+	params: Parameters<typeof fetchDriveItems>[0]
+} & {
 	updater:
 		| Awaited<ReturnType<typeof fetchDriveItems>>
 		| ((prev: Awaited<ReturnType<typeof fetchDriveItems>>) => Awaited<ReturnType<typeof fetchDriveItems>>)
-}): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchDriveItems>>>([BASE_QUERY_KEY, params], prev => {
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchDriveItems>>>([BASE_QUERY_KEY, params], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchDriveItems>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater

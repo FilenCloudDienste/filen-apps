@@ -22,7 +22,7 @@ export function useDriveParent() {
 
 		return parsedPath.base.length === 0 || parsedPath.base === "/"
 			? root
-			: (cacheMap.directoryUUIDToDirEnum.get(parsedPath.base) ?? root)
+			: (cacheMap.directoryUuidToDirEnum.get(parsedPath.base) ?? root)
 	}, [location.pathname])
 
 	return state

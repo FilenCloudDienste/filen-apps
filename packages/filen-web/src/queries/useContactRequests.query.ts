@@ -35,14 +35,14 @@ export function useContactRequestsQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchContactRequests>>, Error>
 }
 
-export function contactRequestsQueryUpdate({
+export async function contactRequestsQueryUpdate({
 	updater
 }: {
 	updater:
 		| Awaited<ReturnType<typeof fetchContactRequests>>
 		| ((prev: Awaited<ReturnType<typeof fetchContactRequests>>) => Awaited<ReturnType<typeof fetchContactRequests>>)
-}): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchContactRequests>>>([BASE_QUERY_KEY], prev => {
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchContactRequests>>>([BASE_QUERY_KEY], prev => {
 		const currentData =
 			prev ??
 			({

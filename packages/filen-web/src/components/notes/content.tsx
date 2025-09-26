@@ -23,7 +23,7 @@ export const NoteContent = memo(({ note }: { note: NoteType }) => {
 	const onValueChangeTimeoutRef = useRef<ReturnType<typeof createExecutableTimeout> | null>(null)
 
 	const noteContentQuery = useNoteContentQuery({
-		note
+		uuid: note.uuid
 	})
 
 	const noteContent = useMemo(() => {
@@ -52,13 +52,37 @@ export const NoteContent = memo(({ note }: { note: NoteType }) => {
 		return `${note.title}.txt`
 	}, [note])
 
+	const isFetching = useMemo(() => {
+		return (
+			noteContentQuery.isRefetching ||
+			noteContentQuery.isLoading ||
+			noteContentQuery.isFetching ||
+			noteContentQuery.isPending ||
+			noteContentQuery.isError ||
+			noteContentQuery.isRefetchError ||
+			noteContentQuery.isLoadingError
+		)
+	}, [
+		noteContentQuery.isError,
+		noteContentQuery.isFetching,
+		noteContentQuery.isLoading,
+		noteContentQuery.isLoadingError,
+		noteContentQuery.isPending,
+		noteContentQuery.isRefetchError,
+		noteContentQuery.isRefetching
+	])
+
 	const canEdit = useMemo(() => {
 		if (!note) {
 			return false
 		}
 
-		return note.participants.some(p => p.userId === client?.userId && p.permissionsWrite)
-	}, [note, client])
+		if (isFetching) {
+			return false
+		}
+
+		return note.ownerId === client?.userId || note.participants.some(p => p.userId === client?.userId && p.permissionsWrite)
+	}, [isFetching, note, client])
 
 	const onValueChange = useCallback(
 		(value: string) => {
@@ -81,7 +105,7 @@ export const NoteContent = memo(({ note }: { note: NoteType }) => {
 						return
 					}
 
-					await notes.edit(note, value, false)
+					await notes.setContent(note, value)
 
 					lastNoteContentRef.current = value
 				} catch (e) {
@@ -125,15 +149,28 @@ export const NoteContent = memo(({ note }: { note: NoteType }) => {
 		lastNoteContentRef.current = noteContentQuery.data
 	}, [noteContentQuery.status, noteContentQuery.data, noteContentQuery.dataUpdatedAt])
 
-	if (note.noteType === "text" || note.noteType === "md" || note.noteType === "code" || note.noteType === "rich") {
+	if (noteContentQuery.status !== "success") {
 		return (
 			<div
 				className="flex flex-1 w-full h-full flex-col overflow-hidden"
 				key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
 			>
 				<Header note={note} />
+				<div>loading...</div>
+			</div>
+		)
+	}
+
+	if (note.noteType === "text" || note.noteType === "md" || note.noteType === "code" || note.noteType === "rich") {
+		return (
+			<div className="flex flex-1 w-full h-full flex-col overflow-hidden">
+				<Header note={note} />
 				<div className="flex flex-1 flex-row overflow-x-hidden overflow-y-auto h-full w-full rounded-b-lg">
+					{isFetching && (
+						<div className="flex flex-1 w-full h-full absolute top-0 left-0 right-0 bottom-0 bg-background opacity-50 rounded-lg z-[9999] pointer-events-none cursor-progress" />
+					)}
 					<TextEditor
+						key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
 						initialValue={noteContent}
 						onValueChange={onValueChange}
 						richText={note.noteType === "rich"}
@@ -147,13 +184,14 @@ export const NoteContent = memo(({ note }: { note: NoteType }) => {
 
 	if (note.noteType === "checklist") {
 		return (
-			<div
-				className="flex flex-1 w-full h-full flex-col overflow-hidden"
-				key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
-			>
+			<div className="flex flex-1 w-full h-full flex-col overflow-hidden">
 				<Header note={note} />
 				<div className="flex flex-1 flex-row overflow-x-hidden overflow-y-auto h-full w-full rounded-b-lg">
+					{isFetching && (
+						<div className="flex flex-1 w-full h-full absolute top-0 left-0 right-0 bottom-0 bg-background opacity-50 rounded-lg z-[9999] pointer-events-none cursor-progress" />
+					)}
 					<Checklist
+						key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
 						initialValue={
 							noteContent.length === 0 || noteContent.indexOf("<ul data-checked") === -1 || noteContent === "<p><br></p>"
 								? // eslint-disable-next-line quotes

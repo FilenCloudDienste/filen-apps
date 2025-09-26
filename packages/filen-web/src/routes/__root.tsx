@@ -2,10 +2,10 @@ import { Outlet, createRootRoute } from "@tanstack/react-router"
 import { ThemeProvider, useTheme } from "@/providers/theme.provider"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import Sidebar from "@/components/sidebar"
-import { memo, useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { memo, useState, useEffect, useRef, useCallback, useMemo, Fragment } from "react"
 import DesktopWrapper from "@/components/desktopWrapper"
-import { QueryClientProvider } from "@tanstack/react-query"
-import queryClient from "@/queries/client"
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
+import { queryClientPersister, CACHE_TIME, queryClient, shouldPersistQuery } from "@/queries/client"
 import setup from "@/lib/setup"
 import { Toaster } from "@/components/ui/sonner"
 import DragSelect from "@/components/dragSelect"
@@ -24,6 +24,7 @@ export const Root = memo(() => {
 	const [setupDone, setSetupDone] = useState<boolean>(false)
 	const { theme } = useTheme()
 	const { authed } = useAuth()
+	const [isRestoring, setIsRestoring] = useState<boolean>(true)
 
 	const withSidebar = useMemo(() => {
 		return authed
@@ -65,40 +66,60 @@ export const Root = memo(() => {
 		>
 			<DesktopWrapper>
 				{setupDone ? (
-					<QueryClientProvider client={queryClient}>
-						{withSidebar ? (
-							<SidebarProvider className="flex flex-1 h-full w-full">
-								<Sidebar />
-								<div
-									className={cn(
-										"flex flex-col flex-1 w-full h-full gap-4 pl-0!",
-										IS_DESKTOP ? "p-0 md:p-4 md:pt-6" : "p-0 md:p-4"
-									)}
-								>
-									<div className="flex flex-row w-full h-full gap-4">
-										<SidebarInset className="z-50 rounded-xl shadow-sm dark:border dark:border-border">
-											<Outlet />
-										</SidebarInset>
-										<DriveInfo />
-									</div>
-									{/*<div className="flex flex-row rounded-lg bg-background w-full h-auto shadow-sm">player</div>*/}
-								</div>
-							</SidebarProvider>
+					<PersistQueryClientProvider
+						client={queryClient}
+						persistOptions={{
+							persister: queryClientPersister,
+							maxAge: CACHE_TIME,
+							buster: "v1",
+							dehydrateOptions: {
+								shouldDehydrateQuery: shouldPersistQuery
+							}
+						}}
+						onError={console.error}
+						onSuccess={() => setIsRestoring(false)}
+					>
+						{isRestoring ? (
+							<div className="flex flex-1 absolute w-full h-full z-[9999] top-0 left-0 right-0 bottom-0 bg-background items-center justify-center">
+								Setting up...
+							</div>
 						) : (
-							<Outlet />
+							<Fragment>
+								{withSidebar ? (
+									<SidebarProvider className="flex flex-1 h-full w-full">
+										<Sidebar />
+										<div
+											className={cn(
+												"flex flex-col flex-1 w-full h-full gap-4 pl-0!",
+												IS_DESKTOP ? "p-0 md:p-4 md:pt-6" : "p-0 md:p-4"
+											)}
+										>
+											<div className="flex flex-row w-full h-full gap-4">
+												<SidebarInset className="z-50 rounded-xl shadow-sm dark:border dark:border-border">
+													<Outlet />
+												</SidebarInset>
+												<DriveInfo />
+											</div>
+											{/*<div className="flex flex-row rounded-lg bg-background w-full h-auto shadow-sm">player</div>*/}
+										</div>
+									</SidebarProvider>
+								) : (
+									<Outlet />
+								)}
+								<SelectContactPrompt />
+								<ConfirmPrompt />
+								<SelectDriveItemPrompt />
+								<InputPrompt />
+								<Preview />
+								<DragSelect />
+								<Toaster
+									position="top-center"
+									richColors={true}
+									theme={theme}
+								/>
+							</Fragment>
 						)}
-						<SelectContactPrompt />
-						<ConfirmPrompt />
-						<SelectDriveItemPrompt />
-						<InputPrompt />
-						<Preview />
-						<DragSelect />
-						<Toaster
-							position="top-center"
-							richColors={true}
-							theme={theme}
-						/>
-					</QueryClientProvider>
+					</PersistQueryClientProvider>
 				) : (
 					<div className="flex flex-1 absolute w-full h-full z-[9999] top-0 left-0 right-0 bottom-0 bg-background items-center justify-center">
 						Setting up...

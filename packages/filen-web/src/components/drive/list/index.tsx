@@ -105,8 +105,8 @@ export const DriveList = memo(() => {
 							data={items}
 							computeItemKey={(_, item) => item.data.uuid}
 							totalCount={items.length}
-							defaultItemHeight={45}
-							fixedItemHeight={45}
+							defaultItemHeight={46}
+							fixedItemHeight={46}
 							skipAnimationFrameInResizeObserver={true}
 							components={{
 								EmptyPlaceholder: () => {

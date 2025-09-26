@@ -168,7 +168,8 @@
 			"trash": "Trash",
 			"addParticipants": "Add participants",
 			"createNote": "Create note",
-			"leave": "Leave"
+			"leave": "Leave",
+			"exportAll": "Export all"
 		},
 		"defaultTags": {
 			"all": "All",

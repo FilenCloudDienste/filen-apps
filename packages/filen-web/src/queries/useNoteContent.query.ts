@@ -2,16 +2,22 @@ import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/r
 import worker from "@/lib/worker"
 import { DEFAULT_QUERY_OPTIONS, queryClient } from "./client"
 import queryUpdater from "./updater"
-import type { Note } from "@filen/sdk-rs"
+import cacheMap from "@/lib/cacheMap"
 
 export const BASE_QUERY_KEY = "useNoteContentQuery"
 
 export type UseNoteContentQueryParams = {
-	note: Note
+	uuid: string
 }
 
 export async function fetchNoteContent(params: UseNoteContentQueryParams) {
-	const content = await worker.sdk("getNoteContent", params.note)
+	const note = cacheMap.noteUuidToNote.get(params.uuid)
+
+	if (!note) {
+		throw new Error("Note not found.")
+	}
+
+	const content = await worker.sdk("getNoteContent", note)
 
 	return content
 }
@@ -30,15 +36,17 @@ export function useNoteContentQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchNoteContent>>, Error>
 }
 
-export function noteContentQueryUpdate({
+export async function noteContentQueryUpdate({
 	updater,
-	...params
-}: Parameters<typeof fetchNoteContent>[0] & {
+	params
+}: {
+	params: Parameters<typeof fetchNoteContent>[0]
+} & {
 	updater:
 		| Awaited<ReturnType<typeof fetchNoteContent>>
 		| ((prev: Awaited<ReturnType<typeof fetchNoteContent>>) => Awaited<ReturnType<typeof fetchNoteContent>>)
-}): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchNoteContent>>>([BASE_QUERY_KEY, params], prev => {
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchNoteContent>>>([BASE_QUERY_KEY, params], prev => {
 		const currentData = prev ?? (undefined satisfies Awaited<ReturnType<typeof fetchNoteContent>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater

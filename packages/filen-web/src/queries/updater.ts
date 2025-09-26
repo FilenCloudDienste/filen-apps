@@ -1,13 +1,24 @@
 import queryClient from "./client"
+import Semaphore from "@/lib/semaphore"
 
 export class QueryUpdater {
-	public get<T>(queryKey: unknown[]): T | undefined {
-		return queryClient.getQueryData(queryKey)
+	private readonly updateMutex: Semaphore = new Semaphore(1)
+
+	public async get<T>(queryKey: unknown[]): Promise<T | undefined> {
+		await this.updateMutex.acquire()
+
+		try {
+			return queryClient.getQueryData<T>(queryKey)
+		} finally {
+			this.updateMutex.release()
+		}
 	}
 
-	public set<T>(queryKey: unknown[], updater: T | ((prev: T) => T)) {
+	public async set<T>(queryKey: unknown[], updater: T | ((prev: T) => T)): Promise<void> {
+		await this.updateMutex.acquire()
+
 		try {
-			return queryClient.setQueryData(
+			queryClient.setQueryData(
 				queryKey,
 				(oldData: T | undefined) => {
 					if (typeof updater === "function") {
@@ -20,8 +31,8 @@ export class QueryUpdater {
 					updatedAt: Date.now()
 				}
 			)
-		} catch (e) {
-			console.error(e)
+		} finally {
+			this.updateMutex.release()
 		}
 	}
 }

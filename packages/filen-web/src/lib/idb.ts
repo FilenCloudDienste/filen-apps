@@ -1,6 +1,6 @@
 import Dexie, { type Table } from "dexie"
 import cacheMap from "./cacheMap"
-import { QUERY_CLIENT_PERSISTER_PREFIX } from "@/queries/persister"
+import { QUERY_CLIENT_PERSISTER_PREFIX } from "@/queries/client"
 import { unpack, pack } from "msgpackr"
 import events from "./events"
 import Semaphore from "./semaphore"

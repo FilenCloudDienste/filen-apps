@@ -5,7 +5,7 @@ import { Virtuoso } from "react-virtuoso"
 import events from "@/lib/events"
 
 export const Checklist = memo(
-	({ initialValue, onValueChange, editable }: { initialValue: string; onValueChange: (value: string) => void; editable?: boolean }) => {
+	({ initialValue, onValueChange, editable }: { initialValue: string; onValueChange?: (value: string) => void; editable?: boolean }) => {
 		const [parsed, setParsed] = useState<ChecklistType>(parser.parse(initialValue))
 		const initialIds = useRef<string[]>(parsed.map(i => i.id)).current
 		const [didType, setDidType] = useState<boolean>(false)
@@ -163,7 +163,7 @@ export const Checklist = memo(
 					stringified = '<ul data-checked="false"><li><br></li></ul>'
 				}
 
-				onValueChange(stringified)
+				onValueChange?.(stringified)
 			}
 		}, [parsed, onValueChange, didType])
 

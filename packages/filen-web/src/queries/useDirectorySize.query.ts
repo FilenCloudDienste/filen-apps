@@ -12,7 +12,7 @@ export type UseDirectorySizeQueryParams = {
 }
 
 export async function fetchDirectorySize(params: UseDirectorySizeQueryParams): Promise<DirSizeResponse> {
-	const dir = cacheMap.directoryUUIDToDirEnum.get(params.uuid)
+	const dir = cacheMap.directoryUuidToDirEnum.get(params.uuid)
 
 	if (!dir || !("parent" in dir)) {
 		throw new Error("Directory not found.")
@@ -36,15 +36,17 @@ export function useDirectorySizeQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchDirectorySize>>, Error>
 }
 
-export function directorySizeQueryUpdate({
+export async function directorySizeQueryUpdate({
 	updater,
-	...params
-}: Parameters<typeof fetchDirectorySize>[0] & {
+	params
+}: {
+	params: Parameters<typeof fetchDirectorySize>[0]
+} & {
 	updater:
 		| Awaited<ReturnType<typeof fetchDirectorySize>>
 		| ((prev: Awaited<ReturnType<typeof fetchDirectorySize>>) => Awaited<ReturnType<typeof fetchDirectorySize>>)
-}): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchDirectorySize>>>([BASE_QUERY_KEY, params], prev => {
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchDirectorySize>>>([BASE_QUERY_KEY, params], prev => {
 		const currentData =
 			prev ??
 			({

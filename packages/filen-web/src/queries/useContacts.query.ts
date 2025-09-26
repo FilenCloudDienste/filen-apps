@@ -50,15 +50,17 @@ export function useContactsQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchContacts>>, Error>
 }
 
-export function contactsQueryUpdate({
+export async function contactsQueryUpdate({
 	updater,
-	...params
+	params
 }: {
 	updater:
 		| Awaited<ReturnType<typeof fetchContacts>>
 		| ((prev: Awaited<ReturnType<typeof fetchContacts>>) => Awaited<ReturnType<typeof fetchContacts>>)
-} & Parameters<typeof fetchContacts>[0]): void {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchContacts>>>([BASE_QUERY_KEY, params], prev => {
+} & {
+	params: Parameters<typeof fetchContacts>[0]
+}): Promise<void> {
+	await queryUpdater.set<Awaited<ReturnType<typeof fetchContacts>>>([BASE_QUERY_KEY, params], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchContacts>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater

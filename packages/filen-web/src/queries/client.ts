@@ -1,32 +1,80 @@
-import queryClientPersisterKv, { QUERY_CLIENT_PERSISTER_PREFIX } from "./persister"
-import { experimental_createQueryPersister, type PersistedQuery } from "@tanstack/query-persist-client-core"
-import { QueryClient, type UseQueryOptions } from "@tanstack/react-query"
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister"
+import { QueryClient, type UseQueryOptions, type Query } from "@tanstack/react-query"
+import { pack, unpack } from "msgpackr"
 import type { DriveItem } from "./useDriveItems.query"
 import cacheMap from "@/lib/cacheMap"
-import { pack, unpack } from "msgpackr"
+import type { Note } from "@filen/sdk-rs"
+import idb from "@/lib/idb"
 
 export const UNCACHED_QUERY_KEYS: string[] = ["thumbnailObjectUrl", "textPreviewQuery"]
 export const CACHE_TIME: number = 86400 * 1000 * 365
+export const VERSION: number = 1
+export const QUERY_CLIENT_PERSISTER_PREFIX: string = `reactQuery_v${VERSION}`
 
-export const shouldPersistQuery = (queryKey: unknown[]) => {
-	const shouldNotPersist = queryKey.some(queryKey => typeof queryKey === "string" && UNCACHED_QUERY_KEYS.includes(queryKey))
+export const shouldPersistQuery = (query: Query<unknown, Error, unknown, readonly unknown[]>): boolean => {
+	const shouldNotPersist = (query.queryKey as unknown[]).some(
+		queryKey => typeof queryKey === "string" && UNCACHED_QUERY_KEYS.includes(queryKey)
+	)
 
-	return !shouldNotPersist
+	return !shouldNotPersist && query.state.status === "success"
 }
 
-export const queryClientPersister = experimental_createQueryPersister({
-	storage: queryClientPersisterKv,
-	maxAge: CACHE_TIME,
-	buster: "",
-	serialize: query => {
-		if (query.state.status !== "success" || !shouldPersistQuery(query.queryKey as unknown[])) {
-			return undefined
+export const queryClientPersister = createAsyncStoragePersister({
+	storage: {
+		getItem: async <T>(key: string): Promise<T | null> => {
+			return await idb.get<T>(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
+		},
+		setItem: async (key: string, value: unknown): Promise<void> => {
+			await idb.set(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`, value)
+		},
+		removeItem: async (key: string): Promise<void> => {
+			return await idb.remove(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
+		},
+		entries: async (): Promise<Array<[string, string]>> => {
+			const keys = await idb.getKeysByPrefix(QUERY_CLIENT_PERSISTER_PREFIX)
+
+			const entries = await Promise.all(
+				keys.map(async key => {
+					const value = await idb.get(key)
+
+					return [key.replace(`${QUERY_CLIENT_PERSISTER_PREFIX}-`, ""), value ?? ""] as [string, string]
+				})
+			)
+
+			return entries.filter(([, value]) => value !== undefined) as Array<[string, string]>
+		}
+	},
+	serialize: client => {
+		return pack(client) as unknown as string
+	},
+	deserialize: client => {
+		const unpacked = unpack(client as unknown as Buffer)
+		const queries = unpacked?.clientState?.queries as Query[]
+
+		if (queries && Array.isArray(queries) && queries.length > 0) {
+			for (const query of queries) {
+				if (query.state.status !== "success" || !query.state.data) {
+					continue
+				}
+
+				if (query.queryKey.at(0) === "useDriveItemsQuery") {
+					for (const item of (query.state.data as DriveItem[]).filter(item => item.type === "directory")) {
+						cacheMap.directoryUuidToDirEnum.set(item.data.uuid, item.data)
+						cacheMap.directoryUuidToName.set(item.data.uuid, item.data.meta?.name ?? item.data.uuid)
+					}
+				}
+
+				if (query.queryKey.at(0) === "useNotesQuery") {
+					for (const note of query.state.data as Note[]) {
+						cacheMap.noteUuidToNote.set(note.uuid, note)
+					}
+				}
+			}
 		}
 
-		return pack(query)
+		return unpacked
 	},
-	deserialize: query => unpack(query as Buffer) as PersistedQuery,
-	prefix: QUERY_CLIENT_PERSISTER_PREFIX
+	key: QUERY_CLIENT_PERSISTER_PREFIX
 })
 
 export const DEFAULT_QUERY_OPTIONS: Pick<
@@ -66,49 +114,9 @@ export const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
 			...DEFAULT_QUERY_OPTIONS,
-			persister: queryClientPersister.persisterFn,
 			queryKeyHashFn: queryKey => pack(queryKey).toString("base64")
 		}
 	}
 })
-
-export async function restoreQueries(): Promise<void> {
-	const keys = await queryClientPersisterKv.keys()
-
-	await Promise.all(
-		keys.map(async key => {
-			try {
-				const persistedQuery = unpack((await queryClientPersisterKv.getItem(key)) as Buffer) as unknown as PersistedQuery
-
-				if (!persistedQuery || !persistedQuery.state || persistedQuery.state.dataUpdatedAt + CACHE_TIME < Date.now()) {
-					await queryClientPersisterKv.removeItem(key)
-
-					return
-				}
-
-				if (persistedQuery.state.status === "success") {
-					const shouldNotPersist = !shouldPersistQuery(persistedQuery.queryKey as unknown[])
-
-					if (!shouldNotPersist) {
-						queryClient.setQueryData(persistedQuery.queryKey, persistedQuery.state.data, {
-							updatedAt: persistedQuery.state.dataUpdatedAt
-						})
-
-						if (persistedQuery.queryKey.at(0) === "useDriveItemsQuery") {
-							for (const item of (persistedQuery.state.data as DriveItem[]).filter(item => item.type === "directory")) {
-								cacheMap.directoryUUIDToDirEnum.set(item.data.uuid, item.data)
-								cacheMap.directoryUUIDToName.set(item.data.uuid, item.data.meta?.name ?? item.data.uuid)
-							}
-						}
-					} else {
-						await queryClientPersisterKv.removeItem(key)
-					}
-				}
-			} catch {
-				await queryClientPersisterKv.removeItem(key)
-			}
-		})
-	)
-}
 
 export default queryClient

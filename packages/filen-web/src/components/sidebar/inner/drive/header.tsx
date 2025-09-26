@@ -25,7 +25,7 @@ export const InnerSidebarDriveHeader = memo(() => {
 		>
 			<div className="flex w-full items-center justify-between gap-4">
 				<div className="text-foreground text-base font-medium text-ellipsis truncate">
-					{cacheMap.directoryUUIDToName.get(driveParent?.uuid ?? "") ?? "Cloud Drive"}
+					{cacheMap.directoryUuidToName.get(driveParent?.uuid ?? "") ?? "Cloud Drive"}
 				</div>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild={true}>

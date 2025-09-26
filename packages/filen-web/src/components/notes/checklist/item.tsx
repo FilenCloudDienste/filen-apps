@@ -110,7 +110,7 @@ export const ChecklistItem = memo(
 				{item.checked ? (
 					<Button
 						variant="default"
-						className="flex flex-row items-center justify-center size-5! h-5! w-5! p-0! m-0! bg-blue-500 transition-transform hover:bg-blue-500 gap-0 active:bg-blue-500 rounded-full ring-0! shadow-none! border border-blue-500"
+						className="flex flex-row items-center justify-center size-5! h-5! w-5! p-0! m-0! bg-blue-500 transition-transform hover:bg-blue-500 gap-0 active:bg-blue-500 rounded-full ring-0! shadow-none! border border-blue-500 disabled:opacity-100 disabled:cursor-default"
 						onClick={toggleChecked}
 						disabled={editable === false}
 					>
@@ -119,7 +119,7 @@ export const ChecklistItem = memo(
 				) : (
 					<Button
 						variant="default"
-						className="flex flex-row items-center justify-center size-5! h-5! w-5! p-0! m-0! bg-transparent transition-transform hover:bg-transparent gap-0 active:bg-transparent rounded-full ring-0! shadow-none! border border-gray-500"
+						className="flex flex-row items-center justify-center size-5! h-5! w-5! p-0! m-0! bg-transparent transition-transform hover:bg-transparent gap-0 active:bg-transparent rounded-full ring-0! shadow-none! border border-gray-500 disabled:opacity-100 disabled:cursor-default"
 						onClick={toggleChecked}
 						disabled={editable === false}
 					/>
@@ -129,7 +129,7 @@ export const ChecklistItem = memo(
 					id={`checklist-item-${item.id}`}
 					name={`checklist-item-${item.id}`}
 					className={cn(
-						"text-foreground flex-1 shrink-0 border-none bg-transparent ring-0! shadow-none! p-0 m-0 min-h-6 h-auto max-h-auto rounded-none resize-none overflow-hidden field-sizing-content",
+						"text-foreground flex-1 shrink-0 border-none bg-transparent ring-0! shadow-none! p-0 m-0 min-h-6 h-auto max-h-auto rounded-none resize-none overflow-hidden field-sizing-content disabled:opacity-100 disabled:cursor-text",
 						item.checked && "line-through text-muted-foreground"
 					)}
 					spellCheck={false}
