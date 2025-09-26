@@ -143,5 +143,42 @@
                 "title": "Note"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Toate",
+            "archived": "Arhivat",
+            "favorited": "Favorit",
+            "pinned": "Fixat",
+            "shared": "Partajat",
+            "trash": "Coș de gunoi",
+            "untagged": "Netagată"
+        },
+        "menu": {
+            "addParticipants": "Adaugă participanți",
+            "archive": "Arhiva",
+            "createNote": "Creează notă",
+            "delete": "Șterge",
+            "duplicate": "Duplicat",
+            "export": "Exportă",
+            "exportAll": "Exportă tot",
+            "favorited": "Favorit",
+            "history": "Istoric",
+            "leave": "Părăsiți",
+            "participants": "Participanți",
+            "pinned": "Fixat",
+            "rename": "Redenumire",
+            "restore": "Restaurează",
+            "share": "Partajează",
+            "tags": "Etichete",
+            "trash": "Coș de gunoi",
+            "type": "Tip",
+            "typeChecklist": "Listă de verificare",
+            "typeCode": "Cod",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Text îmbogățit",
+            "typeText": "Text"
+        },
+        "tag": "Etichetă"
     }
 }

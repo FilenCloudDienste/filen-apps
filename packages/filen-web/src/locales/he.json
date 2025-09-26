@@ -143,5 +143,42 @@
                 "title": "הערות"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "הכל",
+            "archived": "הועבר לארכיון",
+            "favorited": "מועדף",
+            "pinned": "נעוץ",
+            "shared": "משותף",
+            "trash": "זבל",
+            "untagged": "ללא תיוג"
+        },
+        "menu": {
+            "addParticipants": "הוסף משתתפים",
+            "archive": "ארכיון",
+            "createNote": "צור הערה",
+            "delete": "מחק",
+            "duplicate": "שכפל",
+            "export": "ייצא",
+            "exportAll": "ייצא הכל",
+            "favorited": "מועדף",
+            "history": "היסטוריה",
+            "leave": "עזוב",
+            "participants": "משתתפים",
+            "pinned": "נעוץ",
+            "rename": "שנה שם",
+            "restore": "שחזר",
+            "share": "שתף",
+            "tags": "תגים",
+            "trash": "זבל",
+            "type": "סוג",
+            "typeChecklist": "רשימת משימות",
+            "typeCode": "קוד",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "טקסט עשיר",
+            "typeText": "טקסט"
+        },
+        "tag": "תג"
     }
 }
