@@ -143,5 +143,42 @@
                 "title": "Jegyzetek"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Összes",
+            "archived": "Archiválva",
+            "favorited": "Kedvencek közé helyezve",
+            "pinned": "Rögzítve",
+            "shared": "Megosztva",
+            "trash": "Kuka",
+            "untagged": "Címke nélküli"
+        },
+        "menu": {
+            "addParticipants": "Résztvevők hozzáadása",
+            "archive": "Archív",
+            "createNote": "Jegyzet létrehozása",
+            "delete": "Törlés",
+            "duplicate": "Kettőzés",
+            "export": "Exportálás",
+            "exportAll": "Összes exportálása",
+            "favorited": "Kedvencek közé helyezve",
+            "history": "Előzmények",
+            "leave": "Kilépés",
+            "participants": "Résztvevők",
+            "pinned": "Rögzítve",
+            "rename": "Átnevezés",
+            "restore": "Visszaállítás",
+            "share": "Megosztás",
+            "tags": "Címkék",
+            "trash": "Kuka",
+            "type": "Típus",
+            "typeChecklist": "Teendőlista",
+            "typeCode": "Kód",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Gazdag szöveg",
+            "typeText": "Szöveg"
+        },
+        "tag": "Címke"
     }
 }

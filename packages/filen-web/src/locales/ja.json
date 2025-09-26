@@ -143,5 +143,42 @@
                 "title": "メモ"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "すべて",
+            "archived": "アーカイブ済み",
+            "favorited": "お気に入り",
+            "pinned": "ピン留め",
+            "shared": "共有済み",
+            "trash": "ゴミ箱",
+            "untagged": "未タグ付け"
+        },
+        "menu": {
+            "addParticipants": "参加者を追加",
+            "archive": "アーカイブ",
+            "createNote": "メモを作成",
+            "delete": "削除",
+            "duplicate": "重複",
+            "export": "エクスポート",
+            "exportAll": "すべてをエクスポート",
+            "favorited": "お気に入り",
+            "history": "履歴",
+            "leave": "離れる",
+            "participants": "参加者",
+            "pinned": "ピン留め",
+            "rename": "名前を変更",
+            "restore": "復元",
+            "share": "共有",
+            "tags": "タグ",
+            "trash": "ゴミ箱",
+            "type": "タイプ",
+            "typeChecklist": "チェックリスト",
+            "typeCode": "コード",
+            "typeMarkdown": "マークダウン",
+            "typeRichtext": "リッチテキスト",
+            "typeText": "テキスト"
+        },
+        "tag": "タグ"
     }
 }

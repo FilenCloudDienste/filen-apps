@@ -143,5 +143,42 @@
                 "title": "Примітки"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Усе",
+            "archived": "Архівовано",
+            "favorited": "Вибране",
+            "pinned": "Закріплені",
+            "shared": "Спільний доступ",
+            "trash": "Кошик",
+            "untagged": "Без тегів"
+        },
+        "menu": {
+            "addParticipants": "Додати учасників",
+            "archive": "Архівувати",
+            "createNote": "Створити нотатку",
+            "delete": "Видалити",
+            "duplicate": "Дублювати",
+            "export": "Експортувати",
+            "exportAll": "Експортувати все",
+            "favorited": "Вибране",
+            "history": "Історія",
+            "leave": "Залишити",
+            "participants": "Учасники",
+            "pinned": "Закріплені",
+            "rename": "Перейменувати",
+            "restore": "Відновити",
+            "share": "Поділитися",
+            "tags": "Теги",
+            "trash": "Кошик",
+            "type": "Тип",
+            "typeChecklist": "Контрольний список",
+            "typeCode": "Код",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Форматований текст",
+            "typeText": "Текст"
+        },
+        "tag": "Тег"
     }
 }

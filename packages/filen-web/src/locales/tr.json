@@ -143,5 +143,42 @@
                 "title": "Notlar"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Hepsi",
+            "archived": "Arşivlendi",
+            "favorited": "Favorilere Eklendi",
+            "pinned": "Sabitle",
+            "shared": "Paylaşıldı",
+            "trash": "Çöp Kutusu",
+            "untagged": "Etiketlenmemiş"
+        },
+        "menu": {
+            "addParticipants": "Katılımcı Ekle",
+            "archive": "Arşivle",
+            "createNote": "Not Oluştur",
+            "delete": "Sil",
+            "duplicate": "Çoğalt",
+            "export": "Dışa Aktar",
+            "exportAll": "Hepsini Dışa Aktar",
+            "favorited": "Favorilere Eklendi",
+            "history": "Geçmiş",
+            "leave": "Ayrıl",
+            "participants": "Katılımcılar",
+            "pinned": "Sabitle",
+            "rename": "Yeniden Adlandır",
+            "restore": "Geri Yükle",
+            "share": "Paylaş",
+            "tags": "Etiketler",
+            "trash": "Çöp Kutusu",
+            "type": "Tür",
+            "typeChecklist": "Kontrol Listesi",
+            "typeCode": "Kod",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Zengin Metin",
+            "typeText": "Metin"
+        },
+        "tag": "Etiketle"
     }
 }

@@ -143,5 +143,42 @@
                 "title": "Notas"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Todos",
+            "archived": "Arquivado",
+            "favorited": "Favorito",
+            "pinned": "Fixado",
+            "shared": "Compartilhado",
+            "trash": "Lixeira",
+            "untagged": "Sem etiqueta"
+        },
+        "menu": {
+            "addParticipants": "Adicionar participantes",
+            "archive": "Arquivar",
+            "createNote": "Criar nota",
+            "delete": "Excluir",
+            "duplicate": "Duplicar",
+            "export": "Exportar",
+            "exportAll": "Exportar tudo",
+            "favorited": "Favorito",
+            "history": "Histórico",
+            "leave": "Sair",
+            "participants": "Participantes",
+            "pinned": "Fixado",
+            "rename": "Renomear",
+            "restore": "Restaurar",
+            "share": "Compartilhar",
+            "tags": "Etiquetas",
+            "trash": "Lixeira",
+            "type": "Tipo",
+            "typeChecklist": "Lista de Verificação",
+            "typeCode": "Código",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Texto Rico",
+            "typeText": "Texto"
+        },
+        "tag": "Etiqueta"
     }
 }
