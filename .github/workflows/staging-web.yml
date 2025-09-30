@@ -1,4 +1,4 @@
-name: Staging web
+name: Deploy staging web environment
 
 on:
   workflow_dispatch:
@@ -20,7 +20,7 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
 
 jobs:
-  stagingWeb:
+  staging-web:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -46,9 +46,8 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
-        working-directory: packages/filen-web
         with:
-          path: './dist'
+          path: './packages/filen-web/dist'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
