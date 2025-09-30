@@ -1,0 +1,54 @@
+name: Deploy staging web environment
+
+on:
+  workflow_dispatch:
+
+  push:
+    paths:
+      - 'packages/filen-web/**/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'staging-web'
+  cancel-in-progress: true
+
+env:
+  NODE_OPTIONS: --max-old-space-size=6144
+
+jobs:
+  staging-web:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: packages/filen-web
+        run: npm install --package-lock-only && npm ci
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+      - name: Build
+        working-directory: packages/filen-web
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        working-directory: packages/filen-web
+        with:
+          path: './dist'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
