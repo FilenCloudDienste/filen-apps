@@ -40,6 +40,4 @@ playwright/.cache/
 
 *.tsbuildinfo
 
-routeTree.gen.ts
-
 .env
