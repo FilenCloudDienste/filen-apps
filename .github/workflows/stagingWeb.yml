@@ -1,11 +1,11 @@
-name: Deploy staging web environment
+name: Staging web
 
 on:
   workflow_dispatch:
 
   push:
     paths:
-      - 'packages/filen-web/**/**'
+      - 'packages/filen-web/**/*'
 
 permissions:
   contents: read
@@ -20,7 +20,7 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
 
 jobs:
-  staging-web:
+  stagingWeb:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
