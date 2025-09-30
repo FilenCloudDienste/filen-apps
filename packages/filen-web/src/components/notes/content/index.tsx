@@ -1,11 +1,10 @@
 import { memo, useMemo, useEffect, useRef, useCallback } from "react"
-import TextEditor from "../textEditor"
+import TextEditor from "../../textEditor"
 import useNoteContentQuery from "@/queries/useNoteContent.query"
-import Header from "./header"
 import pathModule from "path"
 import type { Note as NoteType } from "@filen/sdk-rs"
-import Checklist from "./checklist"
-import { Navigate } from "@tanstack/react-router"
+import Checklist from "../checklist"
+import Empty from "./empty"
 import { useAuth } from "@/hooks/useAuth"
 import useNotesStore from "@/stores/notes.store"
 import Semaphore from "@/lib/semaphore"
@@ -13,6 +12,8 @@ import toasts from "@/lib/toasts"
 import notes from "@/lib/notes"
 import useKeyPress from "@/hooks/useKeyPress"
 import { createExecutableTimeout } from "@/lib/utils"
+import { Skeleton } from "../../ui/skeleton"
+import Container from "./container"
 
 export const editMutex = new Semaphore(1)
 
@@ -151,62 +152,67 @@ export const NoteContent = memo(({ note }: { note: NoteType }) => {
 
 	if (noteContentQuery.status !== "success") {
 		return (
-			<div
-				className="flex flex-1 w-full h-full flex-col overflow-hidden"
-				key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
-			>
-				<Header note={note} />
-				<div>loading...</div>
-			</div>
+			<Container note={note}>
+				<div className="flex flex-1 w-full h-auto flex-col overflow-hidden px-4 py-2">
+					{Array.from({
+						length: Math.max(Math.ceil(window.innerHeight / 32 / 3), 3)
+					}).map((_, i) => (
+						<div
+							key={i}
+							className="flex flex-row items-center justify-center py-2"
+							style={{
+								height: "32px",
+								width: "100%"
+							}}
+						>
+							<Skeleton className="h-full w-full rounded-lg" />
+						</div>
+					))}
+				</div>
+			</Container>
 		)
 	}
 
 	if (note.noteType === "text" || note.noteType === "md" || note.noteType === "code" || note.noteType === "rich") {
 		return (
-			<div className="flex flex-1 w-full h-full flex-col overflow-hidden">
-				<Header note={note} />
-				<div className="flex flex-1 flex-row overflow-x-hidden overflow-y-auto h-full w-full rounded-b-lg">
-					{isFetching && (
-						<div className="flex flex-1 w-full h-full absolute top-0 left-0 right-0 bottom-0 bg-background opacity-50 rounded-lg z-[9999] pointer-events-none cursor-progress" />
-					)}
-					<TextEditor
-						key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
-						initialValue={noteContent}
-						onValueChange={onValueChange}
-						richText={note.noteType === "rich"}
-						editable={canEdit}
-						fileName={fileName}
-					/>
-				</div>
-			</div>
+			<Container note={note}>
+				{isFetching && (
+					<div className="flex flex-1 w-full h-full absolute top-0 left-0 right-0 bottom-0 bg-background opacity-50 rounded-lg z-[9999] pointer-events-none cursor-progress" />
+				)}
+				<TextEditor
+					key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
+					initialValue={noteContent}
+					onValueChange={onValueChange}
+					richText={note.noteType === "rich"}
+					editable={canEdit}
+					fileName={fileName}
+				/>
+			</Container>
 		)
 	}
 
 	if (note.noteType === "checklist") {
 		return (
-			<div className="flex flex-1 w-full h-full flex-col overflow-hidden">
-				<Header note={note} />
-				<div className="flex flex-1 flex-row overflow-x-hidden overflow-y-auto h-full w-full rounded-b-lg">
-					{isFetching && (
-						<div className="flex flex-1 w-full h-full absolute top-0 left-0 right-0 bottom-0 bg-background opacity-50 rounded-lg z-[9999] pointer-events-none cursor-progress" />
-					)}
-					<Checklist
-						key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
-						initialValue={
-							noteContent.length === 0 || noteContent.indexOf("<ul data-checked") === -1 || noteContent === "<p><br></p>"
-								? // eslint-disable-next-line quotes
-									'<ul data-checked="false"><li><br></li></ul>'
-								: noteContent
-						}
-						onValueChange={onValueChange}
-						editable={canEdit}
-					/>
-				</div>
-			</div>
+			<Container note={note}>
+				{isFetching && (
+					<div className="flex flex-1 w-full h-full absolute top-0 left-0 right-0 bottom-0 bg-background opacity-50 rounded-lg z-[9999] pointer-events-none cursor-progress" />
+				)}
+				<Checklist
+					key={`${note.uuid}:${noteContentQuery.dataUpdatedAt}`}
+					initialValue={
+						noteContent.length === 0 || noteContent.indexOf("<ul data-checked") === -1 || noteContent === "<p><br></p>"
+							? // eslint-disable-next-line quotes
+								'<ul data-checked="false"><li><br></li></ul>'
+							: noteContent
+					}
+					onValueChange={onValueChange}
+					editable={canEdit}
+				/>
+			</Container>
 		)
 	}
 
-	return <Navigate to="/notes" />
+	return <Empty />
 })
 
 NoteContent.displayName = "NoteContent"

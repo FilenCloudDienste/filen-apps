@@ -5,19 +5,20 @@ import Sidebar from "@/components/sidebar"
 import { memo, useState, useEffect, useRef, useCallback, useMemo, Fragment } from "react"
 import DesktopWrapper from "@/components/desktopWrapper"
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
-import { queryClientPersister, CACHE_TIME, queryClient, shouldPersistQuery } from "@/queries/client"
+import { queryClientPersister, queryClient, shouldPersistQuery } from "@/queries/client"
 import setup from "@/lib/setup"
 import { Toaster } from "@/components/ui/sonner"
 import DragSelect from "@/components/dragSelect"
 import DriveInfo from "@/components/drive/info"
 import Preview from "@/components/preview"
 import { cn } from "@/lib/utils"
-import { IS_DESKTOP } from "@/constants"
+import { IS_DESKTOP, QUERY_CLIENT_CACHE_TIME } from "@/constants"
 import InputPrompt from "@/components/prompts/input"
 import SelectDriveItemPrompt from "@/components/prompts/selectDriveItem"
 import ConfirmPrompt from "@/components/prompts/confirm"
 import SelectContactPrompt from "@/components/prompts/selectContact"
 import { useAuth } from "@/hooks/useAuth"
+import Socket from "@/components/socket"
 
 export const Root = memo(() => {
 	const settingUpRef = useRef<boolean>(false)
@@ -70,7 +71,7 @@ export const Root = memo(() => {
 						client={queryClient}
 						persistOptions={{
 							persister: queryClientPersister,
-							maxAge: CACHE_TIME,
+							maxAge: QUERY_CLIENT_CACHE_TIME,
 							buster: "v1",
 							dehydrateOptions: {
 								shouldDehydrateQuery: shouldPersistQuery
@@ -106,6 +107,7 @@ export const Root = memo(() => {
 								) : (
 									<Outlet />
 								)}
+								<Socket />
 								<SelectContactPrompt />
 								<ConfirmPrompt />
 								<SelectDriveItemPrompt />

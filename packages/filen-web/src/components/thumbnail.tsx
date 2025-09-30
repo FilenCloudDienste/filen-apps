@@ -7,7 +7,7 @@ import cacheMap from "@/lib/cacheMap"
 
 export const Thumbnail = memo(({ item, width, height }: { item: DriveItem; width: number; height: number }) => {
 	const query = useQuery({
-		queryKey: ["thumbnailObjectUrl", item],
+		queryKey: ["thumbnailObjectUrlQuery", item],
 		queryFn: async () => {
 			if (item.type === "directory" || !item.data.canMakeThumbnail) {
 				return null

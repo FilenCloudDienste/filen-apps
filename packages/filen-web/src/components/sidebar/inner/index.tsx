@@ -1,12 +1,12 @@
 import { memo, Fragment } from "react"
 import { Sidebar } from "@/components/ui/sidebar"
 import { useLocation } from "@tanstack/react-router"
-import InnerSidebarDriveHeader from "./drive/header"
-import InnerSidebarDriveContent from "./drive/content"
-import InnerSidebarContactsHeader from "./contacts/header"
-import InnerSidebarContactsContent from "./contacts/content"
-import InnerSidebarNotesHeader from "./notes/header"
-import InnerSidebarNotesContent from "./notes/content"
+import DriveHeader from "./drive/header"
+import DriveContent from "./drive/content"
+import ContactsHeader from "./contacts/header"
+import ContactsContent from "./contacts/content"
+import NotesHeader from "./notes/header"
+import NotesContent from "./notes/content"
 import { Tabs } from "@/components/ui/tabs"
 import useIdb from "@/hooks/useIdb"
 
@@ -21,14 +21,14 @@ export const InnerSidebar = memo(() => {
 		>
 			{pathname.startsWith("/drive") && (
 				<Fragment>
-					<InnerSidebarDriveHeader />
-					<InnerSidebarDriveContent />
+					<DriveHeader />
+					<DriveContent />
 				</Fragment>
 			)}
 			{pathname.startsWith("/contacts") && (
 				<Fragment>
-					<InnerSidebarContactsHeader />
-					<InnerSidebarContactsContent />
+					<ContactsHeader />
+					<ContactsContent />
 				</Fragment>
 			)}
 			{pathname.startsWith("/notes") && (
@@ -37,8 +37,8 @@ export const InnerSidebar = memo(() => {
 					className="w-full overflow-hidden h-full"
 					onValueChange={setNotesSidebarDefaultTab as (value: string) => void}
 				>
-					<InnerSidebarNotesHeader />
-					<InnerSidebarNotesContent />
+					<NotesHeader />
+					<NotesContent />
 				</Tabs>
 			)}
 		</Sidebar>

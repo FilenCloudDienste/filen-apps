@@ -15,7 +15,7 @@ import { inputPrompt } from "@/components/prompts/input"
 import { selectDriveItemPrompt } from "@/components/prompts/selectDriveItem"
 import { selectContactPrompt } from "@/components/prompts/selectContact"
 
-export const InnerSidebarDriveHeader = memo(() => {
+export const Header = memo(() => {
 	const driveParent = useDriveParent()
 
 	return (
@@ -104,6 +104,6 @@ export const InnerSidebarDriveHeader = memo(() => {
 	)
 })
 
-InnerSidebarDriveHeader.displayName = "InnerSidebarDriveHeader"
+Header.displayName = "Header"
 
-export default InnerSidebarDriveHeader
+export default Header

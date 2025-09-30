@@ -3,10 +3,8 @@ import useNoteUuidFromPathname from "@/hooks/useNoteUuidFromPathname"
 import useNotesQuery from "@/queries/useNotes.query"
 import useIdb from "@/hooks/useIdb"
 import type { Note as NoteType } from "@filen/sdk-rs"
-import Semaphore from "@/lib/semaphore"
 import NoteContent from "./content"
-
-export const editMutex = new Semaphore(1)
+import Empty from "./content/empty"
 
 export const Note = memo(() => {
 	const noteUuid = useNoteUuidFromPathname()
@@ -31,7 +29,7 @@ export const Note = memo(() => {
 	}, [note, setDefaultNote])
 
 	if (!note) {
-		return <div>note not found</div>
+		return <Empty />
 	}
 
 	return <NoteContent note={note} />

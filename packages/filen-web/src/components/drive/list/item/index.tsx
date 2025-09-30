@@ -15,6 +15,7 @@ import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 import Thumbnail from "@/components/thumbnail"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useSelectDriveItemPromptStore } from "@/components/prompts/selectDriveItem"
+import useDragAndDrop from "@/hooks/useDragAndDrop"
 
 export type DriveListItemFrom = "drive" | "select" | "search"
 
@@ -264,19 +265,18 @@ export const DriveListItem = memo(
 			[item, from]
 		)
 
-		const onDragStart = useCallback(() => {
-			if (from !== "drive") {
-				return
-			}
+		const dragAndDrop = useDragAndDrop({
+			start: () => {
+				if (from !== "drive") {
+					return
+				}
 
-			useDriveStore.getState().setSelectedItems(prev => [...prev.filter(i => i.data.uuid !== item.data.uuid), item])
-			useDriveStore
-				.getState()
-				.setDraggingItems([...useDriveStore.getState().selectedItems.filter(i => i.data.uuid !== item.data.uuid), item])
-		}, [item, from])
-
-		const onDragOver = useCallback(
-			(e: React.DragEvent) => {
+				useDriveStore.getState().setSelectedItems(prev => [...prev.filter(i => i.data.uuid !== item.data.uuid), item])
+				useDriveStore
+					.getState()
+					.setDraggingItems([...useDriveStore.getState().selectedItems.filter(i => i.data.uuid !== item.data.uuid), item])
+			},
+			over: e => {
 				if (item.type !== "directory" || from !== "drive") {
 					return
 				}
@@ -291,11 +291,7 @@ export const DriveListItem = memo(
 
 				setDraggingOver(true)
 			},
-			[item, from]
-		)
-
-		const onDragLeave = useCallback(
-			(e: React.DragEvent) => {
+			leave: e => {
 				if (item.type !== "directory" || from !== "drive") {
 					return
 				}
@@ -304,11 +300,7 @@ export const DriveListItem = memo(
 
 				setDraggingOver(false)
 			},
-			[item, from]
-		)
-
-		const onDrop = useCallback(
-			(e: React.DragEvent) => {
+			drop: e => {
 				e.preventDefault()
 
 				try {
@@ -334,9 +326,8 @@ export const DriveListItem = memo(
 					useDriveStore.getState().setSelectedItems([])
 					useDriveStore.getState().setDraggingItems([])
 				}
-			},
-			[item, from]
-		)
+			}
+		})
 
 		return (
 			<div
@@ -345,10 +336,7 @@ export const DriveListItem = memo(
 				onDoubleClick={onDoubleClick}
 				data-uuid={item.data.uuid}
 				draggable={from === "drive"}
-				onDragStart={onDragStart}
-				onDragOver={onDragOver}
-				onDragLeave={onDragLeave}
-				onDrop={onDrop}
+				{...dragAndDrop}
 			>
 				<MenuWrapper
 					onOpenChange={onContextMenuOpenChange}

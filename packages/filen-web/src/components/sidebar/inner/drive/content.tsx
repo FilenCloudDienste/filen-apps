@@ -123,7 +123,7 @@ export const Tree = memo(({ dir, level, path }: { dir: DriveItem; level: number;
 
 Tree.displayName = "Tree"
 
-export const InnerSidebarDriveContent = memo(() => {
+export const Content = memo(() => {
 	const { t } = useTranslation()
 
 	const driveItemsQuery = useDriveItemsQuery({
@@ -165,6 +165,6 @@ export const InnerSidebarDriveContent = memo(() => {
 	)
 })
 
-InnerSidebarDriveContent.displayName = "InnerSidebarDriveContent"
+Content.displayName = "Content"
 
-export default InnerSidebarDriveContent
+export default Content

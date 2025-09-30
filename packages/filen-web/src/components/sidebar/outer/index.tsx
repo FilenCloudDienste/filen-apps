@@ -22,7 +22,7 @@ import type { Note as NoteType } from "@filen/sdk-rs"
 
 export const OuterSidebar = memo(() => {
 	const { setOpen } = useSidebar()
-	const location = useLocation()
+	const { pathname } = useLocation()
 	const [defaultNote] = useIdb<NoteType | null>("defaultNote", null)
 
 	const contactRequestsQuery = useContactRequestsQuery()
@@ -138,7 +138,7 @@ export const OuterSidebar = memo(() => {
 												children: item.title,
 												hidden: false
 											}}
-											isActive={location.pathname.includes(item.url.replace("/$", ""))}
+											isActive={pathname.includes(item.url.replace("/$", ""))}
 											className="px-2.5 md:px-2 cursor-pointer"
 										>
 											<item.icon />

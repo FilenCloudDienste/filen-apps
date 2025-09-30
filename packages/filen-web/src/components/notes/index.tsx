@@ -3,6 +3,7 @@ import useIdb from "@/hooks/useIdb"
 import type { Note as NoteType } from "@filen/sdk-rs"
 import { Navigate } from "@tanstack/react-router"
 import useNotesQuery from "@/queries/useNotes.query"
+import Empty from "./content/empty"
 
 export const NotesIndex = memo(() => {
 	const [defaultNote] = useIdb<NoteType | null>("defaultNote", null)
@@ -30,7 +31,7 @@ export const NotesIndex = memo(() => {
 		)
 	}
 
-	return <div>Notes Index Component</div>
+	return <Empty />
 })
 
 NotesIndex.displayName = "NotesIndex"

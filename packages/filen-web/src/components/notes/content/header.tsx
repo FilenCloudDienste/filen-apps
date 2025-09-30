@@ -1,15 +1,15 @@
 import { memo, useCallback, useMemo } from "react"
 import type { Note as NoteType } from "@filen/sdk-rs"
 import { CheckCircleIcon, EllipsisVerticalIcon, LoaderIcon, EyeIcon } from "lucide-react"
-import { Button } from "../ui/button"
+import { Button } from "../../ui/button"
 import useNoteContentQuery from "@/queries/useNoteContent.query"
 import notes from "@/lib/notes"
 import toasts from "@/lib/toasts"
-import { NoteMenu } from "../sidebar/inner/notes/content"
+import Menu from "../../sidebar/inner/notes/content/note/menu"
 import useNotesStore from "@/stores/notes.store"
 import { useShallow } from "zustand/shallow"
 import { useAuth } from "@/hooks/useAuth"
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip"
 
 export const NotesHeader = memo(({ note }: { note: NoteType }) => {
 	const syncing = useNotesStore(useShallow(state => state.syncing))
@@ -64,7 +64,7 @@ export const NotesHeader = memo(({ note }: { note: NoteType }) => {
 					{note?.title ?? note.uuid}
 				</p>
 			</div>
-			<NoteMenu
+			<Menu
 				note={note}
 				type="dropdown"
 			>
@@ -75,7 +75,7 @@ export const NotesHeader = memo(({ note }: { note: NoteType }) => {
 				>
 					<EllipsisVerticalIcon />
 				</Button>
-			</NoteMenu>
+			</Menu>
 		</div>
 	)
 })

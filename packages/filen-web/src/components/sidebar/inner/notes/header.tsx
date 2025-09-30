@@ -8,18 +8,18 @@ import useIdb from "@/hooks/useIdb"
 import notes from "@/lib/notes"
 import { useNavigate } from "@tanstack/react-router"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { IoTextOutline, IoLogoMarkdown, IoCodeOutline, IoDocumentTextOutline, IoCheckboxOutline } from "react-icons/io5"
+import Icon from "@/components/notes/icon"
 import type { NoteType } from "@filen/sdk-rs"
 import toasts from "@/lib/toasts"
 import { cn } from "@/lib/utils"
 
-export const InnerSidebarNotesHeader = memo(() => {
+export const Header = memo(() => {
 	const { t } = useTranslation()
 	const [notesSidebarSearch, setNotesSidebarSearch] = useIdb<string>("notesSidebarSearch", "")
 	const navigate = useNavigate()
 	const [notesSidebarDefaultTab] = useIdb<"all" | "tags">("notesSidebarDefaultTab", "all")
 
-	const add = useCallback(
+	const create = useCallback(
 		async (type?: NoteType) => {
 			try {
 				const note = await notes.create(type)
@@ -72,34 +72,49 @@ export const InnerSidebarNotesHeader = memo(() => {
 						side="right"
 						align="start"
 					>
-						<DropdownMenuItem onClick={() => add("text")}>
+						<DropdownMenuItem onClick={() => create("text")}>
 							<div className="flex flex-row items-center gap-8 w-full justify-between">
 								<p>{t("notes.menu.typeText")}</p>
-								<IoTextOutline color="#3b82f6" />
+								<Icon
+									type="text"
+									className="size-[14px]"
+								/>
 							</div>
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => add("rich")}>
+						<DropdownMenuItem onClick={() => create("rich")}>
 							<div className="flex flex-row items-center gap-8 w-full justify-between">
 								<p>{t("notes.menu.typeRichtext")}</p>
-								<IoDocumentTextOutline color="#06b6d4" />
+								<Icon
+									type="rich"
+									className="size-[14px]"
+								/>
 							</div>
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => add("checklist")}>
+						<DropdownMenuItem onClick={() => create("checklist")}>
 							<div className="flex flex-row items-center gap-8 w-full justify-between">
 								<p>{t("notes.menu.typeChecklist")}</p>
-								<IoCheckboxOutline color="#a855f7" />
+								<Icon
+									type="checklist"
+									className="size-[14px]"
+								/>
 							</div>
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => add("md")}>
+						<DropdownMenuItem onClick={() => create("md")}>
 							<div className="flex flex-row items-center gap-8 w-full justify-between">
 								<p>{t("notes.menu.typeMarkdown")}</p>
-								<IoLogoMarkdown color="#6366f1" />
+								<Icon
+									type="md"
+									className="size-[14px]"
+								/>
 							</div>
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => add("code")}>
+						<DropdownMenuItem onClick={() => create("code")}>
 							<div className="flex flex-row items-center gap-8 w-full justify-between">
 								<p>{t("notes.menu.typeCode")}</p>
-								<IoCodeOutline color="#ef4444" />
+								<Icon
+									type="code"
+									className="size-[14px]"
+								/>
 							</div>
 						</DropdownMenuItem>
 					</DropdownMenuContent>
@@ -142,6 +157,6 @@ export const InnerSidebarNotesHeader = memo(() => {
 	)
 })
 
-InnerSidebarNotesHeader.displayName = "InnerSidebarNotesHeader"
+Header.displayName = "Header"
 
-export default InnerSidebarNotesHeader
+export default Header

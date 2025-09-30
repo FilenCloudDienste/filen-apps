@@ -5,15 +5,11 @@ import type { DriveItem } from "./useDriveItems.query"
 import cacheMap from "@/lib/cacheMap"
 import type { Note } from "@filen/sdk-rs"
 import idb from "@/lib/idb"
-
-export const UNCACHED_QUERY_KEYS: string[] = ["thumbnailObjectUrl", "textPreviewQuery"]
-export const CACHE_TIME: number = 86400 * 1000 * 365
-export const VERSION: number = 1
-export const QUERY_CLIENT_PERSISTER_PREFIX: string = `reactQuery_v${VERSION}`
+import { QUERY_CLIENT_PERSISTER_PREFIX, UNCACHED_QUERY_CLIENT_KEYS, QUERY_CLIENT_CACHE_TIME } from "@/constants"
 
 export const shouldPersistQuery = (query: Query<unknown, Error, unknown, readonly unknown[]>): boolean => {
 	const shouldNotPersist = (query.queryKey as unknown[]).some(
-		queryKey => typeof queryKey === "string" && UNCACHED_QUERY_KEYS.includes(queryKey)
+		queryKey => typeof queryKey === "string" && UNCACHED_QUERY_CLIENT_KEYS.includes(queryKey)
 	)
 
 	return !shouldNotPersist && query.state.status === "success"
@@ -96,7 +92,7 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	refetchOnReconnect: "always",
 	refetchOnWindowFocus: "always",
 	staleTime: 0,
-	gcTime: CACHE_TIME,
+	gcTime: QUERY_CLIENT_CACHE_TIME,
 	refetchInterval: false,
 	experimental_prefetchInRender: true,
 	refetchIntervalInBackground: false,

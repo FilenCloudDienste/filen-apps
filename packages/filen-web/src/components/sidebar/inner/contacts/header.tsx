@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import contacts from "@/lib/contacts"
 import { useTranslation } from "react-i18next"
 
-export const InnerSidebarContactsHeader = memo(() => {
+export const Header = memo(() => {
 	const { t } = useTranslation()
 
 	const add = useCallback(() => {
@@ -29,6 +29,6 @@ export const InnerSidebarContactsHeader = memo(() => {
 	)
 })
 
-InnerSidebarContactsHeader.displayName = "InnerSidebarContactsHeader"
+Header.displayName = "Header"
 
-export default InnerSidebarContactsHeader
+export default Header

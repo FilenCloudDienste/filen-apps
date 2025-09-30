@@ -3,6 +3,7 @@ import worker from "@/lib/worker"
 import auth from "@/lib/auth"
 import serviceWorker from "./serviceWorker"
 import cacheMap from "./cacheMap"
+import sdk from "./sdk"
 
 export function checkOpfsAvailable(): boolean {
 	return (
@@ -80,7 +81,7 @@ export async function setup(): Promise<
 			}
 		}
 
-		await worker.direct.setClient(client)
+		await Promise.all([sdk.setClient(client), worker.direct.setClient(client)])
 		await idb.set("serviceWorkerClient", client)
 
 		const root = await worker.sdk("root")

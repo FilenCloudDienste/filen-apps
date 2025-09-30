@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "react-i18next"
 
-export const InnerSidebarContactsContent = memo(() => {
+export const Content = memo(() => {
 	const { pathname } = useLocation()
 	const { t } = useTranslation()
 
@@ -171,6 +171,6 @@ export const InnerSidebarContactsContent = memo(() => {
 	)
 })
 
-InnerSidebarContactsContent.displayName = "InnerSidebarContactsContent"
+Content.displayName = "Content"
 
-export default InnerSidebarContactsContent
+export default Content
