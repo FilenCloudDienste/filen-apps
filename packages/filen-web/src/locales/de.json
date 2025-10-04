@@ -143,5 +143,41 @@
                 "title": "Notizen"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Alle",
+            "archived": "Archiviert",
+            "favorited": "Favorisiert",
+            "pinned": "Angeheftet",
+            "shared": "Geteilt",
+            "trash": "Papierkorb",
+            "untagged": "Unbeschriftet"
+        },
+        "menu": {
+            "addParticipants": "Teilnehmer hinzufügen",
+            "archive": "Archiv",
+            "createNote": "Notiz erstellen",
+            "delete": "Löschen",
+            "duplicate": "Duplizieren",
+            "export": "Exportieren",
+            "favorited": "Favorisiert",
+            "history": "Verlauf",
+            "leave": "Verlassen",
+            "participants": "Teilnehmer",
+            "pinned": "Angeheftet",
+            "rename": "Umbenennen",
+            "restore": "Wiederherstellen",
+            "share": "Teilen",
+            "tags": "Markierungen",
+            "trash": "Papierkorb",
+            "type": "Typ",
+            "typeChecklist": "Checkliste",
+            "typeCode": "Code",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Rich Text",
+            "typeText": "Text"
+        },
+        "tag": "Markierung"
     }
 }
