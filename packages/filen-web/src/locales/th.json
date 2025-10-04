@@ -143,5 +143,42 @@
                 "title": "บันทึก"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "ทั้งหมด",
+            "archived": "ที่เก็บถาวร",
+            "favorited": "ที่โปรด",
+            "pinned": "ปักหมุด",
+            "shared": "แชร์แล้ว",
+            "trash": "ถังขยะ",
+            "untagged": "ไม่มีแท็ก"
+        },
+        "menu": {
+            "addParticipants": "เพิ่มผู้เข้าร่วม",
+            "archive": "เก็บถาวร",
+            "createNote": "สร้างโน้ต",
+            "delete": "ลบ",
+            "duplicate": "ทำซ้ำ",
+            "export": "ส่งออก",
+            "exportAll": "ส่งออกทั้งหมด",
+            "favorited": "ที่โปรด",
+            "history": "ประวัติ",
+            "leave": "ออกจาก",
+            "participants": "ผู้เข้าร่วม",
+            "pinned": "ปักหมุด",
+            "rename": "เปลี่ยนชื่อ",
+            "restore": "กู้คืน",
+            "share": "แชร์",
+            "tags": "แท็ก",
+            "trash": "ถังขยะ",
+            "type": "พิมพ์",
+            "typeChecklist": "รายการตรวจสอบ",
+            "typeCode": "โค้ด",
+            "typeMarkdown": "มาร์กดาวน์",
+            "typeRichtext": "ข้อความอุดม",
+            "typeText": "ข้อความ"
+        },
+        "tag": "แท็ก"
     }
 }

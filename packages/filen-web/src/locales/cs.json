@@ -143,5 +143,42 @@
                 "title": "Poznámky"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Vše",
+            "archived": "Archivováno",
+            "favorited": "Oblíbené",
+            "pinned": "Připnuto",
+            "shared": "Sdíleno",
+            "trash": "Koš",
+            "untagged": "Bez štítku"
+        },
+        "menu": {
+            "addParticipants": "Přidat účastníky",
+            "archive": "Archivovat",
+            "createNote": "Vytvořit poznámku",
+            "delete": "Smazat",
+            "duplicate": "Duplikovat",
+            "export": "Exportovat",
+            "exportAll": "Exportovat vše",
+            "favorited": "Oblíbené",
+            "history": "Historie",
+            "leave": "Opustit",
+            "participants": "Účastníci",
+            "pinned": "Připnuto",
+            "rename": "Přejmenovat",
+            "restore": "Obnovit",
+            "share": "Sdílet",
+            "tags": "Štítky",
+            "trash": "Koš",
+            "type": "Typ",
+            "typeChecklist": "Kontrolní seznam",
+            "typeCode": "Kód",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Formátovaný text",
+            "typeText": "Text"
+        },
+        "tag": "Štítek"
     }
 }
