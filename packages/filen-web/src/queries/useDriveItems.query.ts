@@ -5,6 +5,7 @@ import type { File as FilenSdkRsFile, Dir as FilenSdkRsDir } from "@filen/sdk-rs
 import pathModule from "path"
 import cacheMap from "@/lib/cacheMap"
 import queryUpdater from "./updater"
+import { sortParams } from "@/lib/utils"
 
 export const BASE_QUERY_KEY = "useDriveItemsQuery"
 
@@ -69,17 +70,19 @@ export function useDriveItemsQuery(
 	params: UseDriveItemsQueryParams,
 	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
 ): UseQueryResult<Awaited<ReturnType<typeof fetchDriveItems>>, Error> {
+	const sortedParams = sortParams(params)
+
 	const query = useQuery({
 		...(DEFAULT_QUERY_OPTIONS as Omit<UseQueryOptions, "queryKey" | "queryFn">),
 		...options,
-		queryKey: [BASE_QUERY_KEY, params],
-		queryFn: () => fetchDriveItems(params)
+		queryKey: [BASE_QUERY_KEY, sortedParams],
+		queryFn: () => fetchDriveItems(sortedParams)
 	})
 
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchDriveItems>>, Error>
 }
 
-export async function driveItemsQueryUpdate({
+export function driveItemsQueryUpdate({
 	updater,
 	params
 }: {
@@ -88,8 +91,10 @@ export async function driveItemsQueryUpdate({
 	updater:
 		| Awaited<ReturnType<typeof fetchDriveItems>>
 		| ((prev: Awaited<ReturnType<typeof fetchDriveItems>>) => Awaited<ReturnType<typeof fetchDriveItems>>)
-}): Promise<void> {
-	await queryUpdater.set<Awaited<ReturnType<typeof fetchDriveItems>>>([BASE_QUERY_KEY, params], prev => {
+}): void {
+	const sortedParams = sortParams(params)
+
+	queryUpdater.set<Awaited<ReturnType<typeof fetchDriveItems>>>([BASE_QUERY_KEY, sortedParams], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchDriveItems>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater
@@ -97,8 +102,10 @@ export async function driveItemsQueryUpdate({
 }
 
 export async function driveItemsQueryRefetch(params: Parameters<typeof fetchDriveItems>[0]): Promise<void> {
+	const sortedParams = sortParams(params)
+
 	return await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY, params]
+		queryKey: [BASE_QUERY_KEY, sortedParams]
 	})
 }
 

@@ -21,25 +21,27 @@ export const ContactsRequestsListRequest = memo(
 		const accept = useCallback(async () => {
 			setAccepting(true)
 
-			try {
-				await contacts.acceptRequest(request.uuid)
-			} catch (err) {
-				console.error(err)
-			} finally {
-				setAccepting(false)
-			}
+			await contacts
+				.acceptRequest(request.uuid)
+				.catch(err => {
+					console.error(err)
+				})
+				.finally(() => {
+					setAccepting(false)
+				})
 		}, [request.uuid])
 
 		const deny = useCallback(async () => {
 			setDenying(true)
 
-			try {
-				await contacts.denyRequest(request.uuid)
-			} catch (err) {
-				console.error(err)
-			} finally {
-				setDenying(false)
-			}
+			await contacts
+				.denyRequest(request.uuid)
+				.catch(err => {
+					console.error(err)
+				})
+				.finally(() => {
+					setDenying(false)
+				})
 		}, [request.uuid])
 
 		const cancel = useCallback(async () => {

@@ -2,7 +2,6 @@ import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/r
 import worker from "@/lib/worker"
 import { DEFAULT_QUERY_OPTIONS, queryClient } from "./client"
 import type { ContactRequestIn, ContactRequestOut } from "@filen/sdk-rs"
-import queryUpdater from "./updater"
 
 export const BASE_QUERY_KEY = "useContactRequestsQuery"
 
@@ -33,25 +32,6 @@ export function useContactRequestsQuery(
 	})
 
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchContactRequests>>, Error>
-}
-
-export async function contactRequestsQueryUpdate({
-	updater
-}: {
-	updater:
-		| Awaited<ReturnType<typeof fetchContactRequests>>
-		| ((prev: Awaited<ReturnType<typeof fetchContactRequests>>) => Awaited<ReturnType<typeof fetchContactRequests>>)
-}): Promise<void> {
-	await queryUpdater.set<Awaited<ReturnType<typeof fetchContactRequests>>>([BASE_QUERY_KEY], prev => {
-		const currentData =
-			prev ??
-			({
-				incoming: [],
-				outgoing: []
-			} satisfies Awaited<ReturnType<typeof fetchContactRequests>>)
-
-		return typeof updater === "function" ? updater(currentData) : updater
-	})
 }
 
 export async function contactRequestsQueryRefetch(): Promise<void> {

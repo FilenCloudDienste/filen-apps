@@ -29,14 +29,14 @@ export function useNotesQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchNotes>>, Error>
 }
 
-export async function notesQueryUpdate({
+export function notesQueryUpdate({
 	updater
 }: {
 	updater:
 		| Awaited<ReturnType<typeof fetchNotes>>
 		| ((prev: Awaited<ReturnType<typeof fetchNotes>>) => Awaited<ReturnType<typeof fetchNotes>>)
-}): Promise<void> {
-	await queryUpdater.set<Awaited<ReturnType<typeof fetchNotes>>>([BASE_QUERY_KEY], prev => {
+}): void {
+	queryUpdater.set<Awaited<ReturnType<typeof fetchNotes>>>([BASE_QUERY_KEY], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchNotes>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater

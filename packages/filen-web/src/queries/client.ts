@@ -1,13 +1,14 @@
-import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister"
-import { QueryClient, type UseQueryOptions, type Query } from "@tanstack/react-query"
+import { QueryClient, type UseQueryOptions } from "@tanstack/react-query"
 import { pack, unpack } from "msgpackr"
 import type { DriveItem } from "./useDriveItems.query"
 import cacheMap from "@/lib/cacheMap"
 import type { Note } from "@filen/sdk-rs"
 import idb from "@/lib/idb"
-import { QUERY_CLIENT_PERSISTER_PREFIX, UNCACHED_QUERY_CLIENT_KEYS, QUERY_CLIENT_CACHE_TIME } from "@/constants"
+import { QUERY_CLIENT_PERSISTER_PREFIX, UNCACHED_QUERY_CLIENT_KEYS, QUERY_CLIENT_CACHE_TIME, QUERY_CLIENT_BUSTER } from "@/constants"
+import { experimental_createQueryPersister, type PersistedQuery } from "@tanstack/query-persist-client-core"
+import Semaphore from "@/lib/semaphore"
 
-export const shouldPersistQuery = (query: Query<unknown, Error, unknown, readonly unknown[]>): boolean => {
+export const shouldPersistQuery = (query: PersistedQuery): boolean => {
 	const shouldNotPersist = (query.queryKey as unknown[]).some(
 		queryKey => typeof queryKey === "string" && UNCACHED_QUERY_CLIENT_KEYS.includes(queryKey)
 	)
@@ -15,63 +16,105 @@ export const shouldPersistQuery = (query: Query<unknown, Error, unknown, readonl
 	return !shouldNotPersist && query.state.status === "success"
 }
 
-export const queryClientPersister = createAsyncStoragePersister({
-	storage: {
-		getItem: async <T>(key: string): Promise<T | null> => {
-			return await idb.get<T>(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
-		},
-		setItem: async (key: string, value: unknown): Promise<void> => {
+const persisterMutex = new Semaphore(1)
+
+export const queryClientPersisterKv = {
+	getItem: async <T>(key: string): Promise<T | null> => {
+		return await idb.get<T>(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
+	},
+	setItem: async (key: string, value: unknown): Promise<void> => {
+		await persisterMutex.acquire()
+
+		try {
 			await idb.set(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`, value)
-		},
-		removeItem: async (key: string): Promise<void> => {
+		} finally {
+			persisterMutex.release()
+		}
+	},
+	removeItem: async (key: string): Promise<void> => {
+		await persisterMutex.acquire()
+
+		try {
 			return await idb.remove(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
-		},
-		entries: async (): Promise<Array<[string, string]>> => {
-			const keys = await idb.getKeysByPrefix(QUERY_CLIENT_PERSISTER_PREFIX)
-
-			const entries = await Promise.all(
-				keys.map(async key => {
-					const value = await idb.get(key)
-
-					return [key.replace(`${QUERY_CLIENT_PERSISTER_PREFIX}-`, ""), value ?? ""] as [string, string]
-				})
-			)
-
-			return entries.filter(([, value]) => value !== undefined) as Array<[string, string]>
+		} finally {
+			persisterMutex.release()
 		}
 	},
-	serialize: client => {
-		return pack(client) as unknown as string
+	keys: async (): Promise<string[]> => {
+		return (await idb.keys()).map(key => key.replace(`${QUERY_CLIENT_PERSISTER_PREFIX}-`, ""))
 	},
-	deserialize: client => {
-		const unpacked = unpack(client as unknown as Buffer)
-		const queries = unpacked?.clientState?.queries as Query[]
+	clear: async (): Promise<void> => {
+		return idb.clear()
+	}
+} as const
 
-		if (queries && Array.isArray(queries) && queries.length > 0) {
-			for (const query of queries) {
-				if (query.state.status !== "success" || !query.state.data) {
-					continue
-				}
-
-				if (query.queryKey.at(0) === "useDriveItemsQuery") {
-					for (const item of (query.state.data as DriveItem[]).filter(item => item.type === "directory")) {
-						cacheMap.directoryUuidToDirEnum.set(item.data.uuid, item.data)
-						cacheMap.directoryUuidToName.set(item.data.uuid, item.data.meta?.name ?? item.data.uuid)
-					}
-				}
-
-				if (query.queryKey.at(0) === "useNotesQuery") {
-					for (const note of query.state.data as Note[]) {
-						cacheMap.noteUuidToNote.set(note.uuid, note)
-					}
-				}
-			}
+export const queryClientPersister = experimental_createQueryPersister({
+	storage: queryClientPersisterKv,
+	maxAge: QUERY_CLIENT_CACHE_TIME,
+	serialize: query => {
+		if (query.state.status !== "success" || !shouldPersistQuery(query)) {
+			return undefined
 		}
 
-		return unpacked
+		return pack(query)
 	},
-	key: QUERY_CLIENT_PERSISTER_PREFIX
+	deserialize: query => {
+		return unpack(query as Buffer) as unknown as PersistedQuery
+	},
+	prefix: QUERY_CLIENT_PERSISTER_PREFIX,
+	buster: QUERY_CLIENT_BUSTER.toString()
 })
+
+export async function restoreQueries(): Promise<void> {
+	try {
+		const keys = await queryClientPersisterKv.keys()
+
+		await Promise.all(
+			keys.map(async key => {
+				if (key.startsWith(QUERY_CLIENT_PERSISTER_PREFIX)) {
+					const query = (await queryClientPersisterKv.getItem(key)) as unknown as Buffer | null
+
+					if (!query) {
+						return
+					}
+
+					const persistedQuery = unpack(query) as unknown as PersistedQuery
+
+					if (
+						!persistedQuery ||
+						!persistedQuery.state ||
+						!shouldPersistQuery(persistedQuery) ||
+						persistedQuery.state.dataUpdatedAt + QUERY_CLIENT_CACHE_TIME < Date.now() ||
+						persistedQuery.state.status !== "success"
+					) {
+						await queryClientPersisterKv.removeItem(key)
+
+						return
+					}
+
+					queryClient.setQueryData(persistedQuery.queryKey, persistedQuery.state.data, {
+						updatedAt: persistedQuery.state.dataUpdatedAt
+					})
+
+					if (persistedQuery.queryKey.at(0) === "useDriveItemsQuery") {
+						for (const item of (persistedQuery.state.data as DriveItem[]).filter(item => item.type === "directory")) {
+							cacheMap.directoryUuidToDirEnum.set(item.data.uuid, item.data)
+							cacheMap.directoryUuidToName.set(item.data.uuid, item.data.meta?.name ?? item.data.uuid)
+						}
+					}
+
+					if (persistedQuery.queryKey.at(0) === "useNotesQuery") {
+						for (const note of persistedQuery.state.data as Note[]) {
+							cacheMap.noteUuidToNote.set(note.uuid, note)
+						}
+					}
+				}
+			})
+		)
+	} catch (e) {
+		console.error(e)
+	}
+}
 
 export const DEFAULT_QUERY_OPTIONS: Pick<
 	UseQueryOptions,

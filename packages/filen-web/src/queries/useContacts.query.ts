@@ -3,6 +3,7 @@ import worker from "@/lib/worker"
 import { DEFAULT_QUERY_OPTIONS, queryClient } from "./client"
 import type { Contact, BlockedContact } from "@filen/sdk-rs"
 import queryUpdater from "./updater"
+import { sortParams } from "@/lib/utils"
 
 export const BASE_QUERY_KEY = "useContactsQuery"
 
@@ -36,6 +37,8 @@ export function useContactsQuery(
 	params: UseContactsQueryParams,
 	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
 ): UseQueryResult<Awaited<ReturnType<typeof fetchContacts>>, Error> {
+	const sortedParams = sortParams(params)
+
 	const query = useQuery({
 		...(DEFAULT_QUERY_OPTIONS as Omit<UseQueryOptions, "queryKey" | "queryFn">),
 		...options,
@@ -43,14 +46,14 @@ export function useContactsQuery(
 		refetchIntervalInBackground: true,
 		refetchOnReconnect: true,
 		refetchOnWindowFocus: true,
-		queryKey: [BASE_QUERY_KEY, params],
-		queryFn: () => fetchContacts(params)
+		queryKey: [BASE_QUERY_KEY, sortedParams],
+		queryFn: () => fetchContacts(sortedParams)
 	})
 
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchContacts>>, Error>
 }
 
-export async function contactsQueryUpdate({
+export function contactsQueryUpdate({
 	updater,
 	params
 }: {
@@ -59,8 +62,10 @@ export async function contactsQueryUpdate({
 		| ((prev: Awaited<ReturnType<typeof fetchContacts>>) => Awaited<ReturnType<typeof fetchContacts>>)
 } & {
 	params: Parameters<typeof fetchContacts>[0]
-}): Promise<void> {
-	await queryUpdater.set<Awaited<ReturnType<typeof fetchContacts>>>([BASE_QUERY_KEY, params], prev => {
+}): void {
+	const sortedParams = sortParams(params)
+
+	queryUpdater.set<Awaited<ReturnType<typeof fetchContacts>>>([BASE_QUERY_KEY, sortedParams], prev => {
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchContacts>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater
@@ -68,8 +73,10 @@ export async function contactsQueryUpdate({
 }
 
 export async function contactsQueryRefetch(params: Parameters<typeof fetchContacts>[0]): Promise<void> {
+	const sortedParams = sortParams(params)
+
 	return await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY, params]
+		queryKey: [BASE_QUERY_KEY, sortedParams]
 	})
 }
 
