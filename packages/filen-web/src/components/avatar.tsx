@@ -20,7 +20,7 @@ export const Avatar = memo(
 		className?: string
 	}) => {
 		const isOnline = useMemo(() => {
-			return typeof lastActive === "number" && lastActive > Date.now() - ONLINE_TIMEOUT
+			return typeof lastActive === "number" && lastActive > new Date().getTime() - ONLINE_TIMEOUT
 		}, [lastActive])
 
 		const style = useMemo(() => {

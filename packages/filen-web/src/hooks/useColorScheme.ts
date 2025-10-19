@@ -200,8 +200,29 @@ export const RADIUS_VARS = ["--radius-sm", "--radius-md", "--radius-lg", "--radi
 
 export function useColorScheme(): ColorScheme {
 	const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"))
-	const [colorValues, setColorValues] = useState<string[]>([])
-	const [radiusValues, setRadiusValues] = useState<string[]>([])
+	const [colorValues, setColorValues] = useState<string[]>(
+		COLOR_VARS.map(varName => globalThis.window.getComputedStyle(document.documentElement).getPropertyValue(varName).trim())
+	)
+	const [radiusValues, setRadiusValues] = useState<string[]>(
+		RADIUS_VARS.map(varName => globalThis.window.getComputedStyle(document.documentElement).getPropertyValue(varName).trim())
+	)
+
+	const updateColors = useCallback(() => {
+		const computedStyle = globalThis.window.getComputedStyle(document.documentElement)
+		const newColorValues = COLOR_VARS.map(varName => computedStyle.getPropertyValue(varName).trim())
+		const newRadiusValues = RADIUS_VARS.map(varName => computedStyle.getPropertyValue(varName).trim())
+		const newIsDark = document.documentElement.classList.contains("dark")
+
+		if (
+			JSON.stringify(newColorValues) !== JSON.stringify(colorValues) ||
+			JSON.stringify(newRadiusValues) !== JSON.stringify(radiusValues) ||
+			newIsDark !== isDark
+		) {
+			setColorValues(newColorValues)
+			setRadiusValues(newRadiusValues)
+			setIsDark(newIsDark)
+		}
+	}, [colorValues, radiusValues, isDark])
 
 	const colors = useMemo(() => {
 		const [
@@ -283,26 +304,7 @@ export function useColorScheme(): ColorScheme {
 		}
 	}, [colorValues, radiusValues])
 
-	const updateColors = useCallback(() => {
-		const computedStyle = globalThis.window.getComputedStyle(document.documentElement)
-		const newColorValues = COLOR_VARS.map(varName => computedStyle.getPropertyValue(varName).trim())
-		const newRadiusValues = RADIUS_VARS.map(varName => computedStyle.getPropertyValue(varName).trim())
-		const newIsDark = document.documentElement.classList.contains("dark")
-
-		if (
-			JSON.stringify(newColorValues) !== JSON.stringify(colorValues) ||
-			JSON.stringify(newRadiusValues) !== JSON.stringify(radiusValues) ||
-			newIsDark !== isDark
-		) {
-			setColorValues(newColorValues)
-			setRadiusValues(newRadiusValues)
-			setIsDark(newIsDark)
-		}
-	}, [colorValues, radiusValues, isDark])
-
 	useEffect(() => {
-		updateColors()
-
 		let timeoutId: number
 
 		const observer = new MutationObserver(() => {

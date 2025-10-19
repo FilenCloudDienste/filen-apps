@@ -27,7 +27,7 @@ export const Menu = memo(
 				setOpen(isOpen)
 				onOpenChange?.(isOpen)
 			},
-			[onOpenChange]
+			[onOpenChange, setOpen]
 		)
 
 		return (

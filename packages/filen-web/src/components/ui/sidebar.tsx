@@ -11,8 +11,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+//const SIDEBAR_COOKIE_NAME = "sidebar_state"
+//const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "350px"
 const SIDEBAR_WIDTH_MOBILE = "250px"
 const SIDEBAR_WIDTH_ICON = "64px"
@@ -62,14 +62,12 @@ function SidebarProvider({
 	const setOpen = React.useCallback(
 		(value: boolean | ((value: boolean) => boolean)) => {
 			const openState = typeof value === "function" ? value(open) : value
+
 			if (setOpenProp) {
 				setOpenProp(openState)
 			} else {
 				_setOpen(openState)
 			}
-
-			// This sets the cookie to keep the sidebar state.
-			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
 		},
 		[setOpenProp, open]
 	)
@@ -78,6 +76,11 @@ function SidebarProvider({
 	const toggleSidebar = React.useCallback(() => {
 		return isMobile ? setOpenMobile(open => !open) : setOpen(open => !open)
 	}, [isMobile, setOpen, setOpenMobile])
+
+	//React.useEffect(() => {
+	//	// This sets the cookie to keep the sidebar state.
+	//		document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+	//}, [])
 
 	// Adds a keyboard shortcut to toggle the sidebar.
 	React.useEffect(() => {
@@ -563,9 +566,12 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
 	showIcon?: boolean
 }) {
-	// Random width between 50 to 90%.
 	const width = React.useMemo(() => {
-		return `${Math.floor(Math.random() * 40) + 50}%`
+		const arr = new Uint32Array(1)
+
+		window.crypto.getRandomValues(arr)
+
+		return `${(arr[0] ?? 0 % 40) + 50}%`
 	}, [])
 
 	return (

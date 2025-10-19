@@ -18,5 +18,12 @@
 	"search.exclude": {
 		"**/routeTree.gen.ts": true
 	},
-	"typescript.experimental.useTsgo": false
+	"eslint.validate": ["javascript", "javascriptreact", "html", "typescriptreact", "javascriptreact", "typescript"],
+	"eslint.useFlatConfig": true,
+	"eslint.enable": true,
+	"eslint.format.enable": false,
+	"editor.quickSuggestions": {
+		"strings": "on"
+	},
+	"typescript.preferences.autoImportSpecifierExcludeRegexes": ["^(node:)?os$"]
 }

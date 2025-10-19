@@ -21,7 +21,7 @@ export const ContactsList = memo(({ type, from }: { type: "online" | "all" | "of
 			return []
 		}
 
-		const now = Date.now()
+		const now = new Date().getTime()
 		const searchLower = search.toLowerCase().trim()
 
 		return contactsQuery.data

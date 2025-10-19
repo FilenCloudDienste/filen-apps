@@ -61,7 +61,7 @@ export const Content = memo(() => {
 			return 0
 		}
 
-		const now = Date.now()
+		const now = new Date().getTime()
 
 		return contactsQuery.data.filter(contact => {
 			if (contact.type !== "contact") {
@@ -77,7 +77,7 @@ export const Content = memo(() => {
 			return 0
 		}
 
-		const now = Date.now()
+		const now = new Date().getTime()
 
 		return contactsQuery.data.filter(contact => {
 			if (contact.type !== "contact") {
