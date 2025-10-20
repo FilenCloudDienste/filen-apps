@@ -11,11 +11,11 @@ export const Socket = memo(() => {
 	const listenerRef = useRef<EventListenerHandle | undefined>(undefined)
 
 	const registerListener = useCallback(async () => {
-		try {
-			if (listenerRef.current || !sdk) {
-				return
-			}
+		if (listenerRef.current || !sdk) {
+			return
+		}
 
+		try {
 			listenerRef.current = await sdk.addSocketListener(null, async e => {
 				try {
 					switch (e.type) {

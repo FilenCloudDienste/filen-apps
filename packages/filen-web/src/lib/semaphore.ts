@@ -1,42 +1,47 @@
-/**
- * Semaphore
- *
- * @export
- * @class Semaphore
- * @typedef {Semaphore}
- */
+export class DisposeSemaphoreWrapper implements AsyncDisposable {
+	private readonly semaphore: Semaphore
+	private released: boolean = false
+
+	public constructor(semaphore: Semaphore) {
+		this.semaphore = semaphore
+	}
+
+	async [Symbol.asyncDispose](): Promise<void> {
+		if (this.released) {
+			return Promise.resolve()
+		}
+
+		this.semaphore.release()
+
+		this.released = true
+
+		return Promise.resolve()
+	}
+}
+
 export class Semaphore {
 	private counter: number = 0
 	private waiting: Array<{
-		resolve: (value: void | PromiseLike<void>) => void
+		resolve: (value: DisposeSemaphoreWrapper | PromiseLike<DisposeSemaphoreWrapper>) => void
 		reject: (reason?: unknown) => void
 	}> = []
 	private maxCount: number
 
-	/**
-	 * Creates an instance of Semaphore.
-	 *
-	 * @constructor
-	 * @public
-	 * @param {number} [max=1]
-	 */
 	public constructor(max: number = 1) {
+		if (max < 1) {
+			throw new Error("Max must be at least 1")
+		}
+
 		this.maxCount = max
 	}
 
-	/**
-	 * Acquire a lock.
-	 *
-	 * @public
-	 * @returns {Promise<void>}
-	 */
-	public acquire(): Promise<void> {
+	public acquire(): Promise<DisposeSemaphoreWrapper> {
 		if (this.counter < this.maxCount) {
 			this.counter++
 
-			return Promise.resolve()
+			return Promise.resolve(new DisposeSemaphoreWrapper(this))
 		} else {
-			return new Promise<void>((resolve, reject) => {
+			return new Promise<DisposeSemaphoreWrapper>((resolve, reject) => {
 				this.waiting.push({
 					resolve,
 					reject
@@ -45,11 +50,6 @@ export class Semaphore {
 		}
 	}
 
-	/**
-	 * Release a lock.
-	 *
-	 * @public
-	 */
 	public release(): void {
 		if (this.counter <= 0) {
 			return
@@ -60,52 +60,6 @@ export class Semaphore {
 		this.processQueue()
 	}
 
-	/**
-	 * Returns the locks in the queue.
-	 *
-	 * @public
-	 * @returns {number}
-	 */
-	public count(): number {
-		return this.counter
-	}
-
-	/**
-	 * Set max number of concurrent locks.
-	 *
-	 * @public
-	 * @param {number} newMax
-	 */
-	public setMax(newMax: number): void {
-		this.maxCount = newMax
-
-		this.processQueue()
-	}
-
-	/**
-	 * Purge all waiting promises.
-	 *
-	 * @public
-	 * @returns {number}
-	 */
-	public purge(): number {
-		const unresolved = this.waiting.length
-
-		for (const waiter of this.waiting) {
-			waiter.reject("Task has been purged")
-		}
-
-		this.counter = 0
-		this.waiting = []
-
-		return unresolved
-	}
-
-	/**
-	 * Internal process queue.
-	 *
-	 * @private
-	 */
 	private processQueue(): void {
 		if (this.waiting.length > 0 && this.counter < this.maxCount) {
 			this.counter++
@@ -113,9 +67,21 @@ export class Semaphore {
 			const waiter = this.waiting.shift()
 
 			if (waiter) {
-				waiter.resolve()
+				waiter.resolve(new DisposeSemaphoreWrapper(this))
 			}
 		}
+	}
+}
+
+export class Mutex {
+	private semaphore: Semaphore = new Semaphore(1)
+
+	public acquire(): Promise<DisposeSemaphoreWrapper> {
+		return this.semaphore.acquire()
+	}
+
+	public release(): void {
+		this.semaphore.release()
 	}
 }
 

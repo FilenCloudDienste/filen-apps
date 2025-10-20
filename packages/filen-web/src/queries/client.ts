@@ -23,6 +23,10 @@ export const queryClientPersisterKv = {
 		return await idb.get<T>(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
 	},
 	setItem: async (key: string, value: unknown): Promise<void> => {
+		if (!value) {
+			return
+		}
+
 		await persisterMutex.acquire()
 
 		try {
@@ -35,7 +39,7 @@ export const queryClientPersisterKv = {
 		await persisterMutex.acquire()
 
 		try {
-			return await idb.remove(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
+			await idb.remove(`${QUERY_CLIENT_PERSISTER_PREFIX}-${key}`)
 		} finally {
 			persisterMutex.release()
 		}
@@ -130,6 +134,8 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	| "refetchIntervalInBackground"
 	| "retry"
 	| "retryDelay"
+	| "networkMode"
+	| "notifyOnChangeProps"
 > = {
 	refetchOnMount: "always",
 	refetchOnReconnect: "always",
@@ -137,22 +143,61 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	staleTime: 0,
 	gcTime: QUERY_CLIENT_CACHE_TIME,
 	refetchInterval: false,
-	experimental_prefetchInRender: true,
+	experimental_prefetchInRender: false,
 	refetchIntervalInBackground: false,
 	retry: true,
 	retryDelay: 1000,
 	retryOnMount: true,
+	networkMode: "always",
 	throwOnError(err) {
 		console.error(err)
 
 		return false
 	}
-} as const
+} as Omit<UseQueryOptions, "queryKey" | "queryFn">
+
+export const DEFAULT_QUERY_OPTIONS_ETERNAL: Pick<
+	UseQueryOptions,
+	| "refetchOnMount"
+	| "refetchOnReconnect"
+	| "refetchOnWindowFocus"
+	| "staleTime"
+	| "gcTime"
+	| "refetchInterval"
+	| "throwOnError"
+	| "retryOnMount"
+	| "experimental_prefetchInRender"
+	| "refetchIntervalInBackground"
+	| "retry"
+	| "retryDelay"
+	| "networkMode"
+	| "notifyOnChangeProps"
+> = {
+	notifyOnChangeProps: undefined,
+	refetchOnMount: false,
+	refetchOnReconnect: false,
+	refetchOnWindowFocus: false,
+	staleTime: Infinity,
+	gcTime: Infinity,
+	refetchInterval: false,
+	experimental_prefetchInRender: false,
+	refetchIntervalInBackground: false,
+	retry: true,
+	retryDelay: 1000,
+	retryOnMount: true,
+	networkMode: "always",
+	throwOnError(err) {
+		console.error(err)
+
+		return false
+	}
+} as Omit<UseQueryOptions, "queryKey" | "queryFn">
 
 export const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
 			...DEFAULT_QUERY_OPTIONS,
+			persister: queryClientPersister.persisterFn,
 			queryKeyHashFn: queryKey => pack(queryKey).toString("base64")
 		}
 	}

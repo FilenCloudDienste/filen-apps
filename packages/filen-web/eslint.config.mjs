@@ -57,7 +57,16 @@ export default [
 			"@typescript-eslint/ban-types": "off",
 			"react/react-in-jsx-scope": "off",
 			"react/prop-types": "off",
-			"react-compiler/react-compiler": "error"
+			"react-compiler/react-compiler": "error",
+			"@typescript-eslint/no-unused-vars": [
+				"error",
+				{
+					argsIgnorePattern: "^_",
+					varsIgnorePattern: "^_",
+					caughtErrorsIgnorePattern: "^_",
+					destructuredArrayIgnorePattern: "^_"
+				}
+			]
 		}
 	},
 	{
