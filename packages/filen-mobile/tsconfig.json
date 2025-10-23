@@ -1,0 +1,64 @@
+{
+	"extends": "expo/tsconfig.base",
+	"compilerOptions": {
+		"noEmitOnError": true,
+		"jsx": "react-native",
+		"isolatedModules": true,
+		"noEmit": true,
+		"paths": {
+			"@/*": ["./src/*"],
+			"~/*": ["./src/*"]
+		},
+		// Base configuration
+		"target": "esnext",
+		"lib": ["ESNext"],
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"allowJs": false,
+		"checkJs": false,
+
+		// Bun-specific
+		"types": ["@types/node"],
+
+		// Output
+		"outDir": "./dist",
+		"rootDir": "./src",
+
+		"strict": true,
+		"exactOptionalPropertyTypes": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictBindCallApply": true,
+		"strictPropertyInitialization": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noPropertyAccessFromIndexSignature": true,
+
+		// Interop Constraints
+		"forceConsistentCasingInFileNames": true,
+		"verbatimModuleSyntax": false,
+		"allowImportingTsExtensions": false,
+		"resolveJsonModule": true,
+
+		// Advanced
+		"skipLibCheck": true,
+		"skipDefaultLibCheck": true,
+		"suppressExcessPropertyErrors": false,
+		"suppressImplicitAnyIndexErrors": false,
+		"noStrictGenericChecks": false
+	},
+	"include": ["src/**/*.ts", "src/**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+	"exclude": ["android/**/*", "ios/**/*", ".expo/**/*"]
+}
