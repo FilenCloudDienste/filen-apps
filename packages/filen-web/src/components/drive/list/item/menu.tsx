@@ -1,10 +1,9 @@
-import { memo, useCallback, useMemo, useState } from "react"
+import { memo, useCallback, useState } from "react"
 import type { DriveItem } from "@/queries/useDriveItems.query"
 import type { NonRootItemTagged as FilenSdkRsNonRootItemTagged } from "@filen/sdk-rs"
 import { useDriveStore } from "@/stores/drive.store"
 import serviceWorker from "@/lib/serviceWorker"
 import worker from "@/lib/worker"
-import { useShallow } from "zustand/shallow"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useLocation } from "@tanstack/react-router"
 import pathModule from "path"
@@ -13,6 +12,38 @@ import { HexColorPicker } from "react-colorful"
 import { directoryColorToHex } from "@/components/itemIcons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+
+function selectedItemsAsFilenSdkRsItems() {
+	return [
+		...useDriveStore.getState().selectedItems.map(i => {
+			if (i.type === "directory") {
+				return {
+					type: "dir",
+					uuid: i.data.uuid,
+					meta: i.data.meta,
+					parent: i.data.parent,
+					favorited: i.data.favorited,
+					color: i.data.color,
+					timestamp: i.data.timestamp
+				} satisfies FilenSdkRsNonRootItemTagged
+			}
+
+			return {
+				type: "file",
+				uuid: i.data.uuid,
+				meta: i.data.meta,
+				parent: i.data.parent,
+				size: i.data.size,
+				favorited: i.data.favorited,
+				region: i.data.region,
+				bucket: i.data.bucket,
+				chunks: i.data.chunks,
+				canMakeThumbnail: i.data.canMakeThumbnail,
+				timestamp: i.data.timestamp
+			} satisfies FilenSdkRsNonRootItemTagged
+		})
+	] satisfies FilenSdkRsNonRootItemTagged[]
+}
 
 export const DriveListItemMenu = memo(
 	({
@@ -26,7 +57,6 @@ export const DriveListItemMenu = memo(
 		item: DriveItem
 		type: "context" | "dropdown"
 	}) => {
-		const selectedItems = useDriveStore(useShallow(state => state.selectedItems))
 		const { t } = useTranslation()
 		const navigate = useNavigate()
 		const location = useLocation()
@@ -51,50 +81,20 @@ export const DriveListItemMenu = memo(
 			})
 		}, [item.type, item.data.uuid, location.pathname, navigate])
 
-		const selectedItemsAsFilenSdkRsItems = useMemo(() => {
-			return [
-				...selectedItems.map(i => {
-					if (i.type === "directory") {
-						return {
-							type: "dir",
-							uuid: i.data.uuid,
-							meta: i.data.meta,
-							parent: i.data.parent,
-							favorited: i.data.favorited,
-							color: i.data.color,
-							timestamp: i.data.timestamp
-						} satisfies FilenSdkRsNonRootItemTagged
-					}
-
-					return {
-						type: "file",
-						uuid: i.data.uuid,
-						meta: i.data.meta,
-						parent: i.data.parent,
-						size: i.data.size,
-						favorited: i.data.favorited,
-						region: i.data.region,
-						bucket: i.data.bucket,
-						chunks: i.data.chunks,
-						canMakeThumbnail: i.data.canMakeThumbnail,
-						timestamp: i.data.timestamp
-					} satisfies FilenSdkRsNonRootItemTagged
-				})
-			] satisfies FilenSdkRsNonRootItemTagged[]
-		}, [selectedItems])
-
 		const download = useCallback(() => {
-			if (selectedItemsAsFilenSdkRsItems.length === 0) {
+			const items = selectedItemsAsFilenSdkRsItems()
+
+			if (items.length === 0) {
 				return
 			}
 
 			window.open(
 				serviceWorker.buildDownloadUrl({
-					items: selectedItemsAsFilenSdkRsItems,
+					items,
 					type: "download"
 				})
 			)
-		}, [selectedItemsAsFilenSdkRsItems])
+		}, [])
 
 		const onColorPickerChange = useCallback((newColor: string) => {
 			setDirectoryColor(newColor)
@@ -131,35 +131,11 @@ export const DriveListItemMenu = memo(
 						inset: true,
 						text: t("drive.list.item.contextMenu.compress"),
 						onClick: async () => {
-							const itemsToEncode = [
-								...useDriveStore.getState().selectedItems.map(i => {
-									if (i.type === "directory") {
-										return {
-											type: "dir",
-											uuid: i.data.uuid,
-											meta: i.data.meta,
-											parent: i.data.parent,
-											favorited: i.data.favorited,
-											color: i.data.color,
-											timestamp: i.data.timestamp
-										} satisfies FilenSdkRsNonRootItemTagged
-									}
+							const itemsToEncode = selectedItemsAsFilenSdkRsItems()
 
-									return {
-										type: "file",
-										uuid: i.data.uuid,
-										meta: i.data.meta,
-										parent: i.data.parent,
-										size: i.data.size,
-										favorited: i.data.favorited,
-										region: i.data.region,
-										bucket: i.data.bucket,
-										chunks: i.data.chunks,
-										canMakeThumbnail: i.data.canMakeThumbnail,
-										timestamp: i.data.timestamp
-									} satisfies FilenSdkRsNonRootItemTagged
-								})
-							] satisfies FilenSdkRsNonRootItemTagged[]
+							if (itemsToEncode.length === 0) {
+								return
+							}
 
 							console.log(
 								await worker.direct.compressItems({

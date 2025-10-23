@@ -7,15 +7,15 @@ import { memo, useState, useCallback } from "react"
 import { LoaderCircleIcon } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { arktypeResolver } from "@hookform/resolvers/arktype"
-import { type } from "arktype"
+import { type as arktype } from "arktype"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { toast } from "sonner"
 
-export const formSchema = type({
-	email: type("string.email").describe("tba").configure({
+export const formSchema = arktype({
+	email: arktype("string.email").describe("tba").configure({
 		message: "tba"
 	}),
-	password: type("string").atLeastLength(1).atMostLength(65536).describe("tba").configure({
+	password: arktype("string").atLeastLength(1).atMostLength(65536).describe("tba").configure({
 		message: "tba"
 	})
 })

@@ -1,6 +1,6 @@
 import { memo, useCallback, useRef, useEffect } from "react"
 import { CheckIcon } from "lucide-react"
-import { type ChecklistItem as ChecklistItemType } from "./parser"
+import type { ChecklistItem as ChecklistItemType } from "./parser"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -49,7 +49,7 @@ export const ChecklistItem = memo(
 			(e: React.ChangeEvent<HTMLTextAreaElement>) => {
 				onContentChange({
 					item,
-					content: e.target.value
+					content: e.target.value.split("\n").join("")
 				})
 			},
 			[onContentChange, item]

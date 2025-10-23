@@ -68,9 +68,9 @@ export class ServiceWorker {
 	}
 
 	private async renewClientIds(): Promise<void> {
-		clearInterval(this.renewClientIdInterval)
-
 		await this.setClientIds()
+
+		clearInterval(this.renewClientIdInterval)
 
 		this.renewClientIdInterval = setInterval(() => {
 			this.setClientIds().catch(console.error)

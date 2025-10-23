@@ -102,11 +102,9 @@ export class Fs {
 		}
 
 		const parent = await this.ensurePath(path)
-
 		const fileHandle = await parent.getFileHandle(path, {
 			create: true
 		})
-
 		const writable = await fileHandle.createWritable()
 
 		await writable.write(new Uint8Array(data))
