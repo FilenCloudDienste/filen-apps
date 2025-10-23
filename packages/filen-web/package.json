@@ -13,8 +13,8 @@
 		"start": "cross-env NODE_OPTIONS=--max_old_space_size=16384 vite --port 5173",
 		"ncu": "cross-env NODE_OPTIONS=--max_old_space_size=16384 npm-check-updates --interactive --format group",
 		"lint": "cross-env NODE_OPTIONS=--max_old_space_size=16384 eslint --report-unused-disable-directives --max-warnings 0 --no-warn-ignored",
-		"tsc:check": "cross-env NODE_OPTIONS=--max_old_space_size=16384 tsc --noEmit",
-		"build": "npm run build:clean && npm run lint && npm run tsc:check && npm run build:vite",
+		"typecheck": "cross-env NODE_OPTIONS=--max_old_space_size=16384 tsc --noEmit",
+		"build": "npm run build:clean && npm run lint && npm run typecheck && npm run build:vite",
 		"build:clean": "rimraf ./dist",
 		"build:vite": "cross-env NODE_OPTIONS=--max_old_space_size=16384 vite build --mode production",
 		"preview": "cross-env NODE_OPTIONS=--max_old_space_size=16384 vite preview --host --port 3000"

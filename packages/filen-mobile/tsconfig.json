@@ -59,6 +59,6 @@
 		"suppressImplicitAnyIndexErrors": false,
 		"noStrictGenericChecks": false
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+	"include": ["src/**/*.ts", "src/**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "src/**/*.d.ts"],
 	"exclude": ["android/**/*", "ios/**/*", ".expo/**/*"]
 }

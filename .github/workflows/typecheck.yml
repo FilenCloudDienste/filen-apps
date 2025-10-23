@@ -1,0 +1,50 @@
+name: Typecheck
+
+on:
+  workflow_dispatch:
+
+  push:
+    paths:
+      - 'packages/filen-web/**/*'
+      - 'packages/filen-mobile/**/*'
+
+  pull_request:
+    paths:
+      - 'packages/filen-web/**/*'
+      - 'packages/filen-mobile/**/*'
+
+concurrency:
+  group: 'typecheck'
+  cancel-in-progress: true
+
+jobs:
+  typecheck-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: packages/filen-web
+        run: npm install --package-lock-only && npm ci
+      - name: Typecheck
+        working-directory: packages/filen-web
+        run: npm run typecheck
+  typecheck-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        working-directory: packages/filen-mobile
+        run: npm install --package-lock-only && npm ci
+      - name: Typecheck
+        working-directory: packages/filen-mobile
+        run: npm run typecheck
