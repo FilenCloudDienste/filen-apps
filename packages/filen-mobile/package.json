@@ -60,7 +60,9 @@
   },
   "devDependencies": {
     "@tanstack/eslint-plugin-query": "^5.91.2",
+    "@types/mime": "^3.0.4",
     "@types/react": "~19.1.10",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9.38.0",
     "eslint-config-expo": "~10.0.0",
     "eslint-plugin-react": "^7.37.5",

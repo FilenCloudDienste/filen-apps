@@ -46,12 +46,12 @@ export default function HomeScreen() {
 						<Link.MenuAction
 							title="Action"
 							icon="cube"
-							onPress={() => alert("Action pressed")}
+							onPress={() => console.log("Action pressed")}
 						/>
 						<Link.MenuAction
 							title="Share"
 							icon="square.and.arrow.up"
-							onPress={() => alert("Share pressed")}
+							onPress={() => console.log("Share pressed")}
 						/>
 						<Link.Menu
 							title="More"
@@ -61,18 +61,18 @@ export default function HomeScreen() {
 								title="Delete"
 								icon="trash"
 								destructive
-								onPress={() => alert("Delete pressed")}
+								onPress={() => console.log("Delete pressed")}
 							/>
 						</Link.Menu>
 					</Link.Menu>
 				</Link>
 
-				<ThemedText>{`Tap the Explore tab to learn more about what's included in this starter app.`}</ThemedText>
+				<ThemedText>Tap the Explore tab to learn more about what&apos;s included in this starter app.</ThemedText>
 			</ThemedView>
 			<ThemedView style={styles.stepContainer}>
 				<ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
 				<ThemedText>
-					{`When you're ready, run `}
+					1234
 					<ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{" "}
 					<ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{" "}
 					<ThemedText type="defaultSemiBold">app</ThemedText> to <ThemedText type="defaultSemiBold">app-example</ThemedText>.

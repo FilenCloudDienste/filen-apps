@@ -19,9 +19,6 @@
 		"allowJs": false,
 		"checkJs": false,
 
-		// Bun-specific
-		"types": ["@types/node"],
-
 		// Output
 		"outDir": "./dist",
 		"rootDir": "./src",

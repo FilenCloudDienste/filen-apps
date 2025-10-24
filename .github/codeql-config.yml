@@ -1,4 +1,5 @@
 name: 'CodeQL Configuration'
 paths:
-  - packages/filen-web/src/
-  - packages/filen-desktop/src/
+  - 'packages/filen-web/**/*'
+  - 'packages/filen-mobile/**/*'
+  - 'packages/filen-desktop/**/*'
