@@ -36,7 +36,9 @@ export default [
 			"index.js",
 			"eslint.config.mjs",
 			"metro.config.js",
-			"plugins/**/*"
+			"plugins/**/*",
+			"src/uniwind-types.d.ts",
+			"src/global.css"
 		]
 	},
 	{
@@ -66,6 +68,12 @@ export default [
 					varsIgnorePattern: "^_",
 					caughtErrorsIgnorePattern: "^_",
 					destructuredArrayIgnorePattern: "^_"
+				}
+			],
+			"no-restricted-imports": [
+				"error",
+				{
+					patterns: [".*"]
 				}
 			]
 		}

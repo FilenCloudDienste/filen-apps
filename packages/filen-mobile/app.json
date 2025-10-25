@@ -9,7 +9,8 @@
 		"userInterfaceStyle": "automatic",
 		"newArchEnabled": true,
 		"ios": {
-			"supportsTablet": true
+			"supportsTablet": true,
+			"bundleIdentifier": "com.anonymous.filenmobile"
 		},
 		"android": {
 			"adaptiveIcon": {
@@ -27,12 +28,7 @@
 			"favicon": "./src/assets/images/favicon.png"
 		},
 		"plugins": [
-			[
-				"expo-router",
-				{
-					"root": "./src/routes"
-				}
-			],
+			"expo-router",
 			[
 				"expo-splash-screen",
 				{
