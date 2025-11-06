@@ -2,17 +2,12 @@ import View from "@/components/ui/view"
 import Text from "@/components/ui/text"
 import { memo, Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
-import { Stack } from "expo-router"
+import Header from "@/components/ui/header"
 
 export const SearchIndex = memo(() => {
 	return (
 		<Fragment>
-			<Stack.Screen
-				options={{
-					headerTitle: "Search",
-					headerShown: true
-				}}
-			/>
+			<Header title="Search" />
 			<SafeAreaView edges={["left", "right"]}>
 				<View>
 					<Text>Welcome to the Search Page!</Text>

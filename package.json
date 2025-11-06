@@ -1,9 +1,10 @@
 {
-	"name": "filen-apps",
+	"name": "filen-ts",
 	"private": true,
 	"workspaces": [
 		"packages/filen-web",
-		"packages/filen-desktop"
+		"packages/filen-desktop",
+		"packages/filen-utils"
 	],
 	"scripts": {
 		"dev:web": "npm run dev --workspace=packages/filen-web",

@@ -8,7 +8,7 @@ import initFilenSdkRs, {
 	type StringifiedClient as FilenSdkRsStringifiedClient
 } from "@filen/sdk-rs"
 import Semaphore from "../semaphore"
-import filenSdkRsWasmPath from "@filen/sdk-rs/browser/sdk-rs_bg.wasm?url"
+import filenSdkRsWasmPath from "@filen/sdk-rs/sdk-rs_bg.wasm?url"
 import mime from "mime"
 import type { ServiceWorkerClientId } from "../serviceWorker"
 import { unpack } from "msgpackr"

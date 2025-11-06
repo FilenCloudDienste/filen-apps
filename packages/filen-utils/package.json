@@ -1,0 +1,40 @@
+{
+	"name": "@filen/utils",
+	"version": "0.0.1",
+	"description": "A collection of utils for Filen",
+	"private": false,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/FilenCloudDienste/filen-ts/packages/filen-utils"
+	},
+	"author": "Filen Cloud Dienste UG",
+	"main": "dist/index.js",
+	"types": "dist/types/index.d.ts",
+	"scripts": {
+		"build": "npm run build:clean && tsc --extendedDiagnostics --project tsconfig.json",
+		"build:clean": "rimraf ./dist",
+		"typecheck": "tsc --noEmit",
+		"dev": "tsx src/dev.ts",
+		"test": "vitest",
+		"test:ui": "vitest --ui",
+		"test:coverage": "vitest --coverage"
+	},
+	"keywords": [
+		"filen"
+	],
+	"engines": {
+		"node": ">=20"
+	},
+	"license": "AGPLv3",
+	"devDependencies": {
+		"rimraf": "^6.1.0",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3",
+		"vitest": "^3.2.4"
+	},
+	"dependencies": {
+		"clsx": "^2.1.1",
+		"tailwind-merge": "^3.3.1",
+		"uuid": "^13.0.0"
+	}
+}

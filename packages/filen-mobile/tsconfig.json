@@ -24,7 +24,7 @@
 		"rootDir": "./src",
 
 		"strict": true,
-		"exactOptionalPropertyTypes": true,
+		"exactOptionalPropertyTypes": false,
 		"noImplicitAny": true,
 		"noImplicitThis": true,
 		"alwaysStrict": true,

@@ -25,11 +25,11 @@ export function parseExtension(name: string) {
 export function loadLanguage(name: string) {
 	const ext = parseExtension(name)
 
-	if (!ext.includes(".") || !langNames.includes(ext.replace(".", ""))) {
+	if (!ext.includes(".") || !langNames.includes(ext.replace(".", "") as unknown as (typeof langNames)[0])) {
 		return null
 	}
 
-	const lang = langs[ext.replace(".", "")]
+	const lang = langs[ext.replace(".", "") as unknown as (typeof langNames)[0]]
 
 	if (!lang) {
 		return null

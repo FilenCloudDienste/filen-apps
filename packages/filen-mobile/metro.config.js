@@ -3,12 +3,22 @@ const { getDefaultConfig } = require("expo/metro-config")
 const { withUniwindConfig } = require("uniwind/metro")
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname)
+const defaultConfig = getDefaultConfig(__dirname)
+
+/** @type {import('expo/metro-config').MetroConfig} */
+const config = {
+	...defaultConfig,
+	resolver: {
+		...defaultConfig.resolver,
+		extraNodeModules: {
+			buffer: require.resolve("@craftzdog/react-native-buffer"),
+			crypto: require.resolve("react-native-quick-crypto"),
+			stream: require.resolve("readable-stream")
+		}
+	}
+}
 
 module.exports = withUniwindConfig(config, {
-	// relative path to your global.css file (from previous step)
 	cssEntryFile: "./src/global.css",
-	// (optional) path where we gonna auto-generate typings
-	// defaults to project's root
 	dtsFile: "./src/uniwind-types.d.ts"
 })

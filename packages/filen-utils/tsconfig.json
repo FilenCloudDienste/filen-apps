@@ -1,0 +1,33 @@
+{
+	"include": ["./src", "./src/**/*.d.ts"],
+	"exclude": ["./src/dev.ts"],
+	"compilerOptions": {
+		"target": "es6",
+		"jsx": "react-jsx",
+		"module": "ESNext",
+		"lib": ["DOM", "DOM.Iterable", "WebWorker", "Webworker.Iterable", "esnext", "DOM.AsyncIterable", "WebWorker.AsyncIterable"],
+		"types": ["@types/node"],
+		"esModuleInterop": true,
+		"moduleResolution": "bundler",
+		"verbatimModuleSyntax": true,
+		"forceConsistentCasingInFileNames": true,
+		"sourceMap": false,
+		"skipLibCheck": true,
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"removeComments": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedSideEffectImports": true,
+		"noUncheckedIndexedAccess": true,
+		"resolveJsonModule": true,
+		"baseUrl": ".",
+		"rootDir": "src",
+		"outDir": "./dist",
+		"declaration": true,
+		"declarationDir": "./dist/types",
+		"incremental": false,
+		"noImplicitAny": true,
+		"alwaysStrict": true
+	}
+}

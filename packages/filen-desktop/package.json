@@ -1,11 +1,11 @@
 {
-	"name": "filen-desktop",
+	"name": "@filen/desktop",
 	"version": "3.0.0",
 	"description": "Filen Desktop Client",
 	"homepage": "https://filen.io",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/FilenCloudDienste/filen-apps.git"
+		"url": "git+https://github.com/FilenCloudDienste/filen-ts.git"
 	},
 	"license": "AGPLv3",
 	"author": "Filen Cloud Dienste UG (haftungsbeschränkt) <support@filen.io>",
@@ -23,6 +23,9 @@
 	},
 	"engines": {
 		"node": ">=24"
+	},
+	"dependencies": {
+		"@filen/utils": "*"
 	},
 	"devDependencies": {
 		"@types/node": "^24.3.0",

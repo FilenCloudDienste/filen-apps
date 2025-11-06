@@ -1,0 +1,9 @@
+node_modules/**/*
+src/**/*
+dist/tests/**/*
+dist/types/tests/**/*
+.npmignore
+package-lock.json
+tsconfig.tsbuildinfo
+.env
+tsconfig.json
