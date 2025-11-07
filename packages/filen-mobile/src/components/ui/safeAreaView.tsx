@@ -34,6 +34,7 @@ export const SafeAreaView = memo(
 
 		return (
 			<View
+				{...props}
 				className={classNameMemo}
 				style={styleMemo}
 			>
