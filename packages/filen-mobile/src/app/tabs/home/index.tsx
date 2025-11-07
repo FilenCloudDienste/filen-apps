@@ -6,17 +6,18 @@ import Header from "@/components/ui/header"
 import Button from "@/components/ui/button"
 import auth from "@/lib/auth"
 import { useRouter } from "expo-router"
+import alerts from "@/lib/alerts"
 
 export const Index = memo(() => {
 	const router = useRouter()
 
-	console.log("Notes:", new Date().getTime())
+	console.log("d:", new Date().getTime())
 
 	return (
 		<Fragment>
 			<Header title="Home" />
 			<SafeAreaView edges={["left", "right"]}>
-				<View>
+				<View className="gap-2">
 					<Text>Welcome to the Index Page!</Text>
 					<Button
 						onPress={async () => {
@@ -28,6 +29,20 @@ export const Index = memo(() => {
 						}}
 					>
 						Logout
+					</Button>
+					<Button
+						onPress={async () => {
+							alerts.error("This is a test error alert")
+						}}
+					>
+						Show Error Alert
+					</Button>
+					<Button
+						onPress={async () => {
+							alerts.normal("This is a test normal alert")
+						}}
+					>
+						Show Normal Alert
 					</Button>
 				</View>
 			</SafeAreaView>

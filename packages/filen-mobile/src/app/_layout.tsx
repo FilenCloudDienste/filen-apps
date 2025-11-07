@@ -3,17 +3,20 @@ import "@/global.css"
 import "@/global"
 import "@/queries/onlineStatus"
 
-import { memo, useState, useEffect, useCallback } from "react"
+import { memo, useState, useEffect, useCallback, Fragment } from "react"
 import { Stack } from "expo-router"
-import { useResolveClassNames } from "uniwind"
+import { useResolveClassNames, useUniwind } from "uniwind"
 import View from "@/components/ui/view"
 import setup from "@/lib/setup"
 import { run } from "@filen/utils"
-import Text from "@/components/ui/text"
 import { useIsAuthed } from "@/lib/auth"
 import { queryClient } from "@/queries/client"
 import { QueryClientProvider } from "@tanstack/react-query"
 import * as SplashScreen from "expo-splash-screen"
+import { NotifierWrapper } from "react-native-notifier"
+import { StatusBar } from "expo-status-bar"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { KeyboardProvider } from "react-native-keyboard-controller"
 
 SplashScreen.setOptions({
 	duration: 400,
@@ -26,6 +29,7 @@ export const RootLayout = memo(() => {
 	const bgBackground = useResolveClassNames("bg-background")
 	const [isSetupDone, setIsSetupDone] = useState<boolean>(false)
 	const isAuthed = useIsAuthed()
+	const { theme } = useUniwind()
 
 	const runSetup = useCallback(async () => {
 		const result = await run(async () => {
@@ -55,23 +59,35 @@ export const RootLayout = memo(() => {
 	}, [runSetup])
 
 	return (
-		<QueryClientProvider client={queryClient}>
-			<View className="flex-1">
-				{!isSetupDone ? (
-					<Text>Setting up...</Text>
-				) : (
-					<Stack
-						initialRouteName={isAuthed ? "tabs" : "auth"}
-						screenOptions={{
-							headerShown: false,
-							contentStyle: {
-								backgroundColor: bgBackground.backgroundColor as string
-							}
-						}}
-					/>
-				)}
-			</View>
-		</QueryClientProvider>
+		<Fragment>
+			<StatusBar style={theme === "dark" ? "light" : "dark"} />
+			<GestureHandlerRootView
+				style={{
+					flex: 1,
+					backgroundColor: bgBackground.backgroundColor as string
+				}}
+			>
+				<KeyboardProvider>
+					<NotifierWrapper useRNScreensOverlay={true}>
+						<QueryClientProvider client={queryClient}>
+							<View className="flex-1">
+								{isSetupDone && (
+									<Stack
+										initialRouteName={isAuthed ? "tabs" : "auth"}
+										screenOptions={{
+											headerShown: false,
+											contentStyle: {
+												backgroundColor: bgBackground.backgroundColor as string
+											}
+										}}
+									/>
+								)}
+							</View>
+						</QueryClientProvider>
+					</NotifierWrapper>
+				</KeyboardProvider>
+			</GestureHandlerRootView>
+		</Fragment>
 	)
 })
 

@@ -7,6 +7,7 @@ import useNetInfo from "@/hooks/useNetInfo"
 import sqlite from "@/lib/sqlite"
 import { Semaphore, run } from "@filen/utils"
 import { unpack, pack } from "msgpackr"
+import alerts from "@/lib/alerts"
 
 export const VERSION = 1
 export const QUERY_CLIENT_PERSISTER_PREFIX = `reactQuery_v${VERSION}`
@@ -155,7 +156,7 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 
 		if (err instanceof Error) {
 			// TODO: Logout on auth errors
-			//alerts.error(err.message)
+			alerts.error(err.message)
 		}
 
 		return false
@@ -197,7 +198,7 @@ export const DEFAULT_QUERY_OPTIONS_ETERNAL: Pick<
 
 		if (err instanceof Error) {
 			// TODO: Logout on auth errors
-			//alerts.error(err.message)
+			alerts.error(err.message)
 		}
 
 		return false
