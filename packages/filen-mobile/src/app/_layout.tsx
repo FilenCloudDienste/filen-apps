@@ -1,6 +1,7 @@
 import "react-native-reanimated"
 import "@/global.css"
 import "@/global"
+import "@/queries/onlineStatus"
 
 import { memo, useState, useEffect, useCallback } from "react"
 import { Stack } from "expo-router"
