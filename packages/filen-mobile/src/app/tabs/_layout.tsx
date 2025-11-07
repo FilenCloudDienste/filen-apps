@@ -27,7 +27,7 @@ export const TabsLayout = memo(() => {
 			tintColor={textForeground.color as string}
 		>
 			<NativeTabs.Trigger name="home">
-				<Label>Home</Label>
+				<Label>tbd</Label>
 				{Platform.select({
 					ios: <Icon sf="house.fill" />,
 					default: (
@@ -43,7 +43,7 @@ export const TabsLayout = memo(() => {
 				})}
 			</NativeTabs.Trigger>
 			<NativeTabs.Trigger name="drive">
-				<Label>Drive</Label>
+				<Label>tbd</Label>
 				{Platform.select({
 					ios: <Icon sf="folder.fill" />,
 					default: (
@@ -51,7 +51,55 @@ export const TabsLayout = memo(() => {
 							src={
 								<VectorIcon
 									family={MaterialIcons}
-									name="folder-open"
+									name="folder"
+								/>
+							}
+						/>
+					)
+				})}
+			</NativeTabs.Trigger>
+			<NativeTabs.Trigger name="photos">
+				<Label>tbd</Label>
+				{Platform.select({
+					ios: <Icon sf="photo.fill" />,
+					default: (
+						<Icon
+							src={
+								<VectorIcon
+									family={MaterialIcons}
+									name="photo-library"
+								/>
+							}
+						/>
+					)
+				})}
+			</NativeTabs.Trigger>
+			<NativeTabs.Trigger name="notes">
+				<Label>tbd</Label>
+				{Platform.select({
+					ios: <Icon sf="note.text" />,
+					default: (
+						<Icon
+							src={
+								<VectorIcon
+									family={MaterialIcons}
+									name="book"
+								/>
+							}
+						/>
+					)
+				})}
+			</NativeTabs.Trigger>
+			<NativeTabs.Trigger name="chats">
+				<Label>tbd</Label>
+				{Platform.select({
+					ios: <Icon sf="message.fill" />,
+					default: (
+						<Icon
+							src={
+								<VectorIcon
+									family={MaterialIcons}
+									name="messenger"
 								/>
 							}
 						/>
