@@ -8,6 +8,8 @@ import sqlite from "@/lib/sqlite"
 import { Semaphore, run } from "@filen/utils"
 import { unpack, pack } from "msgpackr"
 import alerts from "@/lib/alerts"
+import { BASE_QUERY_KEY as USE_DRIVE_ITEMS_BASE_QUERY_KEY, type DriveItem, unwrapDirMeta } from "@/queries/useDriveItems.query"
+import cache from "@/lib/cache"
 
 export const VERSION = 1
 export const QUERY_CLIENT_PERSISTER_PREFIX = `reactQuery_v${VERSION}`
@@ -113,7 +115,39 @@ export async function restoreQueries(): Promise<void> {
 						updatedAt: persistedQuery.state.dataUpdatedAt
 					})
 
-					// TODO: Restore query state more accurately
+					try {
+						if (persistedQuery.queryKey.some(k => k === USE_DRIVE_ITEMS_BASE_QUERY_KEY)) {
+							for (const item of persistedQuery.state.data as DriveItem[]) {
+								if (!item.data.decryptedMeta) {
+									continue
+								}
+
+								if (item.type === "directory") {
+									const { meta, uuid } = unwrapDirMeta(item.data)
+
+									if (!uuid) {
+										continue
+									}
+
+									cache.directoryUuidToDir.set(uuid, item.data)
+									cache.directoryUuidToName.set(uuid, meta?.name ?? uuid)
+								}
+
+								if (item.type === "sharedDirectory") {
+									const { meta, uuid } = unwrapDirMeta(item.data)
+
+									if (!uuid) {
+										continue
+									}
+
+									cache.sharedDirUuidToDir.set(uuid, item.data)
+									cache.sharedDirectoryUuidToName.set(uuid, meta?.name ?? uuid)
+								}
+							}
+						}
+					} catch {
+						// Noop
+					}
 				}
 			})
 		)
