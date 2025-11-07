@@ -143,5 +143,41 @@
                 "title": "Notatki"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Wszystko",
+            "archived": "Zarchiwizowane",
+            "favorited": "Ulubione",
+            "pinned": "Przypięty",
+            "shared": "Udostępnione",
+            "trash": "Kosz",
+            "untagged": "Nieoznakowany"
+        },
+        "menu": {
+            "addParticipants": "Dodaj uczestników",
+            "archive": "Archiwizuj",
+            "createNote": "Utwórz notatkę",
+            "delete": "Usuń",
+            "duplicate": "Duplikat",
+            "export": "Eksportuj",
+            "favorited": "Ulubione",
+            "history": "Historia",
+            "leave": "Opuść",
+            "participants": "Uczestnicy",
+            "pinned": "Przypięty",
+            "rename": "Zmień nazwę",
+            "restore": "Przywróć",
+            "share": "Udostępnij",
+            "tags": "Etykiety",
+            "trash": "Kosz",
+            "type": "Typ",
+            "typeChecklist": "Lista kontrolna",
+            "typeCode": "Kod",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Sformatowany tekst",
+            "typeText": "Tekst"
+        },
+        "tag": "Etykieta"
     }
 }

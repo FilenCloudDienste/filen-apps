@@ -143,5 +143,41 @@
                 "title": "Anteckningar"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Alla",
+            "archived": "Arkiverad",
+            "favorited": "Favoritmarkerad",
+            "pinned": "Fäst vid toppen",
+            "shared": "Delad",
+            "trash": "Papperskorg",
+            "untagged": "Otaggad"
+        },
+        "menu": {
+            "addParticipants": "Lägg till deltagare",
+            "archive": "Arkivera",
+            "createNote": "Skapa anteckning",
+            "delete": "Radera",
+            "duplicate": "Duplicera",
+            "export": "Exportera",
+            "favorited": "Favoritmarkerad",
+            "history": "Historik",
+            "leave": "Lämna",
+            "participants": "Deltagare",
+            "pinned": "Fäst vid toppen",
+            "rename": "Byt namn",
+            "restore": "Återställ",
+            "share": "Dela",
+            "tags": "Etiketter",
+            "trash": "Papperskorg",
+            "type": "Typ",
+            "typeChecklist": "Checklista",
+            "typeCode": "Kod",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Formatierad text",
+            "typeText": "Text"
+        },
+        "tag": "Etikett"
     }
 }
