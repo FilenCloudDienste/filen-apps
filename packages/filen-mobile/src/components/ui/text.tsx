@@ -2,7 +2,7 @@ import { NativeText } from "react-native-boost/runtime"
 import { withUniwind } from "uniwind"
 import type { TextProps } from "react-native"
 import { memo } from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@filen/utils"
 
 export const UniwindText = memo(withUniwind(NativeText) as React.FC<TextProps>)
 

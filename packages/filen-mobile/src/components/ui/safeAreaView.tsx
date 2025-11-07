@@ -1,7 +1,7 @@
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { memo, useMemo } from "react"
 import View from "@/components/ui/view"
-import { cn } from "@/lib/utils"
+import { cn } from "@filen/utils"
 import type { ViewProps } from "react-native"
 
 export const SafeAreaView = memo(

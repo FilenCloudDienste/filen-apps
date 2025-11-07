@@ -2,7 +2,7 @@ import { NativeView } from "react-native-boost/runtime"
 import { withUniwind } from "uniwind"
 import type { ViewProps } from "react-native"
 import { memo } from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@filen/utils"
 
 export const UniwindView = memo(withUniwind(NativeView) as React.FC<ViewProps>)
 
