@@ -116,7 +116,7 @@ export async function restoreQueries(): Promise<void> {
 					})
 
 					try {
-						if (persistedQuery.queryKey.some(k => k === USE_DRIVE_ITEMS_BASE_QUERY_KEY)) {
+						if (persistedQuery.queryKey.some(key => key === USE_DRIVE_ITEMS_BASE_QUERY_KEY)) {
 							for (const item of persistedQuery.state.data as DriveItem[]) {
 								if (!item.data.decryptedMeta) {
 									continue

@@ -42,6 +42,7 @@ export type DriveItemFileShared = SharedFile &
 export type DriveItemDirectoryShared = SharedDir &
 	ExtraData & {
 		decryptedMeta: DecryptedDirMeta | null
+		inner: Dir
 	}
 
 export type DriveItem =
@@ -75,12 +76,14 @@ export function unwrapDirMeta(dir: Dir | SharedDir):
 			shared: false
 			dir: Dir
 			uuid: string | null
+			inner: Dir | null
 	  }
 	| {
 			meta: DecryptedDirMeta | null
 			shared: true
 			dir: SharedDir
 			uuid: string | null
+			inner: Dir | null
 	  } {
 	if ("uuid" in dir) {
 		switch (dir.meta.tag) {
@@ -91,7 +94,8 @@ export function unwrapDirMeta(dir: Dir | SharedDir):
 					meta: decoded,
 					shared: false,
 					dir,
-					uuid: dir.uuid
+					uuid: dir.uuid,
+					inner: dir
 				}
 			}
 
@@ -100,7 +104,8 @@ export function unwrapDirMeta(dir: Dir | SharedDir):
 					meta: null,
 					shared: false,
 					dir,
-					uuid: dir.uuid
+					uuid: dir.uuid,
+					inner: dir
 				}
 			}
 		}
@@ -118,7 +123,8 @@ export function unwrapDirMeta(dir: Dir | SharedDir):
 						meta: decoded,
 						shared: true,
 						dir,
-						uuid: inner.uuid
+						uuid: inner.uuid,
+						inner
 					}
 				}
 
@@ -127,7 +133,8 @@ export function unwrapDirMeta(dir: Dir | SharedDir):
 						meta: null,
 						shared: true,
 						dir,
-						uuid: inner.uuid
+						uuid: inner.uuid,
+						inner
 					}
 				}
 			}
@@ -138,7 +145,8 @@ export function unwrapDirMeta(dir: Dir | SharedDir):
 				meta: null,
 				shared: true,
 				dir,
-				uuid: null
+				uuid: null,
+				inner: null
 			}
 		}
 	}
@@ -206,13 +214,19 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 	const parsedPath = Paths.parse(params.path.pathname)
 	const sdkClient = await auth.getSdkClient()
 
+	const signal = params.signal
+		? {
+				signal: params.signal
+			}
+		: undefined
+
 	const result = await (() => {
 		switch (params.path.type) {
 			case "drive": {
 				const dir = (() => {
 					const root = new DirEnum.Root(sdkClient.root())
 
-					if (parsedPath.base.length === 0 || parsedPath.base === "/") {
+					if (parsedPath.base.length === 0 || parsedPath.base === "/" || parsedPath.base === ".") {
 						return root
 					}
 
@@ -225,39 +239,20 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 					return root
 				})()
 
-				return sdkClient.listDir(
-					dir,
-					params.signal
-						? {
-								signal: params.signal
-							}
-						: undefined
-				)
+				return sdkClient.listDir(dir, signal)
 			}
 
 			case "favorites": {
-				return sdkClient.listFavorites(
-					params.signal
-						? {
-								signal: params.signal
-							}
-						: undefined
-				)
+				return sdkClient.listFavorites(signal)
 			}
 
 			case "recents": {
-				return sdkClient.listRecents(
-					params.signal
-						? {
-								signal: params.signal
-							}
-						: undefined
-				)
+				return sdkClient.listRecents(signal)
 			}
 
 			case "sharedIn": {
 				const dir = (() => {
-					if (parsedPath.base.length === 0 || parsedPath.base === "/") {
+					if (parsedPath.base.length === 0 || parsedPath.base === "/" || parsedPath.base === ".") {
 						return undefined
 					}
 
@@ -270,19 +265,12 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 					return undefined
 				})()
 
-				return sdkClient.listInShared(
-					dir,
-					params.signal
-						? {
-								signal: params.signal
-							}
-						: undefined
-				)
+				return sdkClient.listInShared(dir, signal)
 			}
 
 			case "sharedOut": {
 				const dir = (() => {
-					if (parsedPath.base.length === 0 || parsedPath.base === "/") {
+					if (parsedPath.base.length === 0 || parsedPath.base === "/" || parsedPath.base === ".") {
 						return undefined
 					}
 
@@ -295,15 +283,7 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 					return undefined
 				})()
 
-				return sdkClient.listOutShared(
-					dir,
-					params.path.contact,
-					params.signal
-						? {
-								signal: params.signal
-							}
-						: undefined
-				)
+				return sdkClient.listOutShared(dir, params.path.contact, signal)
 			}
 
 			case "trash": {
@@ -319,9 +299,9 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 	const items: DriveItem[] = []
 
 	for (const resultDir of result.dirs) {
-		const { meta, shared, dir, uuid } = unwrapDirMeta(resultDir)
+		const { meta, shared, dir, uuid, inner } = unwrapDirMeta(resultDir)
 
-		if (!uuid) {
+		if (!uuid || !inner) {
 			continue
 		}
 
@@ -343,7 +323,8 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 				data: {
 					...dir,
 					size: 0n,
-					decryptedMeta: meta
+					decryptedMeta: meta,
+					inner
 				}
 			})
 

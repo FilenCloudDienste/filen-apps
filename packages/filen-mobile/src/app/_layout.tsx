@@ -17,6 +17,8 @@ import { NotifierWrapper } from "react-native-notifier"
 import { StatusBar } from "expo-status-bar"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
+import { PressablesConfig } from "pressto"
+import * as Haptics from "expo-haptics"
 
 SplashScreen.setOptions({
 	duration: 400,
@@ -68,23 +70,31 @@ export const RootLayout = memo(() => {
 				}}
 			>
 				<KeyboardProvider>
-					<NotifierWrapper useRNScreensOverlay={true}>
-						<QueryClientProvider client={queryClient}>
-							<View className="flex-1">
-								{isSetupDone && (
-									<Stack
-										initialRouteName={isAuthed ? "tabs" : "auth"}
-										screenOptions={{
-											headerShown: false,
-											contentStyle: {
-												backgroundColor: bgBackground.backgroundColor as string
-											}
-										}}
-									/>
-								)}
-							</View>
-						</QueryClientProvider>
-					</NotifierWrapper>
+					<PressablesConfig
+						globalHandlers={{
+							onPress: () => {
+								Haptics.selectionAsync().catch(console.error)
+							}
+						}}
+					>
+						<NotifierWrapper useRNScreensOverlay={true}>
+							<QueryClientProvider client={queryClient}>
+								<View className="flex-1">
+									{isSetupDone && (
+										<Stack
+											initialRouteName={isAuthed ? "tabs" : "auth"}
+											screenOptions={{
+												headerShown: false,
+												contentStyle: {
+													backgroundColor: bgBackground.backgroundColor as string
+												}
+											}}
+										/>
+									)}
+								</View>
+							</QueryClientProvider>
+						</NotifierWrapper>
+					</PressablesConfig>
 				</KeyboardProvider>
 			</GestureHandlerRootView>
 		</Fragment>

@@ -10,14 +10,9 @@ export const NotifierErrorContainer = memo(({ children }: { children: React.Reac
 	return (
 		<View
 			style={{
-				paddingTop: insets.top,
-				backgroundColor: "rgb(255, 59, 48)", // TODO: Use theme color
-				zIndex: 1000,
-				position: "absolute",
-				top: 0,
-				left: 0,
-				right: 0
+				paddingTop: insets.top
 			}}
+			className="bg-red-500 z-1000 absolute top-0 left-0 right-0"
 		>
 			{children}
 		</View>

@@ -5,8 +5,8 @@ export class Auth {
 	private sdkClient: JsClientInterface | null = null
 	public readonly stringifiedClientStorageKey: string = "stringifiedClient"
 
-	public readonly maxIoMemoryUsage: number = 128 * 1024 * 1024 // 128 MiB
-	public readonly maxParallelRequests: number = 128
+	public readonly maxIoMemoryUsage: number = 256 * 1024 * 1024 // 256 MiB
+	public readonly maxParallelRequests: number = 512
 
 	public async isAuthed(): Promise<
 		| {

@@ -11,8 +11,6 @@ import alerts from "@/lib/alerts"
 export const Index = memo(() => {
 	const router = useRouter()
 
-	console.log("d:", new Date().getTime())
-
 	return (
 		<Fragment>
 			<Header title="Home" />
