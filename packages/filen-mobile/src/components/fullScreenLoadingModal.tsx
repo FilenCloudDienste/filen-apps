@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react"
 import { Modal, ActivityIndicator, Platform } from "react-native"
-import { run, type DeferFn, type Result, type Options } from "@filen/utils"
+import { run, type DeferFn, type Result, type Options, runEffect } from "@filen/utils"
 import { FullWindowOverlay } from "react-native-screens"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { AnimatedView } from "@/components/ui/animated"
@@ -39,29 +39,41 @@ export const FullScreenLoadingModal = memo(() => {
 	const [count, setCount] = useState<number>(0)
 
 	useEffect(() => {
-		const showFullScreenLoadingModalListener = events.subscribe("showFullScreenLoadingModal", () => {
-			setCount(prev => prev + 1)
-		})
+		const { cleanup } = runEffect(defer => {
+			const showFullScreenLoadingModalListener = events.subscribe("showFullScreenLoadingModal", () => {
+				setCount(prev => prev + 1)
+			})
 
-		const hideFullScreenLoadingModalListener = events.subscribe("hideFullScreenLoadingModal", () => {
-			setCount(prev => Math.max(0, prev - 1))
-		})
+			defer(() => {
+				showFullScreenLoadingModalListener.remove()
+			})
 
-		const forceHideFullScreenLoadingModalListener = events.subscribe("forceHideFullScreenLoadingModal", () => {
-			setCount(0)
+			const hideFullScreenLoadingModalListener = events.subscribe("hideFullScreenLoadingModal", () => {
+				setCount(prev => Math.max(0, prev - 1))
+			})
+
+			defer(() => {
+				hideFullScreenLoadingModalListener.remove()
+			})
+
+			const forceHideFullScreenLoadingModalListener = events.subscribe("forceHideFullScreenLoadingModal", () => {
+				setCount(0)
+			})
+
+			defer(() => {
+				forceHideFullScreenLoadingModalListener.remove()
+			})
 		})
 
 		return () => {
-			showFullScreenLoadingModalListener.remove()
-			hideFullScreenLoadingModalListener.remove()
-			forceHideFullScreenLoadingModalListener.remove()
+			cleanup()
 		}
 	}, [])
 
 	return (
 		<FullScreenLoadingModalParent visible={count > 0}>
 			<AnimatedView
-				className="flex-1 bg-black bg-opacity-50 justify-center items-center"
+				className="flex-1 bg-black opacity-50 justify-center items-center top-0 left-0 right-0 bottom-0 z-9999 w-full h-full absolute"
 				entering={FadeIn}
 				exiting={FadeOut}
 			>
@@ -76,7 +88,7 @@ export const FullScreenLoadingModal = memo(() => {
 
 FullScreenLoadingModal.displayName = "FullScreenLoadingModal"
 
-export function forceHideFullScreenLoadingModal(): void {
+export function forceHide(): void {
 	events.emit("forceHideFullScreenLoadingModal")
 }
 
