@@ -15,9 +15,10 @@ export const FullScreenLoadingModalParent = memo(({ children, visible }: { child
 		ios: <FullWindowOverlay>{children}</FullWindowOverlay>,
 		default: (
 			<Modal
+				className="z-9999"
 				visible={visible}
 				transparent={true}
-				animationType="fade"
+				animationType="none"
 				presentationStyle="overFullScreen"
 				onRequestClose={e => {
 					e.preventDefault()
