@@ -12,6 +12,7 @@ export type Events = {
 	secureStoreClear: void
 	showFullScreenLoadingModal: void
 	hideFullScreenLoadingModal: void
+	forceHideFullScreenLoadingModal: void
 }
 
 export class TypedEventEmitter<T> {

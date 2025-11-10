@@ -47,9 +47,14 @@ export const FullScreenLoadingModal = memo(() => {
 			setCount(prev => Math.max(0, prev - 1))
 		})
 
+		const forceHideFullScreenLoadingModalListener = events.subscribe("forceHideFullScreenLoadingModal", () => {
+			setCount(0)
+		})
+
 		return () => {
 			showFullScreenLoadingModalListener.remove()
 			hideFullScreenLoadingModalListener.remove()
+			forceHideFullScreenLoadingModalListener.remove()
 		}
 	}, [])
 
@@ -70,6 +75,10 @@ export const FullScreenLoadingModal = memo(() => {
 })
 
 FullScreenLoadingModal.displayName = "FullScreenLoadingModal"
+
+export function forceHideFullScreenLoadingModal(): void {
+	events.emit("forceHideFullScreenLoadingModal")
+}
 
 export async function runWithLoading<TResult, E = Error>(
 	fn: (defer: DeferFn) => TResult | Promise<TResult>,
