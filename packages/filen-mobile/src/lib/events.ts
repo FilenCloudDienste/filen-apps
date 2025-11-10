@@ -10,6 +10,8 @@ export type Events = {
 		key: string
 	}
 	secureStoreClear: void
+	showFullScreenLoadingModal: void
+	hideFullScreenLoadingModal: void
 }
 
 export class TypedEventEmitter<T> {

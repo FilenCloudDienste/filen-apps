@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { PressablesConfig } from "pressto"
 import * as Haptics from "expo-haptics"
+import FullScreenLoadingModal from "@/components/fullScreenLoadingModal"
 
 SplashScreen.setOptions({
 	duration: 400,
@@ -91,6 +92,7 @@ export const RootLayout = memo(() => {
 											}}
 										/>
 									)}
+									<FullScreenLoadingModal />
 								</View>
 							</QueryClientProvider>
 						</NotifierWrapper>
