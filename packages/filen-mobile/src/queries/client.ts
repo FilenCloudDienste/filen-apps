@@ -29,10 +29,24 @@ const persisterMutex = new Semaphore(1)
 
 export const queryClientPersisterKv = {
 	getItem: async <T>(key: string): Promise<T | null> => {
-		return await sqlite.kvAsync.get(`${QUERY_CLIENT_PERSISTER_PREFIX}:${key}`)
+		const result = await run(async defer => {
+			await persisterMutex.acquire()
+
+			defer(() => {
+				persisterMutex.release()
+			})
+
+			return await sqlite.kvAsync.get<T>(`${QUERY_CLIENT_PERSISTER_PREFIX}:${key}`)
+		})
+
+		if (!result.success) {
+			throw result.error
+		}
+
+		return result.data
 	},
 	setItem: async (key: string, value: unknown): Promise<void> => {
-		await run(async defer => {
+		const result = await run(async defer => {
 			await persisterMutex.acquire()
 
 			defer(() => {
@@ -41,6 +55,10 @@ export const queryClientPersisterKv = {
 
 			await sqlite.kvAsync.set(`${QUERY_CLIENT_PERSISTER_PREFIX}:${key}`, value)
 		})
+
+		if (!result.success) {
+			throw result.error
+		}
 	},
 	removeItem: async (key: string): Promise<void> => {
 		const result = await run(async defer => {
@@ -56,8 +74,6 @@ export const queryClientPersisterKv = {
 		if (!result.success) {
 			throw result.error
 		}
-
-		return result.data
 	},
 	keys: async (): Promise<string[]> => {
 		return (await sqlite.kvAsync.keys()).map(key => key.replace(`${QUERY_CLIENT_PERSISTER_PREFIX}:`, ""))

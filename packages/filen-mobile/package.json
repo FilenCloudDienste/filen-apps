@@ -33,7 +33,7 @@
     "@craftzdog/react-native-buffer": "^6.1.1",
     "@expo/ui": "~0.2.0-beta.7",
     "@expo/vector-icons": "^15.0.3",
-    "@filen/sdk-rs": "^0.3.28",
+    "@filen/sdk-rs": "^0.3.30",
     "@filen/utils": "^0.0.1",
     "@react-native-community/netinfo": "11.4.1",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -42,7 +42,7 @@
     "@shopify/flash-list": "2.0.2",
     "@tanstack/query-persist-client-core": "^5.91.6",
     "@tanstack/react-query": "^5.90.7",
-    "arktype": "^2.1.25",
+    "arktype": "^2.1.26",
     "burnt": "^0.13.0",
     "clsx": "^2.1.1",
     "es-toolkit": "^1.41.0",
@@ -128,6 +128,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.46.3"
+    "typescript-eslint": "^8.46.4"
   }
 }
