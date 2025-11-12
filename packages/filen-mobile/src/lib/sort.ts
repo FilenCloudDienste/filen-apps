@@ -4,11 +4,11 @@ import type { DriveItem } from "@/queries/useDriveItems.query"
 export type SortByType =
 	| "nameAsc"
 	| "sizeAsc"
-	| "typeAsc"
+	| "mimeAsc"
 	| "lastModifiedAsc"
 	| "nameDesc"
 	| "sizeDesc"
-	| "typeDesc"
+	| "mimeDesc"
 	| "lastModifiedDesc"
 	| "uploadDateAsc"
 	| "uploadDateDesc"
@@ -19,7 +19,7 @@ export class ItemSorter {
 	private uuidCache = new Map<string, number>()
 	private lowerCache = new Map<string, string>()
 	private numericPartsCache = new Map<string, (string | number)[]>()
-	private readonly MAX_CACHE_SIZE = 65535
+	private readonly MAX_CACHE_SIZE = Infinity // Might adjust later if needed
 
 	private getUuidNumber(uuid: string): number {
 		let cached = this.uuidCache.get(uuid)
@@ -135,13 +135,27 @@ export class ItemSorter {
 
 	private compareTypes(aType: string, bType: string): number {
 		if (aType !== bType) {
-			return aType === "directory" ? -1 : 1
+			return aType === "directory" || aType === "sharedDirectory" ? -1 : 1
 		}
 
 		return 0
 	}
 
 	private compareName = (a: DriveItem, b: DriveItem, isAsc: boolean): number => {
+		const typeComp = this.compareTypes(a.type, b.type)
+
+		if (typeComp !== 0) {
+			return typeComp
+		}
+
+		const aLower = this.getLowerName(a.data.decryptedMeta?.name ?? a.data.uuid)
+		const bLower = this.getLowerName(b.data.decryptedMeta?.name ?? b.data.uuid)
+		const result = this.compareStringsNumeric(aLower, bLower)
+
+		return isAsc ? result : -result
+	}
+
+	private compareMime = (a: DriveItem, b: DriveItem, isAsc: boolean): number => {
 		const typeComp = this.compareTypes(a.type, b.type)
 
 		if (typeComp !== 0) {
@@ -306,8 +320,8 @@ export class ItemSorter {
 		nameDesc: (a, b) => this.compareName(a, b, false),
 		sizeAsc: (a, b) => this.compareSize(a, b, true),
 		sizeDesc: (a, b) => this.compareSize(a, b, false),
-		typeAsc: (a, b) => this.compareName(a, b, true),
-		typeDesc: (a, b) => this.compareName(a, b, false),
+		mimeAsc: (a, b) => this.compareMime(a, b, true),
+		mimeDesc: (a, b) => this.compareMime(a, b, false),
 		lastModifiedAsc: (a, b) => this.compareLastModified(a, b, true),
 		lastModifiedDesc: (a, b) => this.compareLastModified(a, b, false),
 		uploadDateAsc: (a, b) => this.compareDate(a, b, true),
@@ -320,20 +334,6 @@ export class ItemSorter {
 		const compareFunction = this.sortMap[type] ?? this.sortMap["nameAsc"]
 
 		return items.slice().sort(compareFunction)
-	}
-
-	public clearCaches(): void {
-		this.uuidCache.clear()
-		this.lowerCache.clear()
-		this.numericPartsCache.clear()
-	}
-
-	public getCacheStats() {
-		return {
-			uuidCacheSize: this.uuidCache.size,
-			lowerCacheSize: this.lowerCache.size,
-			numericPartsCacheSize: this.numericPartsCache.size
-		}
 	}
 }
 
