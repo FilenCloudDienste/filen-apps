@@ -20,7 +20,7 @@ import { memo, useMemo } from "react"
 import { isValidHexColor } from "@/lib/utils"
 
 export function fileNameToSvgIcon(fileName: string): string {
-	const parsed = pathModule.posix.parse(fileName.toLowerCase())
+	const parsed = pathModule.posix.parse(fileName.trim().toLowerCase())
 
 	switch (parsed.ext) {
 		case ".dmg":

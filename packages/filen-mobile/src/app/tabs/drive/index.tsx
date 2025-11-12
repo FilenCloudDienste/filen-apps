@@ -9,6 +9,7 @@ import View from "@/components/ui/view"
 import VirtualList from "@/components/ui/virtualList"
 import { PressableOpacity } from "@/components/ui/pressables"
 import Menu from "@/components/ui/menu"
+import { FileIcon, DirectoryIcon } from "@/components/itemIcons"
 
 export const DriveIndex = memo(() => {
 	const drivePath = useDrivePath()
@@ -70,7 +71,12 @@ export const DriveIndex = memo(() => {
 											}
 										]}
 									>
-										<View className="flex-row w-full h-full bg-transparent">
+										<View className="flex-row w-full h-full bg-transparent gap-4 items-center">
+											{info.item.type === "directory" ? (
+												<DirectoryIcon color={info.item.data.color} />
+											) : (
+												<FileIcon name={info.item.data.decryptedMeta?.name ?? ""} />
+											)}
 											<Text>{info.index}</Text>
 											<Text>{info.item.data.decryptedMeta?.name}</Text>
 										</View>

@@ -72,7 +72,7 @@ export const Index = memo(() => {
 							})
 
 							if (!result.cancelled) {
-								alerts.normal(`You entered: ${result.ok}`)
+								alerts.normal("ok")
 							} else {
 								alerts.normal("Prompt was cancelled")
 							}

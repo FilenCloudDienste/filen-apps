@@ -4,11 +4,9 @@ import { showPrompt } from "@/modules/android-alert-prompt"
 export type AlertPromptResult =
 	| {
 			cancelled: true
-			ok: false
 	  }
 	| {
 			cancelled: false
-			ok: boolean
 	  }
 
 export type AlertPromptOptions = {
@@ -51,8 +49,7 @@ export class Prompts {
 						style: "cancel",
 						onPress: () => {
 							resolve({
-								cancelled: true,
-								ok: false
+								cancelled: true
 							})
 						}
 					},
@@ -60,8 +57,7 @@ export class Prompts {
 						text: options?.okText ?? "OK",
 						onPress: () => {
 							resolve({
-								cancelled: false,
-								ok: true
+								cancelled: false
 							})
 						}
 					}
@@ -74,8 +70,7 @@ export class Prompts {
 						}
 
 						resolve({
-							cancelled: true,
-							ok: false
+							cancelled: true
 						})
 					}
 				}
