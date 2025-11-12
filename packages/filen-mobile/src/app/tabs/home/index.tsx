@@ -7,7 +7,7 @@ import Button from "@/components/ui/button"
 import auth from "@/lib/auth"
 import { useRouter } from "expo-router"
 import alerts from "@/lib/alerts"
-import { showPrompt } from "@/modules/android-alert-prompt"
+import { inputPrompt } from "@/lib/prompts"
 
 export const Index = memo(() => {
 	const router = useRouter()
@@ -45,15 +45,16 @@ export const Index = memo(() => {
 					</Button>
 					<Button
 						onPress={async () => {
-							const result = await showPrompt({
+							const result = await inputPrompt({
 								title: "Enter your name",
 								placeholder: "Name",
-								inputType: "password",
-								positiveText: "OK",
-								negativeText: "Cancel"
+								inputType: "secure-text",
+								okText: "OK",
+								cancelText: "Cancel"
 							})
+
 							if (!result.cancelled) {
-								alerts.normal(`You entered: ${result.text}`)
+								alerts.normal(`You entered: ${result.value}`)
 							} else {
 								alerts.normal("Prompt was cancelled")
 							}
