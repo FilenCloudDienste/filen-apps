@@ -1,9 +1,9 @@
 import "react-native-reanimated"
-import "@/global.css"
 import "@/global"
 import "@/queries/onlineStatus"
 
-import { memo, useState, useEffect, useCallback, Fragment } from "react"
+import StyleProvider from "@/providers/style.provider"
+import { memo, useState, useEffect, useCallback } from "react"
 import { Stack } from "expo-router"
 import { useResolveClassNames, useUniwind } from "uniwind"
 import View from "@/components/ui/view"
@@ -62,7 +62,7 @@ export const RootLayout = memo(() => {
 	}, [runSetup])
 
 	return (
-		<Fragment>
+		<StyleProvider>
 			<StatusBar style={theme === "dark" ? "light" : "dark"} />
 			<GestureHandlerRootView
 				style={{
@@ -99,7 +99,7 @@ export const RootLayout = memo(() => {
 					</PressablesConfig>
 				</KeyboardProvider>
 			</GestureHandlerRootView>
-		</Fragment>
+		</StyleProvider>
 	)
 })
 
