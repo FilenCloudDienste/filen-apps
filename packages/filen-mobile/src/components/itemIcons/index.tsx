@@ -1,169 +1,172 @@
 import { Image } from "expo-image"
 import { memo, useMemo } from "react"
 import { Paths } from "expo-file-system"
-import { isValidHexColor } from "@filen/utils"
+import { isValidHexColor, cn } from "@filen/utils"
 import { memoize } from "es-toolkit/function"
 import { type DirColor, DirColor_Tags } from "@filen/sdk-rs"
 
-export const FileIcon = memo(({ name, width, height }: { name: string; width?: number; height?: number }) => {
-	const source = useMemo(() => {
-		const extname = Paths.extname(name.trim().toLowerCase())
+export const FileIcon = memo(
+	({ name, width, height, className }: { name: string; width?: number; height?: number; className?: string }) => {
+		const source = useMemo(() => {
+			const extname = Paths.extname(name.trim().toLowerCase())
 
-		switch (extname) {
-			case ".dmg":
-			case ".iso": {
-				return require("@/components/itemIcons/svg/iso.svg")
+			switch (extname) {
+				case ".dmg":
+				case ".iso": {
+					return require("@/components/itemIcons/svg/iso.svg")
+				}
+
+				case ".cad": {
+					return require("@/components/itemIcons/svg/cad.svg")
+				}
+
+				case ".psd": {
+					return require("@/components/itemIcons/svg/psd.svg")
+				}
+
+				case ".apk": {
+					return require("@/components/itemIcons/svg/android.svg")
+				}
+
+				case ".ipa": {
+					return require("@/components/itemIcons/svg/apple.svg")
+				}
+
+				case ".txt": {
+					return require("@/components/itemIcons/svg/txt.svg")
+				}
+
+				case ".pdf": {
+					return require("@/components/itemIcons/svg/pdf.svg")
+				}
+
+				case ".gif":
+				case ".png":
+				case ".jpg":
+				case ".jpeg":
+				case ".heic":
+				case ".webp":
+				case ".tiff":
+				case ".bmp":
+				case ".jfif":
+				case ".jpe":
+				case ".svg": {
+					return require("@/components/itemIcons/svg/image.svg")
+				}
+
+				case ".pkg":
+				case ".rar":
+				case ".tar":
+				case ".zip":
+				case ".7zip": {
+					return require("@/components/itemIcons/svg/archive.svg")
+				}
+
+				case ".wmv":
+				case ".mov":
+				case ".avi":
+				case ".mkv":
+				case ".webm":
+				case ".mp4": {
+					return require("@/components/itemIcons/svg/video.svg")
+				}
+
+				case ".mp3": {
+					return require("@/components/itemIcons/svg/audio.svg")
+				}
+
+				case ".js":
+				case ".cjs":
+				case ".mjs":
+				case ".jsx":
+				case ".tsx":
+				case ".ts":
+				case ".cpp":
+				case ".c":
+				case ".php":
+				case ".htm":
+				case ".html5":
+				case ".html":
+				case ".css":
+				case ".css3":
+				case ".sass":
+				case ".xml":
+				case ".json":
+				case ".sql":
+				case ".java":
+				case ".kt":
+				case ".swift":
+				case ".py3":
+				case ".py":
+				case ".cmake":
+				case ".cs":
+				case ".dart":
+				case ".dockerfile":
+				case ".go":
+				case ".less":
+				case ".yaml":
+				case ".vue":
+				case ".svelte":
+				case ".vbs":
+				case ".toml":
+				case ".cobol":
+				case ".h":
+				case ".conf":
+				case ".sh":
+				case ".rs":
+				case ".rb":
+				case ".ps1":
+				case ".bat":
+				case ".ps":
+				case ".protobuf":
+				case ".ahk":
+				case ".litcoffee":
+				case ".coffee":
+				case ".proto": {
+					return require("@/components/itemIcons/svg/code.svg")
+				}
+
+				case ".jar":
+				case ".exe":
+				case ".bin": {
+					return require("@/components/itemIcons/svg/exe.svg")
+				}
+
+				case ".doc":
+				case ".docx": {
+					return require("@/components/itemIcons/svg/doc.svg")
+				}
+
+				case ".ppt":
+				case ".pptx": {
+					return require("@/components/itemIcons/svg/ppt.svg")
+				}
+
+				case ".xls":
+				case ".xlsx": {
+					return require("@/components/itemIcons/svg/xls.svg")
+				}
+
+				default: {
+					return require("@/components/itemIcons/svg/other.svg")
+				}
 			}
+		}, [name])
 
-			case ".cad": {
-				return require("@/components/itemIcons/svg/cad.svg")
-			}
-
-			case ".psd": {
-				return require("@/components/itemIcons/svg/psd.svg")
-			}
-
-			case ".apk": {
-				return require("@/components/itemIcons/svg/android.svg")
-			}
-
-			case ".ipa": {
-				return require("@/components/itemIcons/svg/apple.svg")
-			}
-
-			case ".txt": {
-				return require("@/components/itemIcons/svg/txt.svg")
-			}
-
-			case ".pdf": {
-				return require("@/components/itemIcons/svg/pdf.svg")
-			}
-
-			case ".gif":
-			case ".png":
-			case ".jpg":
-			case ".jpeg":
-			case ".heic":
-			case ".webp":
-			case ".tiff":
-			case ".bmp":
-			case ".jfif":
-			case ".jpe":
-			case ".svg": {
-				return require("@/components/itemIcons/svg/image.svg")
-			}
-
-			case ".pkg":
-			case ".rar":
-			case ".tar":
-			case ".zip":
-			case ".7zip": {
-				return require("@/components/itemIcons/svg/archive.svg")
-			}
-
-			case ".wmv":
-			case ".mov":
-			case ".avi":
-			case ".mkv":
-			case ".webm":
-			case ".mp4": {
-				return require("@/components/itemIcons/svg/video.svg")
-			}
-
-			case ".mp3": {
-				return require("@/components/itemIcons/svg/audio.svg")
-			}
-
-			case ".js":
-			case ".cjs":
-			case ".mjs":
-			case ".jsx":
-			case ".tsx":
-			case ".ts":
-			case ".cpp":
-			case ".c":
-			case ".php":
-			case ".htm":
-			case ".html5":
-			case ".html":
-			case ".css":
-			case ".css3":
-			case ".sass":
-			case ".xml":
-			case ".json":
-			case ".sql":
-			case ".java":
-			case ".kt":
-			case ".swift":
-			case ".py3":
-			case ".py":
-			case ".cmake":
-			case ".cs":
-			case ".dart":
-			case ".dockerfile":
-			case ".go":
-			case ".less":
-			case ".yaml":
-			case ".vue":
-			case ".svelte":
-			case ".vbs":
-			case ".toml":
-			case ".cobol":
-			case ".h":
-			case ".conf":
-			case ".sh":
-			case ".rs":
-			case ".rb":
-			case ".ps1":
-			case ".bat":
-			case ".ps":
-			case ".protobuf":
-			case ".ahk":
-			case ".litcoffee":
-			case ".coffee":
-			case ".proto": {
-				return require("@/components/itemIcons/svg/code.svg")
-			}
-
-			case ".jar":
-			case ".exe":
-			case ".bin": {
-				return require("@/components/itemIcons/svg/exe.svg")
-			}
-
-			case ".doc":
-			case ".docx": {
-				return require("@/components/itemIcons/svg/doc.svg")
-			}
-
-			case ".ppt":
-			case ".pptx": {
-				return require("@/components/itemIcons/svg/ppt.svg")
-			}
-
-			case ".xls":
-			case ".xlsx": {
-				return require("@/components/itemIcons/svg/xls.svg")
-			}
-
-			default: {
-				return require("@/components/itemIcons/svg/other.svg")
-			}
-		}
-	}, [name])
-
-	return (
-		<Image
-			source={source}
-			style={{
-				width: width ?? 32,
-				height: height ?? 32
-			}}
-			contentFit="contain"
-			cachePolicy="memory-disk"
-		/>
-	)
-})
+		return (
+			<Image
+				className={cn("shrink-0", className)}
+				source={source}
+				style={{
+					width: width ?? 32,
+					height: height ?? 32
+				}}
+				contentFit="contain"
+				cachePolicy="memory-disk"
+			/>
+		)
+	}
+)
 
 FileIcon.displayName = "FileIcon"
 
@@ -300,24 +303,27 @@ export const directorySvg = memoize((color?: string | null, width?: string | num
 	return `data:image/svg+xml;base64,${btoa(svgTemplateString)}`
 })
 
-export const DirectoryIcon = memo(({ color, width, height }: { color?: DirColor; width?: number; height?: number }) => {
-	const source = useMemo(() => {
-		return {
-			uri: directorySvg(unwrapDirColor(color), width, height)
-		}
-	}, [color, width, height])
+export const DirectoryIcon = memo(
+	({ color, width, height, className }: { color?: DirColor; width?: number; height?: number; className?: string }) => {
+		const source = useMemo(() => {
+			return {
+				uri: directorySvg(unwrapDirColor(color), width, height)
+			}
+		}, [color, width, height])
 
-	return (
-		<Image
-			source={source}
-			style={{
-				width: width ?? 32,
-				height: height ?? 32
-			}}
-			contentFit="contain"
-			cachePolicy="memory-disk"
-		/>
-	)
-})
+		return (
+			<Image
+				className={cn("shrink-0", className)}
+				source={source}
+				style={{
+					width: width ?? 32,
+					height: height ?? 32
+				}}
+				contentFit="contain"
+				cachePolicy="memory-disk"
+			/>
+		)
+	}
+)
 
 DirectoryIcon.displayName = "DirectoryIcon"
