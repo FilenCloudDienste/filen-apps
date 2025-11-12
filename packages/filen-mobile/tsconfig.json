@@ -6,6 +6,7 @@
 		"isolatedModules": true,
 		"noEmit": true,
 		"paths": {
+			"@/modules/*": ["./modules/*"],
 			"@/*": ["./src/*"],
 			"~/*": ["./src/*"]
 		},
@@ -21,7 +22,6 @@
 
 		// Output
 		"outDir": "./dist",
-		"rootDir": "./src",
 
 		"strict": true,
 		"exactOptionalPropertyTypes": false,
@@ -56,6 +56,15 @@
 		"suppressImplicitAnyIndexErrors": false,
 		"noStrictGenericChecks": false
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "src/**/*.d.ts"],
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		".expo/types/**/*.ts",
+		"expo-env.d.ts",
+		"src/**/*.d.ts",
+		"modules/**/*.ts",
+		"modules/**/*.tsx",
+		"modules/**/*.d.ts"
+	],
 	"exclude": ["android/**/*", "ios/**/*", ".expo/**/*"]
 }

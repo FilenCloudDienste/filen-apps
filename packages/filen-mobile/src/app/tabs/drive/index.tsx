@@ -30,6 +30,7 @@ export const DriveIndex = memo(() => {
 					className="flex-1"
 					contentInsetAdjustmentBehavior="automatic"
 					contentContainerClassName="pb-32"
+					itemHeight={36}
 					keyExtractor={item =>
 						item.type === "directory"
 							? item.data.uuid
@@ -48,7 +49,7 @@ export const DriveIndex = memo(() => {
 					}
 					renderItem={info => {
 						return (
-							<View className="border-b border-border flex-row w-full">
+							<View className="border-b border-border flex-row w-full h-9">
 								<PressableOpacity
 									className="flex-row gap-2 p-2 px-4 w-full h-full"
 									onPress={() => console.log("onpress")}

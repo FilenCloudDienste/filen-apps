@@ -19,7 +19,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { PressablesConfig } from "pressto"
 import * as Haptics from "expo-haptics"
-import FullScreenLoadingModal from "@/components/fullScreenLoadingModal"
+import FullScreenLoadingModal from "@/components/ui/fullScreenLoadingModal"
 
 SplashScreen.setOptions({
 	duration: 400,

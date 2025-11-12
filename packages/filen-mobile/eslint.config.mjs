@@ -4,6 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks"
 import typescript from "@typescript-eslint/eslint-plugin"
 import typescriptParser from "@typescript-eslint/parser"
 import reactCompiler from "eslint-plugin-react-compiler"
+import importPlugin from "eslint-plugin-import"
 
 const compat = new FlatCompat()
 
@@ -49,7 +50,8 @@ export default [
 		plugins: {
 			"@typescript-eslint": typescript,
 			"react-hooks": reactHooks,
-			"react-compiler": reactCompiler
+			"react-compiler": reactCompiler,
+			import: importPlugin
 		},
 		rules: {
 			eqeqeq: 2,
@@ -76,6 +78,14 @@ export default [
 					patterns: [".*"]
 				}
 			]
+		},
+		settings: {
+			"import/resolver": {
+				typescript: {
+					alwaysTryTypes: true,
+					project: "./tsconfig.json"
+				}
+			}
 		}
 	},
 	{
