@@ -1,19 +1,21 @@
-import { memo, useMemo, useRef } from "react"
+import { memo, useMemo, useRef, useState, useCallback } from "react"
 import { withUniwind } from "uniwind"
-import { FlatList } from "react-native-gesture-handler"
-import type { FlatListProps, View as RNView } from "react-native"
+import { type FlatListProps, type View as RNView, RefreshControl, FlatList } from "react-native"
 import View from "@/components/ui/view"
 import useViewLayout from "@/hooks/useViewLayout"
-import { cn } from "@filen/utils"
+import { cn, run, type DeferFn } from "@filen/utils"
+import alerts from "@/lib/alerts"
 
 export type VirtualListExtraProps = {
 	itemHeight?: number
 	parentClassName?: string
+	onRefresh?: (defer: DeferFn) => Promise<void> | void
 }
 
 export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => {
 	const viewRef = useRef<RNView>(null)
 	const { layout, onLayout } = useViewLayout(viewRef)
+	const [refreshing, setRefreshing] = useState<boolean>(false)
 
 	const initialNumToRender = useMemo(() => {
 		if (!layout || props.data?.length === 0 || !props.itemHeight) {
@@ -53,6 +55,40 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 		return Math.min(1, itemsInView / 2)
 	}, [layout, props.itemHeight])
 
+	const onRefresh = useCallback(async () => {
+		if (!props.onRefresh) {
+			return
+		}
+
+		const result = await run(async defer => {
+			setRefreshing(true)
+
+			defer(() => {
+				setRefreshing(false)
+			})
+
+			await props.onRefresh?.(defer)
+		})
+
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
+		}
+	}, [props])
+
+	const refreshControl = useMemo(() => {
+		if (!props.onRefresh) {
+			return undefined
+		}
+
+		return (
+			<RefreshControl
+				refreshing={refreshing}
+				onRefresh={onRefresh}
+			/>
+		)
+	}, [props, refreshing, onRefresh])
+
 	if (!props.keyExtractor) {
 		throw new Error("VirtualList requires a keyExtractor prop")
 	}
@@ -70,6 +106,8 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 				getItemLayout={getItemLayout}
 				maxToRenderPerBatch={maxToRenderPerBatch}
 				updateCellsBatchingPeriod={100}
+				refreshing={refreshing}
+				refreshControl={refreshControl}
 				{...props}
 			/>
 		</View>

@@ -22,10 +22,12 @@ export const NotifierErrorContainer = memo(({ children }: { children: React.Reac
 NotifierErrorContainer.displayName = "NotifierErrorContainer"
 
 export class Alerts {
-	public error(title: string): void {
+	public error(message: unknown): void {
+		const description = message instanceof Error ? message.message : String(message)
+
 		Notifier.showNotification({
 			title: "Error",
-			description: title,
+			description,
 			duration: 3000,
 			Component: NotifierComponents.Alert,
 			componentProps: {

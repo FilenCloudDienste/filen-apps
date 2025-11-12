@@ -1,4 +1,4 @@
-import { memo, Fragment, useCallback } from "react"
+import { memo, Fragment, useCallback, useMemo } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import useDrivePath from "@/hooks/useDrivePath"
@@ -10,6 +10,8 @@ import cache from "@/lib/cache"
 import { useStringifiedClient } from "@/lib/auth"
 import Item from "@/components/drive/item"
 import type { ListRenderItemInfo } from "react-native"
+import { run } from "@filen/utils"
+import alerts from "@/lib/alerts"
 
 export const DriveIndex = memo(() => {
 	const drivePath = useDrivePath()
@@ -36,32 +38,46 @@ export const DriveIndex = memo(() => {
 		[drivePath]
 	)
 
+	const keyExtractor = useCallback((item: DriveItem) => {
+		return item.data.uuid
+	}, [])
+
+	const data = useMemo(() => {
+		return driveItemsQuery.data ? itemSorter.sortItems(driveItemsQuery.data, "nameAsc") : []
+	}, [driveItemsQuery.data])
+
+	const onRefresh = useCallback(async () => {
+		const result = await run(async () => {
+			await driveItemsQuery.refetch()
+		})
+
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
+		}
+	}, [driveItemsQuery])
+
+	const headerTitle = useMemo(() => {
+		if (stringifiedClient && Paths.basename(drivePath.pathname ?? "") === stringifiedClient.rootUuid) {
+			return "tbd"
+		}
+
+		return cache.directoryUuidToName.get(Paths.basename(drivePath.pathname ?? "")) ?? "tbd"
+	}, [drivePath, stringifiedClient])
+
 	return (
 		<Fragment>
-			<Header
-				title={
-					stringifiedClient && Paths.basename(drivePath.pathname ?? "") === stringifiedClient.rootUuid
-						? "Drive"
-						: (cache.directoryUuidToName.get(Paths.basename(drivePath.pathname ?? "")) ?? "Drive")
-				}
-			/>
+			<Header title={headerTitle} />
 			<SafeAreaView edges={["left", "right"]}>
 				<VirtualList
 					className="flex-1"
 					contentInsetAdjustmentBehavior="automatic"
 					contentContainerClassName="pb-40"
 					itemHeight={36}
-					keyExtractor={item =>
-						item.type === "directory"
-							? item.data.uuid
-							: item.type === "file"
-								? item.data.uuid
-								: item.type === "sharedDirectory"
-									? item.data.inner.uuid
-									: item.data.file.uuid
-					}
-					data={driveItemsQuery.data ? itemSorter.sortItems(driveItemsQuery.data, "nameAsc") : []}
+					keyExtractor={keyExtractor}
+					data={data}
 					renderItem={renderItem}
+					onRefresh={onRefresh}
 				/>
 			</SafeAreaView>
 		</Fragment>
