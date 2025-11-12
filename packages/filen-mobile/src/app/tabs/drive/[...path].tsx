@@ -4,7 +4,7 @@ import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import useDrivePath from "@/hooks/useDrivePath"
 import useDriveItemsQuery from "@/queries/useDriveItems.query"
-import { fastLocaleCompare } from "@filen/utils"
+import { itemSorter } from "@/lib/sort"
 import View from "@/components/ui/view"
 import VirtualList from "@/components/ui/virtualList"
 import { PressableOpacity } from "@/components/ui/pressables"
@@ -44,13 +44,7 @@ export const DriveIndex = memo(() => {
 									? item.data.inner.uuid
 									: item.data.file.uuid
 					}
-					data={
-						driveItemsQuery.data
-							? driveItemsQuery.data.sort((a, b) =>
-									fastLocaleCompare(a.data.decryptedMeta?.name ?? "", b.data.decryptedMeta?.name ?? "")
-								)
-							: []
-					}
+					data={driveItemsQuery.data ? itemSorter.sortItems(driveItemsQuery.data, "nameAsc") : []}
 					renderItem={info => {
 						return (
 							<View className="border-b border-border flex-row w-full h-9">
