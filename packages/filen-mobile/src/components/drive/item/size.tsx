@@ -14,6 +14,10 @@ export const Size = memo(({ info }: { info: ListRenderItemInfo<DriveItem> }) => 
 		}
 	)
 
+	if (info.item.type === "file" || info.item.type === "sharedFile") {
+		return <Text>{Number(info.item.data.size)}</Text>
+	}
+
 	if (directorySizeQuery.status !== "success") {
 		return null
 	}
