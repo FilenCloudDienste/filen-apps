@@ -1,19 +1,113 @@
-import Text from "@/components/ui/text"
-import { memo, Fragment } from "react"
+import { memo, Fragment, useCallback, useMemo, useRef } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
+import View from "@/components/ui/view"
+import Text from "@/components/ui/text"
+import useDriveItemsQuery, { type DriveItem } from "@/queries/useDriveItems.query"
+import { itemSorter } from "@/lib/sort"
+import VirtualList from "@/components/ui/virtualList"
+import type { ListRenderItemInfo, View as RNView } from "react-native"
+import { run } from "@filen/utils"
+import alerts from "@/lib/alerts"
+import useViewLayout from "@/hooks/useViewLayout"
 
-export const PhotosIndex = memo(() => {
+const drivePath = {
+	type: "drive",
+	pathname: "/"
+} as const
+
+export const Photos = memo(() => {
+	const viewRef = useRef<RNView>(null)
+	const { layout, onLayout } = useViewLayout(viewRef)
+
+	const driveItemsQuery = useDriveItemsQuery(
+		{
+			path: drivePath
+		},
+		{
+			enabled: drivePath.type !== null
+		}
+	)
+
+	const size = useMemo(() => {
+		if (!layout) {
+			return 0
+		}
+
+		return layout.width / 5
+	}, [layout])
+
+	const renderItem = useCallback(
+		(info: ListRenderItemInfo<DriveItem>) => {
+			return (
+				<View
+					style={{
+						width: size,
+						height: size
+					}}
+					className="p-px"
+				>
+					<View className="bg-secondary items-center justify-center flex-1">
+						<Text>{info.index}</Text>
+						<Text>{info.item.data.decryptedMeta?.name}</Text>
+					</View>
+				</View>
+			)
+		},
+		[size]
+	)
+
+	const keyExtractor = useCallback((item: DriveItem) => {
+		return item.data.uuid
+	}, [])
+
+	const data = useMemo(() => {
+		return driveItemsQuery.data
+			? itemSorter.sortItems(
+					driveItemsQuery.data.filter(item => item.type === "file" || item.type === "sharedFile"),
+					"creationDesc"
+				)
+			: []
+	}, [driveItemsQuery.data])
+
+	const onRefresh = useCallback(async () => {
+		const result = await run(async () => {
+			await driveItemsQuery.refetch()
+		})
+
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
+		}
+	}, [driveItemsQuery])
+
 	return (
 		<Fragment>
-			<Header title="Photos" />
+			<Header title="tbd" />
 			<SafeAreaView edges={["left", "right"]}>
-				<Text>Welcome to the Photos Page!</Text>
+				<View
+					ref={viewRef}
+					onLayout={onLayout}
+					className="flex-1"
+				>
+					<VirtualList
+						className="flex-1"
+						contentInsetAdjustmentBehavior="automatic"
+						contentContainerClassName="pb-40"
+						itemHeight={size}
+						grid={true}
+						itemWidth={size}
+						keyExtractor={keyExtractor}
+						data={data}
+						renderItem={renderItem}
+						onRefresh={onRefresh}
+					/>
+				</View>
 			</SafeAreaView>
 		</Fragment>
 	)
 })
 
-PhotosIndex.displayName = "PhotosIndex"
+Photos.displayName = "Photos"
 
-export default PhotosIndex
+export default Photos

@@ -13,7 +13,7 @@ import type { ListRenderItemInfo } from "react-native"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 
-export const DriveIndex = memo(() => {
+export const Drive = memo(() => {
 	const drivePath = useDrivePath()
 	const stringifiedClient = useStringifiedClient()
 
@@ -84,6 +84,6 @@ export const DriveIndex = memo(() => {
 	)
 })
 
-DriveIndex.displayName = "DriveIndex"
+Drive.displayName = "Drive"
 
-export default DriveIndex
+export default Drive

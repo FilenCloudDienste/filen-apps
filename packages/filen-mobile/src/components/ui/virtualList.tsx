@@ -10,6 +10,9 @@ export type VirtualListExtraProps = {
 	itemHeight?: number
 	parentClassName?: string
 	onRefresh?: (defer: DeferFn) => Promise<void> | void
+	grid?: boolean
+	itemWidth?: number
+	itemsPerRow?: number
 }
 
 export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => {
@@ -17,17 +20,63 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
 
-	const initialNumToRender = useMemo(() => {
-		if (!layout || props.data?.length === 0 || !props.itemHeight) {
+	const itemsPerRow = useMemo(() => {
+		if (props.itemsPerRow) {
+			return props.itemsPerRow
+		}
+
+		if (!props.grid || !props.itemWidth) {
+			return 1
+		}
+
+		return Math.max(1, Math.ceil(layout.width / props.itemWidth))
+	}, [props.grid, props.itemWidth, layout, props.itemsPerRow])
+
+	const itemsInView = useMemo(() => {
+		if (!props.itemHeight) {
 			return undefined
 		}
 
-		const itemsInView = Math.ceil(layout.height / props.itemHeight)
+		if (props.grid) {
+			return Math.max(1, Math.ceil(layout.height / props.itemHeight) * itemsPerRow)
+		}
+
+		return Math.max(1, Math.ceil(layout.height / props.itemHeight))
+	}, [layout.height, props.itemHeight, props.grid, itemsPerRow])
+
+	const initialNumToRender = useMemo(() => {
+		if (props.grid) {
+			if (!itemsInView) {
+				return undefined
+			}
+
+			return Math.max(1, Math.ceil(itemsInView / itemsPerRow) * itemsPerRow)
+		}
 
 		return itemsInView
-	}, [layout, props.data, props.itemHeight])
+	}, [props.grid, itemsInView, itemsPerRow])
 
 	const getItemLayout = useMemo(() => {
+		if (props.grid) {
+			if (!props.itemWidth) {
+				return undefined
+			}
+
+			return (_: ArrayLike<T> | null | undefined, index: number) => {
+				if (!props.itemHeight) {
+					throw new Error("itemHeight is required for getItemLayout")
+				}
+
+				const rowIndex = Math.max(0, Math.floor(index / itemsPerRow))
+
+				return {
+					length: props.itemHeight,
+					offset: props.itemHeight * rowIndex,
+					index
+				}
+			}
+		}
+
 		if (!props.itemHeight) {
 			return undefined
 		}
@@ -43,17 +92,15 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 				index
 			}
 		}
-	}, [props.itemHeight])
+	}, [props.itemHeight, props.grid, props.itemWidth, itemsPerRow])
 
 	const maxToRenderPerBatch = useMemo(() => {
-		if (!layout || !props.itemHeight) {
+		if (!itemsInView) {
 			return undefined
 		}
 
-		const itemsInView = Math.ceil(layout.height / props.itemHeight)
-
-		return Math.min(1, itemsInView / 2)
-	}, [layout, props.itemHeight])
+		return Math.max(1, itemsInView / 2)
+	}, [itemsInView])
 
 	const onRefresh = useCallback(async () => {
 		if (!props.onRefresh) {
@@ -93,6 +140,10 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 		throw new Error("VirtualList requires a keyExtractor prop")
 	}
 
+	if (props.grid && (typeof props.itemWidth !== "number" || typeof props.itemHeight !== "number")) {
+		throw new Error("VirtualList in grid mode requires itemWidth and itemHeight props")
+	}
+
 	return (
 		<View
 			ref={viewRef}
@@ -100,6 +151,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			onLayout={onLayout}
 		>
 			<FlatList<T>
+				key={itemsPerRow}
 				windowSize={3}
 				initialNumToRender={initialNumToRender}
 				contentInsetAdjustmentBehavior="automatic"
@@ -108,6 +160,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 				updateCellsBatchingPeriod={100}
 				refreshing={refreshing}
 				refreshControl={refreshControl}
+				numColumns={itemsPerRow}
 				{...props}
 			/>
 		</View>
