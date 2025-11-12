@@ -86,4 +86,10 @@ export function useIsAuthed(): boolean {
 	return stringifiedClient !== null
 }
 
+export function useStringifiedClient(): StringifiedClient | null {
+	const [stringifiedClient] = useSecureStore<StringifiedClient | null>(auth.stringifiedClientStorageKey, null)
+
+	return stringifiedClient
+}
+
 export default auth

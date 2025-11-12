@@ -10,9 +10,12 @@ import VirtualList from "@/components/ui/virtualList"
 import { PressableOpacity } from "@/components/ui/pressables"
 import Menu from "@/components/ui/menu"
 import { FileIcon, DirectoryIcon } from "@/components/itemIcons"
+import { useRouter } from "expo-router"
+import { Paths } from "expo-file-system"
 
 export const DriveIndex = memo(() => {
 	const drivePath = useDrivePath()
+	const router = useRouter()
 
 	const driveItemsQuery = useDriveItemsQuery(
 		{
@@ -53,7 +56,11 @@ export const DriveIndex = memo(() => {
 							<View className="border-b border-border flex-row w-full h-9">
 								<PressableOpacity
 									className="flex-row gap-2 p-2 px-4 w-full h-full"
-									onPress={() => console.log("onpress")}
+									onPress={() => {
+										if (info.item.type === "directory") {
+											router.push(Paths.join("/", "tabs", "drive", drivePath.pathname ?? "", info.item.data.uuid))
+										}
+									}}
 								>
 									<Menu
 										className="flex-row w-full h-full"

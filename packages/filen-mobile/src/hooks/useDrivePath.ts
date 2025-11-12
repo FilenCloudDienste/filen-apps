@@ -1,6 +1,7 @@
-import { usePathname } from "expo-router"
+import { useLocalSearchParams, usePathname } from "expo-router"
 import { useMemo } from "react"
 import type { Contact } from "@filen/sdk-rs"
+import { Paths } from "expo-file-system"
 
 export type DrivePath =
 	| {
@@ -18,13 +19,21 @@ export type DrivePath =
 	  }
 
 export default function useDrivePath(): DrivePath {
+	const localSearchParams = useLocalSearchParams<{ path?: string[] }>()
 	const pathname = usePathname()
 
 	return useMemo(() => {
 		if (pathname.startsWith("/tabs/drive")) {
+			if (localSearchParams && localSearchParams.path && Array.isArray(localSearchParams.path) && localSearchParams.path.length > 0) {
+				return {
+					type: "drive",
+					pathname: Paths.join("/", ...localSearchParams.path)
+				}
+			}
+
 			return {
 				type: "drive",
-				pathname: `/${pathname.replace("/tabs/drive", "")}`
+				pathname: "/"
 			}
 		}
 
@@ -32,5 +41,5 @@ export default function useDrivePath(): DrivePath {
 			type: null,
 			pathname: null
 		}
-	}, [pathname])
+	}, [localSearchParams, pathname])
 }

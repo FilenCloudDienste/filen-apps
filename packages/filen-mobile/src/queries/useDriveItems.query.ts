@@ -37,12 +37,14 @@ export type DriveItemDirectory = Dir &
 export type DriveItemFileShared = SharedFile &
 	ExtraData & {
 		decryptedMeta: DecryptedFileMeta | null
+		uuid: string
 	}
 
 export type DriveItemDirectoryShared = SharedDir &
 	ExtraData & {
 		decryptedMeta: DecryptedDirMeta | null
 		inner: Dir
+		uuid: string
 	}
 
 export type DriveItem =
@@ -324,7 +326,8 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 					...dir,
 					size: 0n,
 					decryptedMeta: meta,
-					inner
+					inner,
+					uuid
 				}
 			})
 
@@ -350,7 +353,8 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 				data: {
 					...file,
 					size: meta?.size ?? 0n,
-					decryptedMeta: meta
+					decryptedMeta: meta,
+					uuid: file.file.uuid
 				}
 			})
 		}
