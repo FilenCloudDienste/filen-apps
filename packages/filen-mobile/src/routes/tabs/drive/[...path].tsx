@@ -33,7 +33,7 @@ export const DriveIndex = memo(() => {
 				<VirtualList
 					className="flex-1"
 					contentInsetAdjustmentBehavior="automatic"
-					contentContainerClassName="pb-32"
+					contentContainerClassName="pb-40"
 					itemHeight={36}
 					keyExtractor={item =>
 						item.type === "directory"
