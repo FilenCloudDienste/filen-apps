@@ -15,7 +15,8 @@ import {
 	type SharedDir,
 	type SharedFile,
 	DirWithMetaEnum_Tags,
-	DirWithMetaEnum
+	DirWithMetaEnum,
+	AnyDirEnumWithShareInfo
 } from "@filen/sdk-rs"
 import { Paths } from "expo-file-system"
 import type { DrivePath } from "@/hooks/useDrivePath"
@@ -319,6 +320,7 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 
 			cache.directoryUuidToDir.set(uuid, dir)
 			cache.directoryUuidToName.set(uuid, meta?.name ?? uuid)
+			cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.Dir(dir))
 		} else {
 			items.push({
 				type: "sharedDirectory",
@@ -333,6 +335,7 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 
 			cache.sharedDirUuidToDir.set(uuid, dir)
 			cache.sharedDirectoryUuidToName.set(uuid, meta?.name ?? uuid)
+			cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.SharedDir(dir))
 		}
 	}
 

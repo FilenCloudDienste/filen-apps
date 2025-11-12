@@ -1,4 +1,4 @@
-import type { Dir, Note, SharedDir } from "@filen/sdk-rs"
+import type { Dir, Note, SharedDir, AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
 
 export const cache = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -8,7 +8,8 @@ export const cache = {
 	noteUuidToNote: new Map<string, Note>(),
 	sharedDirUuidToDir: new Map<string, SharedDir>(),
 	sharedDirectoryUuidToName: new Map<string, string>(),
-	sharedDirectoryUuidToDir: new Map<string, SharedDir>()
+	sharedDirectoryUuidToDir: new Map<string, SharedDir>(),
+	directoryUuidToDirForSize: new Map<string, AnyDirEnumWithShareInfo>()
 }
 
 export default cache
