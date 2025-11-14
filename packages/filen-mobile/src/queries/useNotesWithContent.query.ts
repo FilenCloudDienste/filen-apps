@@ -1,23 +1,43 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, queryClient, useDefaultQueryParams, queryUpdater } from "@/queries/client"
+import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams } from "@/queries/client"
 import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 
-export const BASE_QUERY_KEY = "useNotesQuery"
+export const BASE_QUERY_KEY = "useNotesWithContentQuery"
 
 export async function fetchData(params?: { signal?: AbortSignal }) {
 	const sdkClient = await auth.getSdkClient()
 
-	return await sdkClient.listNotes(
+	const notes = await sdkClient.listNotes(
 		params?.signal
 			? {
 					signal: params.signal
 				}
 			: undefined
 	)
+
+	const withContent = await Promise.all(
+		notes.map(async note => {
+			const content = await sdkClient.getNoteContent(
+				note,
+				params?.signal
+					? {
+							signal: params.signal
+						}
+					: undefined
+			)
+
+			return {
+				...note,
+				content
+			}
+		})
+	)
+
+	return withContent
 }
 
-export function useNotesQuery(
+export function useNotesWithContentQuery(
 	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
 ): UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error> {
 	const defaultParams = useDefaultQueryParams(options)
@@ -41,26 +61,4 @@ export function useNotesQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error>
 }
 
-export function notesQueryUpdate({
-	updater
-}: {
-	updater:
-		| Awaited<ReturnType<typeof fetchData>>
-		| ((prev: Awaited<ReturnType<typeof fetchData>>) => Awaited<ReturnType<typeof fetchData>>)
-}) {
-	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY], prev => {
-		return typeof updater === "function" ? updater(prev ?? []) : updater
-	})
-}
-
-export async function notesQueryRefetch(): Promise<void> {
-	await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY]
-	})
-}
-
-export function notesQueryGet() {
-	return queryUpdater.get<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY])
-}
-
-export default useNotesQuery
+export default useNotesWithContentQuery

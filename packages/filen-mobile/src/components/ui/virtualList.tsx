@@ -1,10 +1,13 @@
 import { memo, useMemo, useRef, useState, useCallback } from "react"
-import { withUniwind } from "uniwind"
-import { type FlatListProps, type View as RNView, RefreshControl, FlatList } from "react-native"
+import { withUniwind, useResolveClassNames } from "uniwind"
+import { type FlatListProps, type View as RNView, RefreshControl, FlatList, ActivityIndicator } from "react-native"
 import View from "@/components/ui/view"
 import useViewLayout from "@/hooks/useViewLayout"
 import { cn, run, type DeferFn } from "@filen/utils"
 import alerts from "@/lib/alerts"
+import { AnimatedView } from "@/components/ui/animated"
+import { FadeOut, useAnimatedStyle } from "react-native-reanimated"
+import { useKeyboardAnimation } from "react-native-keyboard-controller"
 
 export type VirtualListExtraProps = {
 	itemHeight?: number
@@ -13,12 +16,17 @@ export type VirtualListExtraProps = {
 	grid?: boolean
 	itemWidth?: number
 	itemsPerRow?: number
+	loading?: boolean
+	emptyComponent?: () => React.ReactNode
+	footerComponent?: () => React.ReactNode
 }
 
 export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => {
 	const viewRef = useRef<RNView>(null)
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
+	const textForeground = useResolveClassNames("text-foreground")
+	const { height } = useKeyboardAnimation()
 
 	const itemsPerRow = useMemo(() => {
 		if (props.itemsPerRow) {
@@ -29,7 +37,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			return 1
 		}
 
-		return Math.max(1, Math.ceil(layout.width / props.itemWidth))
+		return Math.max(1, Math.floor(layout.width / props.itemWidth))
 	}, [props.grid, props.itemWidth, layout, props.itemsPerRow])
 
 	const itemsInView = useMemo(() => {
@@ -38,7 +46,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 		}
 
 		if (props.grid) {
-			return Math.max(1, Math.ceil(layout.height / props.itemHeight) * itemsPerRow)
+			return Math.max(1, Math.floor(Math.floor(layout.height / props.itemHeight) * itemsPerRow))
 		}
 
 		return Math.max(1, Math.ceil(layout.height / props.itemHeight))
@@ -50,7 +58,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 				return undefined
 			}
 
-			return Math.max(1, Math.ceil(itemsInView / itemsPerRow) * itemsPerRow)
+			return Math.max(1, Math.floor(Math.floor(itemsInView / itemsPerRow) * itemsPerRow))
 		}
 
 		return itemsInView
@@ -136,6 +144,12 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 		)
 	}, [props, refreshing, onRefresh])
 
+	const animatedStyle = useAnimatedStyle(() => {
+		return {
+			paddingBottom: height
+		}
+	}, [])
+
 	if (!props.keyExtractor) {
 		throw new Error("VirtualList requires a keyExtractor prop")
 	}
@@ -150,19 +164,57 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			className={cn("flex-1", props.parentClassName)}
 			onLayout={onLayout}
 		>
-			<FlatList<T>
-				key={itemsPerRow}
-				windowSize={3}
-				initialNumToRender={initialNumToRender}
-				contentInsetAdjustmentBehavior="automatic"
-				getItemLayout={getItemLayout}
-				maxToRenderPerBatch={maxToRenderPerBatch}
-				updateCellsBatchingPeriod={100}
-				refreshing={refreshing}
-				refreshControl={refreshControl}
-				numColumns={itemsPerRow}
-				{...props}
-			/>
+			<AnimatedView
+				className="flex-1"
+				style={animatedStyle}
+			>
+				{props.loading && (
+					<AnimatedView
+						className="absolute inset-0 z-99 bg-background items-center justify-center"
+						exiting={FadeOut}
+					>
+						<ActivityIndicator
+							size="large"
+							color={textForeground.color as string}
+						/>
+					</AnimatedView>
+				)}
+				<FlatList<T>
+					key={itemsPerRow}
+					windowSize={3}
+					initialNumToRender={initialNumToRender}
+					contentInsetAdjustmentBehavior="automatic"
+					getItemLayout={getItemLayout}
+					maxToRenderPerBatch={maxToRenderPerBatch}
+					updateCellsBatchingPeriod={100}
+					refreshing={refreshing}
+					refreshControl={refreshControl}
+					numColumns={itemsPerRow}
+					ListEmptyComponent={() => {
+						if (props.loading) {
+							return null
+						}
+
+						if (props.emptyComponent) {
+							return (
+								<AnimatedView
+									className="flex-1"
+									style={{
+										width: layout.width,
+										height: layout.height
+									}}
+								>
+									{props.emptyComponent()}
+								</AnimatedView>
+							)
+						}
+
+						return null
+					}}
+					ListFooterComponent={props.footerComponent}
+					{...props}
+				/>
+			</AnimatedView>
 		</View>
 	)
 }) as (<T>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => React.JSX.Element) & {

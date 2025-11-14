@@ -1,40 +1,39 @@
 import { memo } from "react"
 import { useResolveClassNames } from "uniwind"
-import { Stack, router } from "expo-router"
-import Text from "@/components/ui/text"
-import { TouchableOpacity } from "react-native"
+import { Stack } from "expo-router"
+import type { NativeStackHeaderItemProps, NativeStackHeaderItem } from "@react-navigation/native-stack"
 
-export const Header = memo((props: { title: string }) => {
-	const bgBackground = useResolveClassNames("bg-background")
-	const textForeground = useResolveClassNames("text-foreground")
+export const Header = memo(
+	(props: {
+		title: string
+		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
+		rightItems?: (props: NativeStackHeaderItemProps) => NativeStackHeaderItem[]
+		shown?: boolean
+		largeTitle?: boolean
+	}) => {
+		const bgBackground = useResolveClassNames("bg-background")
+		const textForeground = useResolveClassNames("text-foreground")
 
-	return (
-		<Stack.Screen
-			options={{
-				headerTitle: props.title,
-				headerShown: true,
-				headerStyle: {
-					backgroundColor: bgBackground.backgroundColor as string
-				},
-				headerTitleStyle: {
-					color: textForeground.color as string
-				},
-				headerTintColor: textForeground.color as string,
-				headerRight() {
-					return (
-						<TouchableOpacity
-							onPress={() => {
-								router.push("/search")
-							}}
-						>
-							<Text>btn</Text>
-						</TouchableOpacity>
-					)
-				}
-			}}
-		/>
-	)
-})
+		return (
+			<Stack.Screen
+				options={{
+					headerTitle: props.title,
+					headerShown: props.shown ?? true,
+					headerStyle: {
+						backgroundColor: bgBackground.backgroundColor as string
+					},
+					headerTitleStyle: {
+						color: textForeground.color as string
+					},
+					headerTintColor: textForeground.color as string,
+					headerRight: props.rightItems ? undefined : props.right,
+					unstable_headerRightItems: props.rightItems,
+					headerLargeTitle: props.largeTitle
+				}}
+			/>
+		)
+	}
+)
 
 Header.displayName = "Header"
 

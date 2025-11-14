@@ -8,9 +8,9 @@ import sqlite from "@/lib/sqlite"
 import { Semaphore, run } from "@filen/utils"
 import { unpack, pack } from "msgpackr"
 import alerts from "@/lib/alerts"
-import { BASE_QUERY_KEY as USE_DRIVE_ITEMS_BASE_QUERY_KEY, type DriveItem, unwrapDirMeta } from "@/queries/useDriveItems.query"
+import { type DriveItem, unwrapDirMeta } from "@/queries/useDriveItems.query"
 import cache from "@/lib/cache"
-import { AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
+import { AnyDirEnumWithShareInfo, type Note, type Chat } from "@filen/sdk-rs"
 
 export const VERSION = 1
 export const QUERY_CLIENT_PERSISTER_PREFIX = `reactQuery_v${VERSION}`
@@ -133,7 +133,7 @@ export async function restoreQueries(): Promise<void> {
 					})
 
 					try {
-						if (persistedQuery.queryKey.some(key => key === USE_DRIVE_ITEMS_BASE_QUERY_KEY)) {
+						if (persistedQuery.queryKey.some(key => key === "useDriveItems")) {
 							for (const item of persistedQuery.state.data as DriveItem[]) {
 								if (!item.data.decryptedMeta) {
 									continue
@@ -162,6 +162,18 @@ export async function restoreQueries(): Promise<void> {
 									cache.sharedDirectoryUuidToName.set(uuid, meta?.name ?? uuid)
 									cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.SharedDir(item.data))
 								}
+							}
+						}
+
+						if (persistedQuery.queryKey.some(key => key === "useNotesQuery")) {
+							for (const note of persistedQuery.state.data as Note[]) {
+								cache.noteUuidToNote.set(note.uuid, note)
+							}
+						}
+
+						if (persistedQuery.queryKey.some(key => key === "useChatsQuery")) {
+							for (const chat of persistedQuery.state.data as Chat[]) {
+								cache.chatUuidToChat.set(chat.uuid, chat)
 							}
 						}
 					} catch {

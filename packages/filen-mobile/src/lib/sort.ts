@@ -1,5 +1,6 @@
 import { parseNumbersFromString } from "@filen/utils"
 import type { DriveItem } from "@/queries/useDriveItems.query"
+import type { Note } from "@filen/sdk-rs"
 
 export type SortByType =
 	| "nameAsc"
@@ -338,3 +339,33 @@ export class ItemSorter {
 }
 
 export const itemSorter = new ItemSorter()
+
+export class NotesSorter {
+	public sort(notes: Note[]): Note[] {
+		return notes.sort((a, b) => {
+			if (a.pinned !== b.pinned) {
+				return b.pinned ? 1 : -1
+			}
+
+			if (a.trash !== b.trash && a.archive === false) {
+				return a.trash ? 1 : -1
+			}
+
+			if (a.archive !== b.archive) {
+				return a.archive ? 1 : -1
+			}
+
+			if (a.trash !== b.trash) {
+				return a.trash ? 1 : -1
+			}
+
+			if (b.editedTimestamp === a.editedTimestamp) {
+				return parseNumbersFromString(b.uuid) - parseNumbersFromString(a.uuid)
+			}
+
+			return Number(b.editedTimestamp) - Number(a.editedTimestamp)
+		})
+	}
+}
+
+export const notesSorter = new NotesSorter()

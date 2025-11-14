@@ -3,12 +3,12 @@ import { DEFAULT_QUERY_OPTIONS, queryClient, useDefaultQueryParams, queryUpdater
 import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 
-export const BASE_QUERY_KEY = "useNotesQuery"
+export const BASE_QUERY_KEY = "useChatsQuery"
 
 export async function fetchData(params?: { signal?: AbortSignal }) {
 	const sdkClient = await auth.getSdkClient()
 
-	return await sdkClient.listNotes(
+	return await sdkClient.listChats(
 		params?.signal
 			? {
 					signal: params.signal
@@ -17,7 +17,7 @@ export async function fetchData(params?: { signal?: AbortSignal }) {
 	)
 }
 
-export function useNotesQuery(
+export function useChatsQuery(
 	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
 ): UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error> {
 	const defaultParams = useDefaultQueryParams(options)
@@ -41,7 +41,7 @@ export function useNotesQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error>
 }
 
-export function notesQueryUpdate({
+export function chatsQueryUpdate({
 	updater
 }: {
 	updater:
@@ -53,14 +53,14 @@ export function notesQueryUpdate({
 	})
 }
 
-export async function notesQueryRefetch(): Promise<void> {
-	await queryClient.refetchQueries({
+export async function chatsQueryRefetch(): Promise<void> {
+	return await queryClient.refetchQueries({
 		queryKey: [BASE_QUERY_KEY]
 	})
 }
 
-export function notesQueryGet() {
+export function chatsQueryGet() {
 	return queryUpdater.get<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY])
 }
 
-export default useNotesQuery
+export default useChatsQuery
