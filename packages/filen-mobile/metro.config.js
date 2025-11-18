@@ -14,7 +14,10 @@ const config = {
 			buffer: require.resolve("@craftzdog/react-native-buffer"),
 			crypto: require.resolve("react-native-quick-crypto"),
 			stream: require.resolve("readable-stream")
-		}
+		},
+		unstable_enablePackageExports: true,
+		enableGlobalPackages: true,
+		unstable_conditionNames: ["browser", "require", "react-native", "default"]
 	}
 }
 

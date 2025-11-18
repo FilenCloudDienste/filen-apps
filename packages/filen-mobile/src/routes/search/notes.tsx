@@ -1,5 +1,5 @@
 import Text from "@/components/ui/text"
-import { memo, Fragment, useMemo, useCallback, useState } from "react"
+import { memo, Fragment, useMemo, useCallback, useState, useRef } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import useNotesWithContentQuery from "@/queries/useNotesWithContent.query"
@@ -18,12 +18,15 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useResolveClassNames } from "uniwind"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export const Notes = memo(() => {
 	const [searchQuery, setSearchQuery] = useState<string>("")
 	const notesWithContentQuery = useNotesWithContentQuery()
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
+	const searchQueryInputRef = useRef<TextInput>(null)
+	const insets = useSafeAreaInsets()
 
 	const notes = useMemo(() => {
 		const searchQueryNormalized = searchQuery.trim().toLowerCase()
@@ -144,6 +147,7 @@ export const Notes = memo(() => {
 							/>
 						</View>
 						<TextInput
+							ref={searchQueryInputRef}
 							className="flex-1 text-base"
 							placeholder="tbd"
 							onChangeText={text => setSearchQuery(text)}
@@ -159,7 +163,11 @@ export const Notes = memo(() => {
 								className="ml-2 p-1"
 							>
 								<PressableOpacity
-									onPress={() => setSearchQuery("")}
+									onPress={() => {
+										searchQueryInputRef.current?.clear()
+
+										setSearchQuery("")
+									}}
 									rippleColor="transparent"
 								>
 									<MaterialIcons
@@ -179,6 +187,9 @@ export const Notes = memo(() => {
 					data={notes}
 					renderItem={renderItem}
 					onRefresh={onRefresh}
+					contentContainerStyle={{
+						paddingBottom: insets.bottom
+					}}
 					loading={notesWithContentQuery.status !== "success"}
 					emptyComponent={() => {
 						if (notesWithContentQuery.status === "success") {

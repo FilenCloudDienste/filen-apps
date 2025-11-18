@@ -1,5 +1,5 @@
 import { parseNumbersFromString } from "@filen/utils"
-import type { DriveItem } from "@/queries/useDriveItems.query"
+import type { DriveItem } from "@/types"
 import type { Note } from "@filen/sdk-rs"
 
 export type SortByType =

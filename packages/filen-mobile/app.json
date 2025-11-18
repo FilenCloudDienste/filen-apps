@@ -51,7 +51,17 @@
 			"expo-build-properties",
 			"expo-background-task",
 			"expo-audio",
-			"expo-secure-store"
+			"expo-secure-store",
+			"expo-navigation-bar",
+			[
+				"react-native-edge-to-edge",
+				{
+					"android": {
+						"parentTheme": "Material3Expressive.Dynamic",
+						"enforceNavigationBarContrast": false
+					}
+				}
+			]
 		],
 		"experiments": {
 			"typedRoutes": true,

@@ -1,11 +1,10 @@
-import View from "@/components/ui/view"
-import Text from "@/components/ui/text"
 import { memo, Fragment, useMemo } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import { useLocalSearchParams, Redirect } from "expo-router"
 import useNotesQuery from "@/queries/useNotes.query"
 import type { Note as TNote } from "@filen/sdk-rs"
+import Content from "@/components/notes/content"
 
 export const Note = memo(() => {
 	const { uuid } = useLocalSearchParams<{ uuid: string }>()
@@ -22,16 +21,11 @@ export const Note = memo(() => {
 		return <Redirect href="/tabs/notes" />
 	}
 
-	console.log("Rendering note:", note)
-
 	return (
 		<Fragment>
 			<Header title="tbd" />
 			<SafeAreaView edges={["left", "right"]}>
-				<View>
-					<Text>Welcome to the Note Page!</Text>
-					<Text>Note UUID: {uuid}</Text>
-				</View>
+				<Content note={note} />
 			</SafeAreaView>
 		</Fragment>
 	)

@@ -1,7 +1,7 @@
 import { memo } from "react"
 import Text from "@/components/ui/text"
 import type { ListRenderItemInfo } from "react-native"
-import type { DriveItem } from "@/queries/useDriveItems.query"
+import type { DriveItem } from "@/types"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 
 export const Size = memo(({ info }: { info: ListRenderItemInfo<DriveItem> }) => {

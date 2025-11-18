@@ -7,7 +7,6 @@ import Button from "@/components/ui/button"
 import auth from "@/lib/auth"
 import { useRouter } from "expo-router"
 import alerts from "@/lib/alerts"
-import prompts from "@/lib/prompts"
 
 export const Index = memo(() => {
 	const router = useRouter()
@@ -42,43 +41,6 @@ export const Index = memo(() => {
 						}}
 					>
 						Show Normal Alert
-					</Button>
-					<Button
-						onPress={async () => {
-							const result = await prompts.input({
-								title: "Enter your name",
-								placeholder: "Name",
-								inputType: "secure-text",
-								okText: "OK",
-								cancelText: "Cancel"
-							})
-
-							if (!result.cancelled) {
-								alerts.normal(`You entered: ${result.value}`)
-							} else {
-								alerts.normal("Prompt was cancelled")
-							}
-						}}
-					>
-						Show Prompt Alert
-					</Button>
-					<Button
-						onPress={async () => {
-							const result = await prompts.alert({
-								title: "hi",
-								message: "This is an alert",
-								okText: "OK",
-								cancelText: "Cancel"
-							})
-
-							if (!result.cancelled) {
-								alerts.normal("ok")
-							} else {
-								alerts.normal("Prompt was cancelled")
-							}
-						}}
-					>
-						Show Alert
 					</Button>
 				</View>
 			</SafeAreaView>

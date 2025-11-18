@@ -7,7 +7,7 @@ import Text from "@/components/ui/text"
 import { useRouter } from "expo-router"
 import { Paths } from "expo-file-system"
 import type { ListRenderItemInfo } from "react-native"
-import type { DriveItem } from "@/queries/useDriveItems.query"
+import type { DriveItem } from "@/types"
 import type { DrivePath } from "@/hooks/useDrivePath"
 import Size from "@/components/drive/item/size"
 
@@ -31,7 +31,7 @@ export const Item = memo(({ info, drivePath }: { info: ListRenderItemInfo<DriveI
 						console.log(e.nativeEvent)
 					}}
 					preview={<Text>{info.item.data.decryptedMeta?.name}</Text>}
-					actions={[
+					buttons={[
 						{
 							title: "Title 1"
 						},

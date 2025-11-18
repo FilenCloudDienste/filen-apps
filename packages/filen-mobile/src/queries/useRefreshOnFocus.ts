@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { useFocusEffect } from "@react-navigation/native"
 import type { UseQueryResult } from "@tanstack/react-query"
 
@@ -9,21 +9,19 @@ export default function useRefreshOnFocus({
 	isEnabled: UseQueryResult["isEnabled"]
 	refetch: UseQueryResult["refetch"]
 }): void {
-	const firstTimeRef = useRef<boolean>(true)
+	const enabledRef = useRef<boolean>(false)
 
 	useFocusEffect(
 		useCallback(() => {
-			if (firstTimeRef.current) {
-				firstTimeRef.current = false
-
-				return
-			}
-
 			if (!isEnabled) {
 				return
 			}
 
-			refetch().catch(() => {})
+			if (enabledRef.current) {
+				refetch().catch(() => {})
+			} else {
+				enabledRef.current = true
+			}
 		}, [isEnabled, refetch])
 	)
 }

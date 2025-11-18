@@ -6,8 +6,7 @@ import useViewLayout from "@/hooks/useViewLayout"
 import { cn, run, type DeferFn } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { AnimatedView } from "@/components/ui/animated"
-import { FadeOut, useAnimatedStyle } from "react-native-reanimated"
-import { useKeyboardAnimation } from "react-native-keyboard-controller"
+import { FadeOut } from "react-native-reanimated"
 
 export type VirtualListExtraProps = {
 	itemHeight?: number
@@ -26,7 +25,6 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
 	const textForeground = useResolveClassNames("text-foreground")
-	const { height } = useKeyboardAnimation()
 
 	const itemsPerRow = useMemo(() => {
 		if (props.itemsPerRow) {
@@ -46,7 +44,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 		}
 
 		if (props.grid) {
-			return Math.max(1, Math.floor(Math.floor(layout.height / props.itemHeight) * itemsPerRow))
+			return Math.max(1, Math.floor((layout.height / props.itemHeight) * itemsPerRow))
 		}
 
 		return Math.max(1, Math.ceil(layout.height / props.itemHeight))
@@ -58,7 +56,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 				return undefined
 			}
 
-			return Math.max(1, Math.floor(Math.floor(itemsInView / itemsPerRow) * itemsPerRow))
+			return Math.max(1, Math.floor((itemsInView / itemsPerRow) * itemsPerRow))
 		}
 
 		return itemsInView
@@ -144,12 +142,6 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 		)
 	}, [props, refreshing, onRefresh])
 
-	const animatedStyle = useAnimatedStyle(() => {
-		return {
-			paddingBottom: height
-		}
-	}, [])
-
 	if (!props.keyExtractor) {
 		throw new Error("VirtualList requires a keyExtractor prop")
 	}
@@ -159,14 +151,11 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 	}
 
 	return (
-		<View
-			ref={viewRef}
-			className={cn("flex-1", props.parentClassName)}
-			onLayout={onLayout}
-		>
-			<AnimatedView
-				className="flex-1"
-				style={animatedStyle}
+		<View className="flex-1">
+			<View
+				ref={viewRef}
+				className={cn("flex-1", props.parentClassName)}
+				onLayout={onLayout}
 			>
 				{props.loading && (
 					<AnimatedView
@@ -190,6 +179,9 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 					refreshing={refreshing}
 					refreshControl={refreshControl}
 					numColumns={itemsPerRow}
+					showsHorizontalScrollIndicator={!props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
+					showsVerticalScrollIndicator={props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
+					scrollEnabled={!props.loading && (props.data ?? []).length > 0}
 					ListEmptyComponent={() => {
 						if (props.loading) {
 							return null
@@ -214,7 +206,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 					ListFooterComponent={props.footerComponent}
 					{...props}
 				/>
-			</AnimatedView>
+			</View>
 		</View>
 	)
 }) as (<T>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => React.JSX.Element) & {
