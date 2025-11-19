@@ -18,7 +18,7 @@ import * as Linking from "expo-linking"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 
-const ICON_SIZE = 16
+const ICON_SIZE = 18
 
 export const Button = memo(
 	({ type, postMessage }: { type: keyof QuillFormats | "keyboard"; postMessage: (message: TextEditorEvents) => void }) => {
@@ -320,7 +320,7 @@ export const Button = memo(
 									intensity={100}
 									experimentalBlurMethod="dimezisBlurView"
 									tint={theme === "dark" ? "dark" : "light"}
-									className="flex-row items-center justify-center absolute rounded-full bg-secondary size-4 -mt-5 -mr-5 overflow-hidden border border-border"
+									className="flex-row items-center justify-center absolute rounded-full size-4 -mt-5 -mr-5 overflow-hidden border border-border"
 								>
 									<Text className="text-foreground text-xs">{formats[type]}</Text>
 								</BlurView>
@@ -394,7 +394,7 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 				className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
 			>
 				<BlurView
-					className="bg-transparent rounded-full overflow-hidden border border-border shrink-0"
+					className="rounded-full overflow-hidden border border-border shrink-0"
 					intensity={100}
 					experimentalBlurMethod="dimezisBlurView"
 					tint={theme === "dark" ? "dark" : "light"}
@@ -440,7 +440,7 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 						exiting={FadeOut}
 					>
 						<BlurView
-							className="bg-transparent rounded-full overflow-hidden border border-border shrink-0"
+							className="rounded-full overflow-hidden border border-border shrink-0"
 							intensity={100}
 							experimentalBlurMethod="dimezisBlurView"
 							tint={theme === "dark" ? "dark" : "light"}

@@ -1,6 +1,5 @@
 "use dom"
 
-import "@/global.css"
 import "quill/dist/quill.snow.css"
 
 import { type DOMProps, useDOMImperativeHandle } from "expo/dom"
@@ -312,13 +311,27 @@ const RichTextEditorDom = memo(
 			}
 		}, [initialValue])
 
+		useEffect(() => {
+			postMessage({
+				type: "ready"
+			})
+		}, [postMessage])
+
 		return (
-			<div className="bg-transparent flex flex-1 flex-col">
+			<div
+				style={{
+					backgroundColor: "transparent",
+					display: "flex",
+					flex: 1,
+					flexDirection: "column"
+				}}
+			>
 				<div
 					ref={editorRef}
-					className="flex flex-1"
 					style={{
-						paddingBottom: keyboardVisible ? (toolbarHeight ?? 0) + 128 : 128
+						paddingBottom: keyboardVisible ? (toolbarHeight ?? 0) + 128 : 128,
+						display: "flex",
+						flex: 1
 					}}
 				/>
 			</div>

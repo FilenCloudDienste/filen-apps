@@ -223,7 +223,7 @@ export const Item = memo(
 								backgroundColor: textPrimary.color as string
 							}}
 							onPress={toggleChecked}
-							hitSlop={5}
+							hitSlop={10}
 							enabled={!readOnly}
 						>
 							<MaterialIcons
@@ -237,7 +237,7 @@ export const Item = memo(
 							rippleColor="transparent"
 							className="flex-row items-center justify-center w-5 h-5 bg-gray-500 rounded-full"
 							onPress={toggleChecked}
-							hitSlop={5}
+							hitSlop={10}
 							enabled={!readOnly}
 						>
 							<View className="rounded-full w-[18.5px] h-[18.5px] bg-background" />
@@ -246,7 +246,7 @@ export const Item = memo(
 				</View>
 				<TextInput
 					ref={textInputRef}
-					className={cn("text-foreground text-[17px] shrink-0 flex-1", Platform.OS === "android" && "-mt-[7.5px]")}
+					className="text-foreground shrink-0 flex-1 pt-1"
 					value={value}
 					onChangeText={onChangeText}
 					multiline={true}

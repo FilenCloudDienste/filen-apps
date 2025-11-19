@@ -1,19 +1,44 @@
 "use dom"
 
-import "@/global.css"
+import "@uiw/react-md-editor/markdown-editor.css"
+import "@uiw/react-markdown-preview/markdown.css"
 
-import { type DOMProps } from "expo/dom"
-import { memo, useEffect, useRef, useCallback, useMemo } from "react"
+import { type DOMProps, useDOMImperativeHandle } from "expo/dom"
+import { memo, useEffect, useRef, useCallback, useMemo, useState } from "react"
 import type { Platform } from "react-native"
 import CodeMirror, { EditorView } from "@uiw/react-codemirror"
 import { xcodeLight, xcodeDark } from "@uiw/codemirror-theme-xcode"
 import { materialDark, materialLight } from "@uiw/codemirror-theme-material"
-import type { TextEditorType, Font, Colors } from "@/components/textEditor"
-import { cn } from "@filen/utils"
+import type { TextEditorType, Font, Colors, TextEditorEvents } from "@/components/textEditor"
 import { createTextThemes, parseExtension, loadLanguage } from "@/components/textEditor/codeMirror"
+import type { DOMRef } from "@/hooks/useDomEvents/useNativeDomEvents"
+import useDomDomEvents from "@/hooks/useDomEvents/useDomDomEvents"
+import MDEditor from "@uiw/react-md-editor"
+import rehypeSanitize from "rehype-sanitize"
+import { visit } from "unist-util-visit"
+import type { Plugin } from "unified"
+import type { Root, Element } from "hast"
+
+const rehypeExternalLinks: Plugin<[], Root> = () => {
+	return tree => {
+		visit(tree, "element", (node: Element) => {
+			if (node.tagName === "a" && node.properties?.["href"]) {
+				const href = String(node.properties["href"]).trim().toLowerCase()
+				const protocols = ["http://", "https://", "mailto:", "tel:", "sms:", "whatsapp:", "geo:", "maps:"]
+				const shouldIntercept = protocols.some(protocol => href.startsWith(protocol))
+
+				if (shouldIntercept) {
+					node.properties["data-external-url"] = href
+					node.properties["href"] = "#"
+				}
+			}
+		})
+	}
+}
 
 const TextEditorDOM = memo(
 	({
+		ref,
 		initialValue,
 		onValueChange,
 		placeholder,
@@ -24,8 +49,10 @@ const TextEditorDOM = memo(
 		type,
 		autoFocus,
 		font,
-		colors
+		colors,
+		markdownPreviewActive
 	}: {
+		ref: React.Ref<DOMRef>
 		dom?: DOMProps
 		initialValue?: string
 		onValueChange?: (value: string) => void
@@ -38,8 +65,10 @@ const TextEditorDOM = memo(
 		autoFocus?: boolean
 		font?: Font
 		colors?: Colors
+		markdownPreviewActive?: boolean
 	}) => {
 		const didTypeRef = useRef<boolean>(false)
+		const [value, setValue] = useState<string>(initialValue ?? "")
 
 		const onChange = useCallback(
 			(value: string) => {
@@ -48,6 +77,7 @@ const TextEditorDOM = memo(
 				}
 
 				onValueChange?.(value)
+				setValue(value)
 			},
 			[onValueChange]
 		)
@@ -120,17 +150,86 @@ const TextEditorDOM = memo(
 			return [...base, lang]
 		}, [isTextFile, fileName, font, type])
 
+		const { onNativeMessage, postMessage } = useDomDomEvents<TextEditorEvents>()
+
+		useDOMImperativeHandle(
+			ref,
+			() => ({
+				postMessage: onNativeMessage
+			}),
+			[]
+		)
+
 		useEffect(() => {
-			const listener = () => {
+			postMessage({
+				type: "ready"
+			})
+
+			const keydownListener = () => {
 				didTypeRef.current = true
 			}
 
-			window.addEventListener("keydown", listener)
+			const onClickListener = (e: PointerEvent) => {
+				if (!(e.target instanceof HTMLElement)) {
+					return
+				}
+
+				const link = e.target.closest("a[data-external-url]")
+
+				if (!link) {
+					return
+				}
+
+				const url = link.getAttribute("data-external-url")?.toLowerCase().trim()
+
+				if (!url) {
+					return
+				}
+
+				postMessage({
+					type: "externalLinkClicked",
+					data: url
+				})
+			}
+
+			window.addEventListener("keydown", keydownListener)
+			window.addEventListener("click", onClickListener)
 
 			return () => {
-				window.removeEventListener("keydown", listener)
+				window.removeEventListener("keydown", keydownListener)
+				window.removeEventListener("click", onClickListener)
 			}
-		}, [])
+		}, [postMessage])
+
+		if (markdownPreviewActive && type === "markdown") {
+			return (
+				<div
+					style={{
+						overflowX: "hidden",
+						overflowY: "auto",
+						width: "100dvw",
+						height: "100dvh"
+					}}
+				>
+					<MDEditor.Markdown
+						source={value}
+						data-color-mode={darkMode ? "dark" : "light"}
+						rehypePlugins={[rehypeSanitize, rehypeExternalLinks]}
+						style={{
+							fontSize: font?.size ?? 14,
+							fontFamily: font?.family ?? "inherit",
+							lineHeight: font?.lineHeight ? font.lineHeight : 1.5,
+							paddingTop: 16,
+							paddingBottom: 128,
+							paddingLeft: 16,
+							paddingRight: 16,
+							border: "none",
+							borderRadius: 0
+						}}
+					/>
+				</div>
+			)
+		}
 
 		return (
 			<CodeMirror
@@ -147,7 +246,6 @@ const TextEditorDOM = memo(
 				autoSave="off"
 				spellCheck={false}
 				autoFocus={autoFocus ?? (initialValue ?? "").length === 0}
-				className={cn("select-text", !isTextFile && "font-mono", isTextFile && "font-sans")}
 				style={{
 					width: "100dvw",
 					paddingBottom: 128

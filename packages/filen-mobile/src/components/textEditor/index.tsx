@@ -1,4 +1,4 @@
-import { memo, useRef, Fragment } from "react"
+import { memo, useRef, Fragment, useMemo, useState } from "react"
 import TextEditorDOM from "@/components/textEditor/dom"
 import RichTextEditorDOM, { type QuillFormats, type HeaderLevel } from "@/components/textEditor/richText/dom"
 import View from "@/components/ui/view"
@@ -9,6 +9,10 @@ import { useKeyboardState } from "react-native-keyboard-controller"
 import useRichtextStore from "@/stores/useRichtext.store"
 import { useShallow } from "zustand/shallow"
 import RichTextEditorToolbar from "@/components/textEditor/richText/toolbar"
+import MarkdownPreviewButton from "@/components/textEditor/markdownPreviewButton"
+import { useSecureStore } from "@/lib/secureStore"
+import * as ExpoLinking from "expo-linking"
+import alerts from "@/lib/alerts"
 
 export type TextEditorType = "richtext" | "text" | "markdown" | "code"
 
@@ -55,6 +59,13 @@ export type TextEditorEvents =
 	  }
 	| {
 			type: "quillRemoveList"
+	  }
+	| {
+			type: "ready"
+	  }
+	| {
+			type: "externalLinkClicked"
+			data: string
 	  }
 
 export type Colors = {
@@ -104,7 +115,10 @@ export const TextEditor = memo(
 		placeholder,
 		disableRichtextToolbar,
 		type,
-		readOnly
+		readOnly,
+		onReady,
+		disableMarkdownPreview,
+		id
 	}: {
 		initialValue?: string
 		onValueChange?: (value: string) => void
@@ -112,6 +126,9 @@ export const TextEditor = memo(
 		disableRichtextToolbar?: boolean
 		type: TextEditorType
 		readOnly?: boolean
+		onReady?: () => void
+		disableMarkdownPreview?: boolean
+		id?: string
 	}) => {
 		const ref = useRef<DOMRef>(null)
 		const textForeground = useResolveClassNames("text-foreground")
@@ -123,6 +140,16 @@ export const TextEditor = memo(
 		const keyboardState = useKeyboardState()
 		const { theme } = useUniwind()
 		const toolbarHeight = useRichtextStore(useShallow(state => state.toolbarHeight))
+		const [textEditorMarkdownPreviewActive] = useSecureStore<Record<string, boolean>>("textEditorMarkdownPreviewActive", {})
+		const [ready, setReady] = useState<boolean>(false)
+
+		const markdownPreviewActive = useMemo(() => {
+			if (!id) {
+				return false
+			}
+
+			return textEditorMarkdownPreviewActive[id] ?? false
+		}, [id, textEditorMarkdownPreviewActive])
 
 		const { onDomMessage, postMessage } = useNativeDomEvents<TextEditorEvents>({
 			ref,
@@ -130,6 +157,35 @@ export const TextEditor = memo(
 				switch (message.type) {
 					case "quillFormats": {
 						useRichtextStore.getState().setFormats(message.data)
+
+						break
+					}
+
+					case "ready": {
+						onReady?.()
+						setReady(true)
+
+						break
+					}
+
+					case "externalLinkClicked": {
+						ExpoLinking.canOpenURL(message.data)
+							.then(supported => {
+								if (!supported) {
+									alerts.error(`No app found to open ${message.data}`)
+
+									return
+								}
+
+								ExpoLinking.openURL(message.data).catch(err => {
+									console.error(err)
+									alerts.error(err)
+								})
+							})
+							.catch(err => {
+								console.error(err)
+								alerts.error(err)
+							})
 
 						break
 					}
@@ -178,10 +234,13 @@ export const TextEditor = memo(
 								backgroundColor:
 									type === "text"
 										? bgBackground.backgroundColor
-										: backgroundColors["normal"][theme === "dark" ? "dark" : "light"]
+										: backgroundColors[type === "markdown" && markdownPreviewActive ? "markdown" : "normal"][
+												theme === "dark" ? "dark" : "light"
+											]
 							}}
 						>
 							<TextEditorDOM
+								ref={ref}
 								type={type}
 								onValueChange={onValueChange}
 								darkMode={theme === "dark"}
@@ -189,6 +248,10 @@ export const TextEditor = memo(
 								initialValue={initialValue}
 								placeholder={placeholder}
 								readOnly={readOnly}
+								markdownPreviewActive={markdownPreviewActive}
+								dom={{
+									onMessage: onDomMessage
+								}}
 								font={{
 									family: text.fontFamily as string,
 									size: text.fontSize as number,
@@ -209,7 +272,10 @@ export const TextEditor = memo(
 						</View>
 					)}
 				</View>
-				{!disableRichtextToolbar && type === "richtext" && !readOnly && <RichTextEditorToolbar postMessage={postMessage} />}
+				{!disableRichtextToolbar && type === "richtext" && !readOnly && ready && (
+					<RichTextEditorToolbar postMessage={postMessage} />
+				)}
+				{!disableMarkdownPreview && type === "markdown" && ready && <MarkdownPreviewButton id={id} />}
 			</Fragment>
 		)
 	}
