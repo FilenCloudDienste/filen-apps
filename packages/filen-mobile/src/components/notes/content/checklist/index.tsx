@@ -1,12 +1,24 @@
-import { memo, useCallback, useState, useEffect } from "react"
+import { memo, useCallback, useState, useEffect, Fragment } from "react"
 import { KeyboardAwareScrollView } from "@/components/ui/view"
 import { checklistParser, type ChecklistItem } from "@filen/utils"
 import Item from "@/components/notes/content/checklist/item"
 import useChecklistStore from "@/stores/useChecklist.store"
 import { useShallow } from "zustand/shallow"
+import { randomUUID } from "expo-crypto"
+import Toolbar from "@/components/notes/content/checklist/toolbar"
 
 export const Checklist = memo(
-	({ initialValue, onChange, readOnly }: { initialValue?: string; onChange?: (value: string) => void; readOnly?: boolean }) => {
+	({
+		initialValue,
+		onChange,
+		readOnly,
+		autoFocus
+	}: {
+		initialValue?: string
+		onChange?: (value: string) => void
+		readOnly?: boolean
+		autoFocus?: boolean
+	}) => {
 		const [didType, setDidType] = useState<boolean>(false)
 		const ids = useChecklistStore(useShallow(state => state.ids))
 
@@ -45,13 +57,13 @@ export const Checklist = memo(
 					)
 				)
 
-				if (didType && onChange) {
+				if (onChange) {
 					const parsed = useChecklistStore.getState().parsed
 
 					onChange(checklistParser.stringify(parsed))
 				}
 			},
-			[didType, onChange]
+			[onChange]
 		)
 
 		const onTyped = useCallback(() => {
@@ -59,7 +71,17 @@ export const Checklist = memo(
 		}, [])
 
 		useEffect(() => {
-			const parsed = initialValue ? checklistParser.parse(initialValue) : []
+			let parsed = initialValue ? checklistParser.parse(initialValue) : []
+
+			if (parsed.length === 0) {
+				parsed = [
+					{
+						id: randomUUID(),
+						checked: false,
+						content: ""
+					}
+				]
+			}
 
 			useChecklistStore.getState().setInputRefs({})
 			useChecklistStore.getState().setInitialIds(
@@ -77,26 +99,32 @@ export const Checklist = memo(
 		}, [initialValue])
 
 		return (
-			<KeyboardAwareScrollView
-				className="flex-1"
-				contentInsetAdjustmentBehavior="automatic"
-				contentContainerClassName="p-4 px-6 flex-col pb-10"
-				keyboardShouldPersistTaps="handled"
-				keyboardDismissMode="on-drag"
-			>
-				{ids.map(id => {
-					return (
-						<Item
-							key={id}
-							id={id}
-							onContentChange={onContentChange}
-							onCheckedChange={onCheckedChange}
-							readOnly={readOnly}
-							onDidType={onTyped}
-						/>
-					)
-				})}
-			</KeyboardAwareScrollView>
+			<Fragment>
+				<KeyboardAwareScrollView
+					className="flex-1"
+					contentInsetAdjustmentBehavior="automatic"
+					contentContainerClassName="p-4 flex-col pb-32 gap-4"
+					keyboardShouldPersistTaps="always"
+					keyboardDismissMode="interactive"
+					bottomOffset={32}
+				>
+					{ids.map((id, index) => {
+						return (
+							<Item
+								key={id}
+								id={id}
+								onContentChange={onContentChange}
+								onCheckedChange={onCheckedChange}
+								readOnly={readOnly}
+								onDidType={onTyped}
+								isLast={index === ids.length - 1}
+								autoFocus={autoFocus}
+							/>
+						)
+					})}
+				</KeyboardAwareScrollView>
+				{!readOnly && <Toolbar />}
+			</Fragment>
 		)
 	}
 )

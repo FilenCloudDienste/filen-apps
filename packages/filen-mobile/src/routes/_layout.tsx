@@ -3,7 +3,7 @@ import "@/global"
 import "@/queries/onlineStatus"
 
 import StyleProvider from "@/providers/style.provider"
-import { memo, useState, useEffect, useCallback } from "react"
+import { memo, useState, useEffect, useCallback, Fragment } from "react"
 import { Stack } from "expo-router"
 import { useResolveClassNames, useUniwind } from "uniwind"
 import View from "@/components/ui/view"
@@ -20,6 +20,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller"
 import { PressablesConfig } from "pressto"
 import * as Haptics from "expo-haptics"
 import FullScreenLoadingModal from "@/components/ui/fullScreenLoadingModal"
+import NotesSync from "@/components/notes/sync"
 
 SplashScreen.setOptions({
 	duration: 400,
@@ -82,15 +83,22 @@ export const RootLayout = memo(() => {
 							<QueryClientProvider client={queryClient}>
 								<View className="flex-1">
 									{isSetupDone && (
-										<Stack
-											initialRouteName={isAuthed ? "tabs" : "auth"}
-											screenOptions={{
-												headerShown: false,
-												contentStyle: {
-													backgroundColor: bgBackground.backgroundColor as string
-												}
-											}}
-										/>
+										<Fragment>
+											<Stack
+												initialRouteName={isAuthed ? "tabs" : "auth"}
+												screenOptions={{
+													headerShown: false,
+													contentStyle: {
+														backgroundColor: bgBackground.backgroundColor as string
+													}
+												}}
+											/>
+											{isAuthed && (
+												<Fragment>
+													<NotesSync />
+												</Fragment>
+											)}
+										</Fragment>
 									)}
 									<FullScreenLoadingModal />
 								</View>

@@ -43,7 +43,8 @@ const RichTextEditorDom = memo(
 		colors,
 		font,
 		toolbarHeight,
-		keyboardVisible
+		keyboardVisible,
+		autoFocus
 	}: {
 		dom?: DOMProps
 		ref: React.Ref<DOMRef>
@@ -57,6 +58,7 @@ const RichTextEditorDom = memo(
 		font?: Font
 		toolbarHeight?: number
 		keyboardVisible?: boolean
+		autoFocus?: boolean
 	}) => {
 		const quillRef = useRef<Quill | null>(null)
 		const editorRef = useRef<HTMLDivElement | null>(null)
@@ -308,8 +310,13 @@ const RichTextEditorDom = memo(
 				})
 
 				quillRef.current.clipboard.dangerouslyPasteHTML(sanitized, "silent")
+
+				if (autoFocus || sanitized.length === 0) {
+					quillRef.current.setSelection(sanitized.length, 0)
+					quillRef.current.focus()
+				}
 			}
-		}, [initialValue])
+		}, [initialValue, autoFocus])
 
 		useEffect(() => {
 			postMessage({

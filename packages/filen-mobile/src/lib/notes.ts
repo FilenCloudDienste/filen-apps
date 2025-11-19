@@ -41,7 +41,17 @@ export class Notes {
 		)
 	}
 
-	public async setContent({ note, content, signal }: { note: Note; content: string; signal?: AbortSignal }) {
+	public async setContent({
+		note,
+		content,
+		signal,
+		updateQuery
+	}: {
+		note: Note
+		content: string
+		signal?: AbortSignal
+		updateQuery?: boolean
+	}) {
 		const sdkClient = await auth.getSdkClient()
 
 		note = await sdkClient.setNoteContent(
@@ -58,12 +68,14 @@ export class Notes {
 				: undefined
 		)
 
-		noteContentQueryUpdate({
-			params: {
-				note
-			},
-			updater: content
-		})
+		if (updateQuery) {
+			noteContentQueryUpdate({
+				params: {
+					note
+				},
+				updater: content
+			})
+		}
 	}
 }
 

@@ -1,10 +1,37 @@
 import { memo, Fragment, useMemo } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
-import Header from "@/components/ui/header"
+import StackHeader from "@/components/ui/header"
 import { useLocalSearchParams, Redirect } from "expo-router"
 import useNotesQuery from "@/queries/useNotes.query"
 import type { Note as TNote } from "@filen/sdk-rs"
 import Content from "@/components/notes/content"
+import { ActivityIndicator } from "react-native"
+import useNotesStore from "@/stores/useNotes.store"
+import { useShallow } from "zustand/shallow"
+
+export const Header = memo(({ note }: { note: TNote }) => {
+	const temporaryNoteContents = useNotesStore(useShallow(state => state.temporaryContent))
+
+	return (
+		<StackHeader
+			title="tbd"
+			right={() => {
+				if ((temporaryNoteContents[note.uuid] ?? []).length === 0) {
+					return null
+				}
+
+				return (
+					<ActivityIndicator
+						size="small"
+						color="white"
+					/>
+				)
+			}}
+		/>
+	)
+})
+
+Header.displayName = "Header"
 
 export const Note = memo(() => {
 	const { uuid } = useLocalSearchParams<{ uuid: string }>()
@@ -23,7 +50,7 @@ export const Note = memo(() => {
 
 	return (
 		<Fragment>
-			<Header title="tbd" />
+			<Header note={note} />
 			<SafeAreaView edges={["left", "right"]}>
 				<Content note={note} />
 			</SafeAreaView>

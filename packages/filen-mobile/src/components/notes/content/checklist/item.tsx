@@ -1,8 +1,8 @@
 import { memo, useCallback, useRef, useEffect, useState } from "react"
-import { TextInput, type TextInputKeyPressEvent, Platform, type TextInputSubmitEditingEvent } from "react-native"
+import { TextInput, type TextInputKeyPressEvent, type TextInputSubmitEditingEvent } from "react-native"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useResolveClassNames } from "uniwind"
-import { type ChecklistItem, cn } from "@filen/utils"
+import { type ChecklistItem } from "@filen/utils"
 import { PressableOpacity } from "@/components/ui/pressables"
 import View from "@/components/ui/view"
 import useChecklistStore from "@/stores/useChecklist.store"
@@ -15,19 +15,22 @@ export const Item = memo(
 		onContentChange,
 		onCheckedChange,
 		readOnly,
-		onDidType
+		onDidType,
+		autoFocus,
+		isLast
 	}: {
 		id: string
 		onContentChange: ({ item, content }: { item: ChecklistItem; content: string }) => void
 		onCheckedChange: ({ item, checked }: { item: ChecklistItem; checked: boolean }) => void
 		readOnly?: boolean
 		onDidType: () => void
+		autoFocus?: boolean
+		isLast?: boolean
 	}) => {
 		const textInputRef = useRef<TextInput>(null)
 		const bgBackground = useResolveClassNames("bg-background")
 		const textPrimary = useResolveClassNames("text-primary")
 		const item = useChecklistStore(useShallow(state => state.parsed.find(i => i.id === id)))
-		const initialIds = useChecklistStore(useShallow(state => state.initialIds))
 
 		const normalizeItemContent = useCallback((content: string) => {
 			return content.replace(/\r?\n/g, "")
@@ -213,8 +216,8 @@ export const Item = memo(
 		}
 
 		return (
-			<View className={cn("flex-row flex-1 items-center", Platform.OS === "android" ? "gap-2" : "gap-3")}>
-				<View className="flex-row items-center self-start pt-1 shrink-0">
+			<View className="flex-row flex-1 items-center gap-2">
+				<View className="flex-row items-center self-start shrink-0">
 					{item.checked ? (
 						<PressableOpacity
 							rippleColor="transparent"
@@ -229,7 +232,7 @@ export const Item = memo(
 							<MaterialIcons
 								name="check"
 								size={16}
-								color={bgBackground.backgroundColor as string}
+								color={bgBackground.backgroundColor}
 							/>
 						</PressableOpacity>
 					) : (
@@ -246,7 +249,7 @@ export const Item = memo(
 				</View>
 				<TextInput
 					ref={textInputRef}
-					className="text-foreground shrink-0 flex-1 pt-1"
+					className="text-foreground shrink-0 flex-1 bg-transparent py-0 my-0"
 					value={value}
 					onChangeText={onChangeText}
 					multiline={true}
@@ -257,7 +260,12 @@ export const Item = memo(
 					returnKeyType="next"
 					keyboardType="default"
 					keyboardAppearance="default"
-					autoFocus={!readOnly && !initialIds[item.id]}
+					autoCapitalize="none"
+					autoComplete="off"
+					autoCorrect={false}
+					spellCheck={false}
+					enablesReturnKeyAutomatically={true}
+					autoFocus={autoFocus && isLast}
 					editable={!readOnly}
 				/>
 			</View>

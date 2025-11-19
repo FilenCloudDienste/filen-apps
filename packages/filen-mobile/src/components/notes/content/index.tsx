@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useCallback } from "react"
+import { memo, useMemo, useCallback } from "react"
 import { type Note, NoteType } from "@filen/sdk-rs"
 import View from "@/components/ui/view"
 import useNoteContentQuery from "@/queries/useNoteContent.query"
@@ -9,21 +9,21 @@ import { ActivityIndicator } from "react-native"
 import { useResolveClassNames } from "uniwind"
 import TextEditor from "@/components/textEditor"
 import { useStringifiedClient } from "@/lib/auth"
+import useNotesStore from "@/stores/useNotes.store"
+import useTextEditorStore from "@/stores/useTextEditor.store"
+import { useShallow } from "zustand/shallow"
 
-export const Loading = memo(({ children, loading, ready }: { children: React.ReactNode; loading?: boolean; ready?: boolean }) => {
+export const Loading = memo(({ children, loading, noteType }: { children: React.ReactNode; loading?: boolean; noteType: NoteType }) => {
 	const textForeground = useResolveClassNames("text-foreground")
+	const textEditorReady = useTextEditorStore(useShallow(state => state.ready))
 
 	const showLoader = useMemo(() => {
-		if (loading) {
-			return true
+		if (noteType === NoteType.Checklist) {
+			return loading
 		}
 
-		if (typeof ready === "boolean" && !ready) {
-			return true
-		}
-
-		return false
-	}, [loading, ready])
+		return loading || !textEditorReady
+	}, [loading, textEditorReady, noteType])
 
 	return (
 		<View className="flex-1">
@@ -46,11 +46,18 @@ export const Loading = memo(({ children, loading, ready }: { children: React.Rea
 Loading.displayName = "Loading"
 
 export const Content = memo(({ note }: { note: Note }) => {
-	const [ready, setReady] = useState<boolean>(note.noteType === NoteType.Checklist)
 	const stringifiedClient = useStringifiedClient()
 	const noteContentQuery = useNoteContentQuery({
 		note
 	})
+
+	const initialValue = useMemo(() => {
+		if (noteContentQuery.status !== "success") {
+			return null
+		}
+
+		return noteContentQuery.data
+	}, [noteContentQuery.data, noteContentQuery.status])
 
 	const loading = useMemo(() => {
 		return (
@@ -60,7 +67,8 @@ export const Content = memo(({ note }: { note: Note }) => {
 			noteContentQuery.isPending ||
 			noteContentQuery.isError ||
 			noteContentQuery.isRefetchError ||
-			noteContentQuery.isLoadingError
+			noteContentQuery.isLoadingError ||
+			typeof initialValue !== "string"
 		)
 	}, [
 		noteContentQuery.isError,
@@ -69,7 +77,8 @@ export const Content = memo(({ note }: { note: Note }) => {
 		noteContentQuery.isLoadingError,
 		noteContentQuery.isPending,
 		noteContentQuery.isRefetchError,
-		noteContentQuery.isRefetching
+		noteContentQuery.isRefetching,
+		initialValue
 	])
 
 	const hasWriteAccess = useMemo(() => {
@@ -83,30 +92,39 @@ export const Content = memo(({ note }: { note: Note }) => {
 		)
 	}, [stringifiedClient, note])
 
-	const onReady = useCallback(() => {
-		setReady(true)
-	}, [])
-
-	const onValueChange = useCallback((value: string) => {
-		console.log("New value:", value)
-	}, [])
+	const onValueChange = useCallback(
+		(value: string) => {
+			useNotesStore.getState().setTemporaryContent(prev => ({
+				...prev,
+				[note.uuid]: [
+					{
+						timestamp: Date.now(),
+						note,
+						content: value
+					},
+					...(prev[note.uuid] ?? [])
+				]
+			}))
+		},
+		[note]
+	)
 
 	return (
 		<Loading
 			loading={loading}
-			ready={ready}
+			noteType={note.noteType}
 		>
 			{note.noteType === NoteType.Checklist ? (
 				<Checklist
-					initialValue={noteContentQuery.data ?? ""}
+					initialValue={initialValue ?? ""}
 					onChange={onValueChange}
 					readOnly={!hasWriteAccess}
 				/>
 			) : (
 				<TextEditor
+					// Needs a key to reset the editor when the note changes, somehow expo-dom compontents does not update the state properly
 					key={noteContentQuery.dataUpdatedAt}
-					initialValue={noteContentQuery.data ?? ""}
-					onReady={onReady}
+					initialValue={initialValue ?? ""}
 					onValueChange={onValueChange}
 					readOnly={!hasWriteAccess}
 					type={

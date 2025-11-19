@@ -9,18 +9,21 @@ import VirtualList from "@/components/ui/virtualList"
 import type { Note } from "@filen/sdk-rs"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
-import type { ListRenderItemInfo } from "react-native"
+import { type ListRenderItemInfo, ActivityIndicator } from "react-native"
 import { Menu } from "@/components/ui/menu"
 import { PressableOpacity, AndroidIconButton } from "@/components/ui/pressables"
 import { Paths } from "expo-file-system"
 import { useRouter } from "expo-router"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useResolveClassNames } from "uniwind"
+import { useShallow } from "zustand/shallow"
+import useNotesStore from "@/stores/useNotes.store"
 
 export const Notes = memo(() => {
 	const notesQuery = useNotesQuery()
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
+	const temporaryContent = useNotesStore(useShallow(state => state.temporaryContent))
 
 	const notes = useMemo(() => {
 		return notesQuery.data ? notesSorter.sort(notesQuery.data) : []
@@ -28,6 +31,8 @@ export const Notes = memo(() => {
 
 	const renderItem = useCallback(
 		(info: ListRenderItemInfo<Note>) => {
+			const syncing = (temporaryContent[info.item.uuid] ?? []).length > 0
+
 			return (
 				<View className="w-full h-auto border-b border-border flex-row">
 					<PressableOpacity
@@ -42,7 +47,7 @@ export const Notes = memo(() => {
 							onPress={e => {
 								console.log(e.nativeEvent)
 							}}
-							actions={[
+							buttons={[
 								{
 									title: "Title 1"
 								},
@@ -53,7 +58,14 @@ export const Notes = memo(() => {
 						>
 							<View className="flex-1 flex-row gap-4 px-4 bg-transparent py-2">
 								<View className="gap-2 bg-transparent">
-									<Text>{info.index}</Text>
+									{syncing ? (
+										<ActivityIndicator
+											size="small"
+											color={textForeground.color as string}
+										/>
+									) : (
+										<Text>{info.index}</Text>
+									)}
 								</View>
 								<View className="gap-2 flex-1 bg-transparent">
 									<Text
@@ -83,7 +95,7 @@ export const Notes = memo(() => {
 				</View>
 			)
 		},
-		[router]
+		[router, temporaryContent, textForeground]
 	)
 
 	const keyExtractor = useCallback((note: Note) => {

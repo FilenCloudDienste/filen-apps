@@ -17,6 +17,7 @@ import prompts from "@/lib/prompts"
 import * as Linking from "expo-linking"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
+import useTextEditorStore from "@/stores/useTextEditor.store"
 
 const ICON_SIZE = 18
 
@@ -297,16 +298,16 @@ export const Button = memo(
 			>
 				<PressableScale
 					rippleColor="transparent"
-					className="flex-row items-center justify-center shrink-0"
-					hitSlop={10}
+					className="flex-row items-center justify-center shrink-0 size-9"
+					hitSlop={15}
 					enabled={menuButtons.length === 0}
 					onPress={onPress}
 				>
 					{type === "keyboard" ? (
 						<FontAwesome6
-							name="keyboard"
+							name="check"
 							size={ICON_SIZE}
-							color={keyboardState.isVisible ? (textPrimary.color as string) : (textForeground.color as string)}
+							color={textPrimary.color}
 						/>
 					) : type === "header" ? (
 						<Fragment>
@@ -375,86 +376,93 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 	const viewRef = useRef<RNView>(null)
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const keyboardState = useKeyboardState()
+	const textEditorReady = useTextEditorStore(useShallow(state => state.ready))
 
 	useEffect(() => {
 		useRichtextStore.getState().setToolbarHeight(layout.height)
 	}, [layout.height])
 
+	if (!textEditorReady) {
+		return null
+	}
+
 	return (
 		<KeyboardStickyView
-			className="bg-transparent"
 			offset={{
 				opened: 0,
 				closed: -(insets.bottom + 8)
 			}}
 		>
-			<View
-				ref={viewRef}
-				onLayout={onLayout}
-				className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
+			<AnimatedView
+				entering={FadeIn}
+				exiting={FadeOut}
 			>
-				<BlurView
-					className="rounded-full overflow-hidden border border-border shrink-0"
-					intensity={100}
-					experimentalBlurMethod="dimezisBlurView"
-					tint={theme === "dark" ? "dark" : "light"}
+				<View
+					ref={viewRef}
+					onLayout={onLayout}
+					className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
 				>
-					<View className="flex-row items-center gap-4 bg-transparent px-3.5 py-2.5 shrink-0">
-						<Button
-							type="header"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="bold"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="italic"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="underline"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="code-block"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="link"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="blockquote"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="list"
-							postMessage={postMessage}
-						/>
-					</View>
-				</BlurView>
-				{keyboardState.isVisible && (
-					<AnimatedView
-						entering={FadeIn}
-						exiting={FadeOut}
+					<BlurView
+						className="rounded-full overflow-hidden border border-border shrink-0"
+						intensity={100}
+						experimentalBlurMethod="dimezisBlurView"
+						tint={theme === "dark" ? "dark" : "light"}
 					>
-						<BlurView
-							className="rounded-full overflow-hidden border border-border shrink-0"
-							intensity={100}
-							experimentalBlurMethod="dimezisBlurView"
-							tint={theme === "dark" ? "dark" : "light"}
+						<View className="flex-row items-center bg-transparent shrink-0 px-1">
+							<Button
+								type="header"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="bold"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="italic"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="underline"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="code-block"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="link"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="blockquote"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="list"
+								postMessage={postMessage}
+							/>
+						</View>
+					</BlurView>
+					{keyboardState.isVisible && (
+						<AnimatedView
+							entering={FadeIn}
+							exiting={FadeOut}
 						>
-							<View className="flex-row items-center gap-4 bg-transparent px-2.5 py-2.5 shrink-0">
+							<BlurView
+								className="rounded-full overflow-hidden border border-border shrink-0"
+								intensity={100}
+								experimentalBlurMethod="dimezisBlurView"
+								tint={theme === "dark" ? "dark" : "light"}
+							>
 								<Button
 									type="keyboard"
 									postMessage={postMessage}
 								/>
-							</View>
-						</BlurView>
-					</AnimatedView>
-				)}
-			</View>
+							</BlurView>
+						</AnimatedView>
+					)}
+				</View>
+			</AnimatedView>
 		</KeyboardStickyView>
 	)
 })

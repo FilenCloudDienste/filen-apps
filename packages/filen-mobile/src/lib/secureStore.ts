@@ -10,6 +10,7 @@ import cache from "@/lib/cache"
 import events from "@/lib/events"
 import { Buffer } from "@craftzdog/react-native-buffer"
 import { IOS_APP_GROUP_IDENTIFIER } from "@/constants"
+import { isEqual } from "es-toolkit/predicate"
 
 export class SecureStore {
 	private readonly mmkv: MMKV
@@ -287,12 +288,11 @@ export class SecureStore {
 
 export const secureStore = new SecureStore()
 
-const useSecureStoreFlushMutex: Semaphore = new Semaphore(1)
+export const useSecureStoreFlushMutex: Semaphore = new Semaphore(1)
 
-export function useSecureStore<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T) => void)) => void, boolean] {
+export function useSecureStore<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T) => void)) => void] {
 	const fromCache = cache.secureStore.get(key)
 	const [state, setState] = useState<T>(fromCache ?? initialValue)
-	const [loaded, setLoaded] = useState<boolean>(fromCache ? true : false)
 	const didRetrieveRef = useRef<boolean>(false)
 
 	const flush = useCallback(
@@ -332,9 +332,8 @@ export function useSecureStore<T>(key: string, initialValue: T): [T, (fn: T | ((
 
 			const value = await secureStore.get<T>(key)
 
-			if (value) {
+			if (value && !isEqual(value, state)) {
 				setState(value)
-				setLoaded(true)
 			}
 		})
 
@@ -343,7 +342,7 @@ export function useSecureStore<T>(key: string, initialValue: T): [T, (fn: T | ((
 
 			didRetrieveRef.current = false
 		}
-	}, [key])
+	}, [key, state])
 
 	const set = useCallback(
 		(fn: T | ((prev: T) => void)): void => {
@@ -394,7 +393,7 @@ export function useSecureStore<T>(key: string, initialValue: T): [T, (fn: T | ((
 		}
 	}, [key, initialValue, retrieve])
 
-	return [state, set, loaded]
+	return [state, set]
 }
 
 export default secureStore

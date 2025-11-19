@@ -8,8 +8,10 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useSecureStore } from "@/lib/secureStore"
 import { PressableScale } from "@/components/ui/pressables"
+import { useShallow } from "zustand/shallow"
+import useTextEditorStore from "@/stores/useTextEditor.store"
 
-export const MarkdownPreviewButton = memo(({ id }: { id?: string }) => {
+export const MarkdownPreviewButton = memo(({ id }: { id: string }) => {
 	const keyboardState = useKeyboardState()
 	const { theme } = useUniwind()
 	const textForeground = useResolveClassNames("text-foreground")
@@ -18,12 +20,9 @@ export const MarkdownPreviewButton = memo(({ id }: { id?: string }) => {
 		"textEditorMarkdownPreviewActive",
 		{}
 	)
+	const textEditorReady = useTextEditorStore(useShallow(state => state.ready))
 
 	const active = useMemo(() => {
-		if (!id) {
-			return false
-		}
-
 		return textEditorMarkdownPreviewActive[id] ?? false
 	}, [id, textEditorMarkdownPreviewActive])
 
@@ -38,7 +37,7 @@ export const MarkdownPreviewButton = memo(({ id }: { id?: string }) => {
 		}))
 	}, [id, setTextEditorMarkdownPreviewActive])
 
-	if (keyboardState.isVisible || !id) {
+	if (keyboardState.isVisible || !textEditorReady) {
 		return null
 	}
 

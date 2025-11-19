@@ -1,4 +1,4 @@
-import { memo, useRef, Fragment, useMemo, useState } from "react"
+import { memo, useRef, Fragment, useMemo, useEffect } from "react"
 import TextEditorDOM from "@/components/textEditor/dom"
 import RichTextEditorDOM, { type QuillFormats, type HeaderLevel } from "@/components/textEditor/richText/dom"
 import View from "@/components/ui/view"
@@ -13,6 +13,7 @@ import MarkdownPreviewButton from "@/components/textEditor/markdownPreviewButton
 import { useSecureStore } from "@/lib/secureStore"
 import * as ExpoLinking from "expo-linking"
 import alerts from "@/lib/alerts"
+import useTextEditorStore from "@/stores/useTextEditor.store"
 
 export type TextEditorType = "richtext" | "text" | "markdown" | "code"
 
@@ -141,7 +142,6 @@ export const TextEditor = memo(
 		const { theme } = useUniwind()
 		const toolbarHeight = useRichtextStore(useShallow(state => state.toolbarHeight))
 		const [textEditorMarkdownPreviewActive] = useSecureStore<Record<string, boolean>>("textEditorMarkdownPreviewActive", {})
-		const [ready, setReady] = useState<boolean>(false)
 
 		const markdownPreviewActive = useMemo(() => {
 			if (!id) {
@@ -163,7 +163,9 @@ export const TextEditor = memo(
 
 					case "ready": {
 						onReady?.()
-						setReady(true)
+
+						useRichtextStore.getState().setFormats({})
+						useTextEditorStore.getState().setReady(true)
 
 						break
 					}
@@ -192,6 +194,10 @@ export const TextEditor = memo(
 				}
 			}
 		})
+
+		useEffect(() => {
+			useTextEditorStore.getState().setReady(false)
+		}, [])
 
 		return (
 			<Fragment>
@@ -272,10 +278,8 @@ export const TextEditor = memo(
 						</View>
 					)}
 				</View>
-				{!disableRichtextToolbar && type === "richtext" && !readOnly && ready && (
-					<RichTextEditorToolbar postMessage={postMessage} />
-				)}
-				{!disableMarkdownPreview && type === "markdown" && ready && <MarkdownPreviewButton id={id} />}
+				{!disableRichtextToolbar && type === "richtext" && !readOnly && <RichTextEditorToolbar postMessage={postMessage} />}
+				{!disableMarkdownPreview && type === "markdown" && <MarkdownPreviewButton id={id ?? "textEditor"} />}
 			</Fragment>
 		)
 	}
