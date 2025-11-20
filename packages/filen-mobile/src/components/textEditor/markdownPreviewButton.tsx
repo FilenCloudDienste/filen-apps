@@ -1,4 +1,3 @@
-import { memo, useMemo, useCallback } from "react"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { BlurView } from "@/components/ui/view"
@@ -10,6 +9,7 @@ import { useSecureStore } from "@/lib/secureStore"
 import { PressableScale } from "@/components/ui/pressables"
 import { useShallow } from "zustand/shallow"
 import useTextEditorStore from "@/stores/useTextEditor.store"
+import { memo, useCallback, useMemo } from "@/lib/memo"
 
 export const MarkdownPreviewButton = memo(({ id }: { id: string }) => {
 	const keyboardState = useKeyboardState()
@@ -71,7 +71,5 @@ export const MarkdownPreviewButton = memo(({ id }: { id: string }) => {
 		</AnimatedView>
 	)
 })
-
-MarkdownPreviewButton.displayName = "MarkdownPreviewButton"
 
 export default MarkdownPreviewButton

@@ -1,8 +1,9 @@
 import View from "@/components/ui/view"
 import Text from "@/components/ui/text"
-import { memo, Fragment } from "react"
+import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
+import { memo } from "@/lib/memo"
 
 export const SearchIndex = memo(() => {
 	return (
@@ -16,7 +17,5 @@ export const SearchIndex = memo(() => {
 		</Fragment>
 	)
 })
-
-SearchIndex.displayName = "SearchIndex"
 
 export default SearchIndex

@@ -1,12 +1,13 @@
 import View from "@/components/ui/view"
 import Text from "@/components/ui/text"
-import { memo, Fragment } from "react"
+import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import auth from "@/lib/auth"
 import { TextInput } from "react-native"
 import Button from "@/components/ui/button"
 import { useRouter } from "expo-router"
+import { memo } from "@/lib/memo"
 
 export const Login = memo(() => {
 	const router = useRouter()
@@ -42,7 +43,5 @@ export const Login = memo(() => {
 		</Fragment>
 	)
 })
-
-Login.displayName = "Login"
 
 export default Login

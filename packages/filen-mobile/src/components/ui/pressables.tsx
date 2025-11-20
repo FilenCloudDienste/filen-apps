@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 import { withUniwind } from "uniwind"
 import {
 	PressableOpacity as PresstoPressableOpacity,
@@ -28,5 +28,3 @@ export const AndroidIconButton = memo(
 		)
 	}
 )
-
-AndroidIconButton.displayName = "AndroidIconButton"

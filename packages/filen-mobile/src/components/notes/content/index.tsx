@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback } from "react"
+import { memo, useMemo, useCallback } from "@/lib/memo"
 import { type Note, NoteType } from "@filen/sdk-rs"
 import View from "@/components/ui/view"
 import useNoteContentQuery from "@/queries/useNoteContent.query"
@@ -12,6 +12,7 @@ import { useStringifiedClient } from "@/lib/auth"
 import useNotesStore from "@/stores/useNotes.store"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { useShallow } from "zustand/shallow"
+import isEqual from "react-fast-compare"
 
 export const Loading = memo(({ children, loading, noteType }: { children: React.ReactNode; loading?: boolean; noteType: NoteType }) => {
 	const textForeground = useResolveClassNames("text-foreground")
@@ -43,108 +44,117 @@ export const Loading = memo(({ children, loading, noteType }: { children: React.
 	)
 })
 
-Loading.displayName = "Loading"
+export const Content = memo(
+	({ note }: { note: Note }) => {
+		const stringifiedClient = useStringifiedClient()
+		const noteContentQuery = useNoteContentQuery({
+			note
+		})
 
-export const Content = memo(({ note }: { note: Note }) => {
-	const stringifiedClient = useStringifiedClient()
-	const noteContentQuery = useNoteContentQuery({
-		note
-	})
+		const initialValue = useMemo(() => {
+			if (noteContentQuery.status !== "success") {
+				return null
+			}
 
-	const initialValue = useMemo(() => {
-		if (noteContentQuery.status !== "success") {
-			return null
-		}
+			return noteContentQuery.data
+		}, [noteContentQuery.data, noteContentQuery.status])
 
-		return noteContentQuery.data
-	}, [noteContentQuery.data, noteContentQuery.status])
+		const loading = useMemo(() => {
+			return (
+				noteContentQuery.isRefetching ||
+				noteContentQuery.isLoading ||
+				noteContentQuery.isFetching ||
+				noteContentQuery.isPending ||
+				noteContentQuery.isError ||
+				noteContentQuery.isRefetchError ||
+				noteContentQuery.isLoadingError ||
+				typeof initialValue !== "string"
+			)
+		}, [
+			noteContentQuery.isError,
+			noteContentQuery.isFetching,
+			noteContentQuery.isLoading,
+			noteContentQuery.isLoadingError,
+			noteContentQuery.isPending,
+			noteContentQuery.isRefetchError,
+			noteContentQuery.isRefetching,
+			initialValue
+		])
 
-	const loading = useMemo(() => {
-		return (
-			noteContentQuery.isRefetching ||
-			noteContentQuery.isLoading ||
-			noteContentQuery.isFetching ||
-			noteContentQuery.isPending ||
-			noteContentQuery.isError ||
-			noteContentQuery.isRefetchError ||
-			noteContentQuery.isLoadingError ||
-			typeof initialValue !== "string"
+		const hasWriteAccess = useMemo(() => {
+			if (!stringifiedClient) {
+				return false
+			}
+
+			return (
+				note.ownerId === stringifiedClient.userId ||
+				note.participants.some(participant => participant.userId === stringifiedClient.userId && participant.permissionsWrite)
+			)
+		}, [stringifiedClient, note])
+
+		const onValueChange = useCallback(
+			(value: string) => {
+				const now = Date.now()
+
+				useNotesStore.getState().setTemporaryContent(prev => ({
+					...prev,
+					[note.uuid]: [
+						{
+							timestamp: now,
+							note,
+							content: value
+						},
+						...(prev[note.uuid] ?? []).filter(c => c.timestamp > now)
+					]
+				}))
+			},
+			[note]
 		)
-	}, [
-		noteContentQuery.isError,
-		noteContentQuery.isFetching,
-		noteContentQuery.isLoading,
-		noteContentQuery.isLoadingError,
-		noteContentQuery.isPending,
-		noteContentQuery.isRefetchError,
-		noteContentQuery.isRefetching,
-		initialValue
-	])
-
-	const hasWriteAccess = useMemo(() => {
-		if (!stringifiedClient) {
-			return false
-		}
 
 		return (
-			note.ownerId === stringifiedClient.userId ||
-			note.participants.some(participant => participant.userId === stringifiedClient.userId && participant.permissionsWrite)
+			<Loading
+				loading={loading}
+				noteType={note.noteType}
+			>
+				{note.noteType === NoteType.Checklist ? (
+					<Checklist
+						initialValue={initialValue ?? ""}
+						onChange={onValueChange}
+						readOnly={!hasWriteAccess}
+					/>
+				) : (
+					<TextEditor
+						// Needs a key to reset the editor when the note changes, somehow expo-dom compontents does not update the state properly
+						key={noteContentQuery.dataUpdatedAt}
+						initialValue={initialValue ?? ""}
+						onValueChange={onValueChange}
+						readOnly={!hasWriteAccess}
+						type={
+							note.noteType === NoteType.Text
+								? "text"
+								: note.noteType === NoteType.Code
+									? "code"
+									: note.noteType === NoteType.Md
+										? "markdown"
+										: note.noteType === NoteType.Rich
+											? "richtext"
+											: "text"
+						}
+						id={`note:${note.uuid}`}
+					/>
+				)}
+			</Loading>
 		)
-	}, [stringifiedClient, note])
-
-	const onValueChange = useCallback(
-		(value: string) => {
-			useNotesStore.getState().setTemporaryContent(prev => ({
-				...prev,
-				[note.uuid]: [
-					{
-						timestamp: Date.now(),
-						note,
-						content: value
-					},
-					...(prev[note.uuid] ?? [])
-				]
-			}))
-		},
-		[note]
-	)
-
-	return (
-		<Loading
-			loading={loading}
-			noteType={note.noteType}
-		>
-			{note.noteType === NoteType.Checklist ? (
-				<Checklist
-					initialValue={initialValue ?? ""}
-					onChange={onValueChange}
-					readOnly={!hasWriteAccess}
-				/>
-			) : (
-				<TextEditor
-					// Needs a key to reset the editor when the note changes, somehow expo-dom compontents does not update the state properly
-					key={noteContentQuery.dataUpdatedAt}
-					initialValue={initialValue ?? ""}
-					onValueChange={onValueChange}
-					readOnly={!hasWriteAccess}
-					type={
-						note.noteType === NoteType.Text
-							? "text"
-							: note.noteType === NoteType.Code
-								? "code"
-								: note.noteType === NoteType.Md
-									? "markdown"
-									: note.noteType === NoteType.Rich
-										? "richtext"
-										: "text"
-					}
-					id={`note:${note.uuid}`}
-				/>
-			)}
-		</Loading>
-	)
-})
-
-Content.displayName = "NotesContent"
+	},
+	(prevProps, nextProps) => {
+		// We have to manually prevent re-renders here, otherwise the text editor will re-render on every note state change
+		return (
+			prevProps.note.uuid === nextProps.note.uuid &&
+			isEqual(prevProps.note.participants, nextProps.note.participants) &&
+			prevProps.note.ownerId === nextProps.note.ownerId &&
+			prevProps.note.noteType === nextProps.note.noteType
+		)
+	}
+)
 
 export default Content

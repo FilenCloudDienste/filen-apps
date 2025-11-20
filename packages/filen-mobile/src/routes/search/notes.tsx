@@ -1,5 +1,5 @@
 import Text from "@/components/ui/text"
-import { memo, Fragment, useMemo, useCallback, useState, useRef } from "react"
+import { Fragment, useState, useRef } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import useNotesWithContentQuery from "@/queries/useNotesWithContent.query"
@@ -19,6 +19,7 @@ import { useResolveClassNames } from "uniwind"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { memo, useCallback, useMemo } from "@/lib/memo"
 
 export const Notes = memo(() => {
 	const [searchQuery, setSearchQuery] = useState<string>("")
@@ -74,7 +75,7 @@ export const Notes = memo(() => {
 							onPress={e => {
 								console.log(e.nativeEvent)
 							}}
-							actions={[
+							buttons={[
 								{
 									title: "Title 1"
 								},
@@ -207,7 +208,5 @@ export const Notes = memo(() => {
 		</Fragment>
 	)
 })
-
-Notes.displayName = "Notes"
 
 export default Notes

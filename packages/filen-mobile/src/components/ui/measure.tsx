@@ -1,7 +1,8 @@
-import { memo, useRef } from "react"
+import { useRef } from "react"
 import useViewLayout from "@/hooks/useViewLayout"
 import View from "@/components/ui/view"
 import type { View as RNView } from "react-native"
+import { memo } from "@/lib/memo"
 
 export const Measure = memo(({ children, id }: { children: React.ReactNode; id?: string }) => {
 	const viewRef = useRef<RNView>(null)
@@ -22,7 +23,5 @@ export const Measure = memo(({ children, id }: { children: React.ReactNode; id?:
 		</View>
 	)
 })
-
-Measure.displayName = "Measure"
 
 export default Measure

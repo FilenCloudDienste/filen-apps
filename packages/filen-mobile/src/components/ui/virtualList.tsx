@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState, useCallback } from "react"
+import { useRef, useState } from "react"
 import { withUniwind, useResolveClassNames } from "uniwind"
 import { type FlatListProps, type View as RNView, RefreshControl, FlatList, ActivityIndicator } from "react-native"
 import View from "@/components/ui/view"
@@ -7,6 +7,7 @@ import { cn, run, type DeferFn } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeOut } from "react-native-reanimated"
+import { memo, useCallback, useMemo } from "@/lib/memo"
 
 export type VirtualListExtraProps = {
 	itemHeight?: number
@@ -212,8 +213,6 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 }) as (<T>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => React.JSX.Element) & {
 	displayName?: string
 }
-
-VirtualListInner.displayName = "VirtualList"
 
 export const VirtualList = withUniwind(VirtualListInner) as typeof VirtualListInner
 

@@ -62,6 +62,7 @@ export default [
 			"@typescript-eslint/ban-types": "off",
 			"react/react-in-jsx-scope": "off",
 			"react/prop-types": "off",
+			"react/display-name": "warn",
 			"react-compiler/react-compiler": "error",
 			"@typescript-eslint/no-unused-vars": [
 				"error",
@@ -76,6 +77,12 @@ export default [
 				"error",
 				{
 					patterns: [".*"]
+				}
+			],
+			"react-hooks/exhaustive-deps": [
+				"warn",
+				{
+					additionalHooks: "(useMemoDeep|useCallbackDeep)"
 				}
 			]
 		},

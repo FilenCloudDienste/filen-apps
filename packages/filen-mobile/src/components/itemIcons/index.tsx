@@ -1,5 +1,5 @@
 import { Image } from "expo-image"
-import { memo, useMemo } from "react"
+import { memo, useMemo } from "@/lib/memo"
 import { Paths } from "expo-file-system"
 import { isValidHexColor, cn } from "@filen/utils"
 import { memoize } from "es-toolkit/function"
@@ -168,8 +168,6 @@ export const FileIcon = memo(
 	}
 )
 
-FileIcon.displayName = "FileIcon"
-
 export function shadeColor(color: string, decimal: number): string {
 	const base = color.startsWith("#") ? 1 : 0
 
@@ -325,5 +323,3 @@ export const DirectoryIcon = memo(
 		)
 	}
 )
-
-DirectoryIcon.displayName = "DirectoryIcon"

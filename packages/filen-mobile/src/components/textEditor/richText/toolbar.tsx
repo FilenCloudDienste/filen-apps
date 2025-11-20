@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, Fragment, useMemo, useCallback } from "react"
+import { useEffect, useRef, Fragment } from "react"
 import View, { KeyboardStickyView, BlurView } from "@/components/ui/view"
 import { type View as RNView } from "react-native"
 import { useResolveClassNames, useUniwind } from "uniwind"
@@ -18,6 +18,7 @@ import * as Linking from "expo-linking"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import useTextEditorStore from "@/stores/useTextEditor.store"
+import { memo, useCallback, useMemo } from "@/lib/memo"
 
 const ICON_SIZE = 18
 
@@ -368,8 +369,6 @@ export const Button = memo(
 	}
 )
 
-Button.displayName = "Button"
-
 export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEditorEvents) => void }) => {
 	const insets = useSafeAreaInsets()
 	const { theme } = useUniwind()
@@ -466,7 +465,5 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 		</KeyboardStickyView>
 	)
 })
-
-Toolbar.displayName = "Toolbar"
 
 export default Toolbar

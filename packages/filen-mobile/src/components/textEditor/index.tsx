@@ -1,4 +1,4 @@
-import { memo, useRef, Fragment, useMemo, useEffect } from "react"
+import { useRef, Fragment, useEffect } from "react"
 import TextEditorDOM from "@/components/textEditor/dom"
 import RichTextEditorDOM, { type QuillFormats, type HeaderLevel } from "@/components/textEditor/richText/dom"
 import View from "@/components/ui/view"
@@ -14,6 +14,7 @@ import { useSecureStore } from "@/lib/secureStore"
 import * as ExpoLinking from "expo-linking"
 import alerts from "@/lib/alerts"
 import useTextEditorStore from "@/stores/useTextEditor.store"
+import { memo, useMemo } from "@/lib/memo"
 
 export type TextEditorType = "richtext" | "text" | "markdown" | "code"
 
@@ -284,7 +285,5 @@ export const TextEditor = memo(
 		)
 	}
 )
-
-TextEditor.displayName = "TextEditor"
 
 export default TextEditor

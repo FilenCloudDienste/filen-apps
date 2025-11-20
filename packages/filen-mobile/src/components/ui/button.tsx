@@ -1,8 +1,8 @@
 import { Button as JetpackComposeButton } from "@expo/ui/jetpack-compose"
 import { Button as SwiftUiButton } from "@expo/ui/swift-ui"
-import { memo } from "react"
 import { Platform, type StyleProp, type ViewStyle } from "react-native"
 import { useResolveClassNames } from "uniwind"
+import { memo } from "@/lib/memo"
 
 export const Button = memo(
 	(props: {
@@ -50,7 +50,5 @@ export const Button = memo(
 		})
 	}
 )
-
-Button.displayName = "Button"
 
 export default Button

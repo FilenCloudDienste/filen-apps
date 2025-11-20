@@ -1,4 +1,5 @@
-import { memo, useCallback, useState, useEffect, Fragment } from "react"
+import { useState, useEffect, Fragment } from "react"
+import { memo, useCallback } from "@/lib/memo"
 import { KeyboardAwareScrollView } from "@/components/ui/view"
 import { checklistParser, type ChecklistItem } from "@filen/utils"
 import Item from "@/components/notes/content/checklist/item"
@@ -128,7 +129,5 @@ export const Checklist = memo(
 		)
 	}
 )
-
-Checklist.displayName = "Checklist"
 
 export default Checklist

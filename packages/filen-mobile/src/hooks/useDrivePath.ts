@@ -1,5 +1,5 @@
 import { useLocalSearchParams, usePathname } from "expo-router"
-import { useMemo } from "react"
+import { useMemo } from "@/lib/memo"
 import type { Contact } from "@filen/sdk-rs"
 import { Paths } from "expo-file-system"
 

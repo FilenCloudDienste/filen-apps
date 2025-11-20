@@ -1,4 +1,4 @@
-import { memo, Fragment, useCallback, useMemo, useRef } from "react"
+import { Fragment, useRef } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import View from "@/components/ui/view"
@@ -11,6 +11,7 @@ import type { ListRenderItemInfo, View as RNView } from "react-native"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import useViewLayout from "@/hooks/useViewLayout"
+import { memo, useCallback, useMemo } from "@/lib/memo"
 
 const drivePath = {
 	type: "drive",
@@ -108,7 +109,5 @@ export const Photos = memo(() => {
 		</Fragment>
 	)
 })
-
-Photos.displayName = "Photos"
 
 export default Photos

@@ -1,7 +1,7 @@
 import { NativeView } from "react-native-boost/runtime"
 import { withUniwind } from "uniwind"
 import type { ViewProps, View as RNView } from "react-native"
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 import { cn } from "@filen/utils"
 import {
 	KeyboardAvoidingView as RNKeyboardControllerKeyboardAvoidingView,
@@ -21,8 +21,6 @@ export const View = memo((props: ViewProps & React.RefAttributes<RNView>) => {
 	)
 })
 
-View.displayName = "View"
-
 export const UniwindKeyboardAvoidingView = memo(
 	withUniwind(RNKeyboardControllerKeyboardAvoidingView) as React.FC<React.ComponentProps<typeof RNKeyboardControllerKeyboardAvoidingView>>
 )
@@ -37,8 +35,6 @@ export const KeyboardAvoidingView = memo(
 		)
 	}
 )
-
-KeyboardAvoidingView.displayName = "KeyboardAvoidingView"
 
 export const UniwindKeyboardAwareScrollView = memo(
 	withUniwind(RNKeyboardControllerKeyboardAwareScrollView) as React.FC<
@@ -57,8 +53,6 @@ export const KeyboardAwareScrollView = memo(
 	}
 )
 
-KeyboardAwareScrollView.displayName = "KeyboardAwareScrollView"
-
 export const UniwindKeyboardStickyView = memo(
 	withUniwind(RNKeyboardControllerKeyboardStickyView) as React.FC<React.ComponentProps<typeof RNKeyboardControllerKeyboardStickyView>>
 )
@@ -74,14 +68,10 @@ export const KeyboardStickyView = memo(
 	}
 )
 
-KeyboardStickyView.displayName = "KeyboardStickyView"
-
 export const UniwindBlurView = memo(withUniwind(ExpoBlurView) as React.FC<React.ComponentProps<typeof ExpoBlurView>>)
 
 export const BlurView = memo((props: React.ComponentProps<typeof ExpoBlurView> & React.RefAttributes<RNView>) => {
 	return <UniwindBlurView {...props} />
 })
-
-BlurView.displayName = "BlurView"
 
 export default View

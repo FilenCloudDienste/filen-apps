@@ -3,7 +3,8 @@ import "@/global"
 import "@/queries/onlineStatus"
 
 import StyleProvider from "@/providers/style.provider"
-import { memo, useState, useEffect, useCallback, Fragment } from "react"
+import { useState, useEffect, Fragment } from "react"
+import { memo, useCallback } from "@/lib/memo"
 import { Stack } from "expo-router"
 import { useResolveClassNames, useUniwind } from "uniwind"
 import View from "@/components/ui/view"
@@ -58,7 +59,6 @@ export const RootLayout = memo(() => {
 	}, [])
 
 	useEffect(() => {
-		// eslint-disable-next-line react-hooks/set-state-in-effect
 		runSetup()
 	}, [runSetup])
 
@@ -110,7 +110,5 @@ export const RootLayout = memo(() => {
 		</StyleProvider>
 	)
 })
-
-RootLayout.displayName = "RootLayout"
 
 export default RootLayout

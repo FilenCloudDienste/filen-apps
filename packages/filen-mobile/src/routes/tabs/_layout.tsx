@@ -1,10 +1,10 @@
-import { memo } from "react"
 import { NativeTabs, Icon, Label, VectorIcon } from "expo-router/unstable-native-tabs"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { Platform } from "react-native"
 import { useResolveClassNames } from "uniwind"
 import { useIsAuthed } from "@/lib/auth"
 import { Redirect } from "expo-router"
+import { memo } from "@/lib/memo"
 
 export const TabsLayout = memo(() => {
 	const bgBackground = useResolveClassNames("bg-background")
@@ -109,7 +109,5 @@ export const TabsLayout = memo(() => {
 		</NativeTabs>
 	)
 })
-
-TabsLayout.displayName = "TabsLayout"
 
 export default TabsLayout

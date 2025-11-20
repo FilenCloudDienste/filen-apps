@@ -1,4 +1,5 @@
-import { memo, useCallback, useRef, useEffect, useState } from "react"
+import { useRef, useEffect, useState } from "react"
+import { memo, useCallback } from "@/lib/memo"
 import { TextInput, type TextInputKeyPressEvent, type TextInputSubmitEditingEvent } from "react-native"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useResolveClassNames } from "uniwind"
@@ -272,7 +273,5 @@ export const Item = memo(
 		)
 	}
 )
-
-Item.displayName = "Item"
 
 export default Item

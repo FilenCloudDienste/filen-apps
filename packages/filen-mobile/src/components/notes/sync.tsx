@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react"
+import { useEffect } from "react"
 import { run, Semaphore, createExecutableTimeout } from "@filen/utils"
 import notes from "@/lib/notes"
 import alerts from "@/lib/alerts"
@@ -6,13 +6,15 @@ import { AppState } from "react-native"
 import useNotesStore, { type TemporaryContent } from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import sqlite from "@/lib/sqlite"
+import { memo } from "@/lib/memo"
 
 export class Sync {
 	private readonly mutex: Semaphore = new Semaphore(1)
 	private readonly storageMutex: Semaphore = new Semaphore(1)
-	private timeout: ReturnType<typeof createExecutableTimeout> | null = null
+	private syncTimeout: ReturnType<typeof createExecutableTimeout> | null = null
 	public readonly sqliteKvKey: string = "temporaryNoteContents"
 	private initDone: boolean = false
+	private flushTimeout: ReturnType<typeof createExecutableTimeout> | null = null
 
 	public constructor() {
 		this.restoreFromDisk()
@@ -89,7 +91,7 @@ export class Sync {
 		this.initDone = true
 	}
 
-	public async flushToDisk(temporaryContent?: TemporaryContent): Promise<void> {
+	private async flushToDisk(temporaryContent?: TemporaryContent): Promise<void> {
 		const result = await run(async defer => {
 			await Promise.all([this.storageMutex.acquire(), this.waitForInit()])
 
@@ -105,81 +107,90 @@ export class Sync {
 		}
 	}
 
-	public async sync(temporaryContent?: TemporaryContent): Promise<void> {
-		console.log("Syncing notes, count:", Object.keys(temporaryContent ?? useNotesStore.getState().temporaryContent).length)
+	public flushToDiskDebounced(temporaryContent?: TemporaryContent): void {
+		this.flushTimeout?.cancel()
 
-		this.timeout?.cancel()
+		this.flushTimeout = createExecutableTimeout(() => {
+			this.flushToDisk(temporaryContent).catch(console.error)
+		}, 3000)
+	}
 
-		this.timeout = createExecutableTimeout(async () => {
-			const result = await run(async defer => {
-				await Promise.all([this.mutex.acquire(), this.waitForInit()])
+	private async sync(temporaryContent?: TemporaryContent): Promise<void> {
+		const result = await run(async defer => {
+			await Promise.all([this.mutex.acquire(), this.waitForInit()])
 
-				defer(() => {
-					this.mutex.release()
-				})
-
-				await Promise.all(
-					Object.entries(temporaryContent ?? useNotesStore.getState().temporaryContent).map(async ([_, contents]) => {
-						if (contents.length === 0) {
-							return
-						}
-
-						const mostRecentContent = contents.sort((a, b) => b.timestamp - a.timestamp).at(0)
-
-						if (!mostRecentContent) {
-							return
-						}
-
-						await notes.setContent({
-							note: mostRecentContent.note,
-							content: mostRecentContent.content
-						})
-
-						let didFlushToDisk = false
-
-						useNotesStore.getState().setTemporaryContent(prev => {
-							const updated = {
-								...prev
-							}
-
-							for (const [noteUuid, contents] of Object.entries(updated)) {
-								if (noteUuid === mostRecentContent.note.uuid) {
-									// Remove contents that have been synced
-									updated[noteUuid] = contents.filter(c => c.timestamp > mostRecentContent.timestamp)
-								}
-
-								if (updated[noteUuid] && updated[noteUuid].length === 0) {
-									delete updated[noteUuid]
-								}
-							}
-
-							this.flushToDisk(updated)
-								.then(() => {
-									didFlushToDisk = true
-								})
-								.catch(console.error)
-
-							return updated
-						})
-
-						while (!didFlushToDisk) {
-							await new Promise<void>(resolve => setTimeout(resolve, 100))
-						}
-
-						console.log("Synced note:", mostRecentContent.note.uuid)
-					})
-				)
+			defer(() => {
+				this.mutex.release()
 			})
 
-			if (!result.success) {
-				console.error(result.error)
-				alerts.error(result.error)
-			}
+			await Promise.all(
+				Object.entries(temporaryContent ?? useNotesStore.getState().temporaryContent).map(async ([_, contents]) => {
+					if (contents.length === 0) {
+						return
+					}
+
+					const mostRecentContent = contents.sort((a, b) => b.timestamp - a.timestamp).at(0)
+
+					if (!mostRecentContent) {
+						return
+					}
+
+					await notes.setContent({
+						note: mostRecentContent.note,
+						content: mostRecentContent.content
+					})
+
+					let didFlushToDisk = false
+
+					useNotesStore.getState().setTemporaryContent(prev => {
+						const updated = {
+							...prev
+						}
+
+						for (const [noteUuid, contents] of Object.entries(updated)) {
+							if (noteUuid === mostRecentContent.note.uuid) {
+								// Remove contents that have been synced
+								updated[noteUuid] = contents.filter(c => c.timestamp > mostRecentContent.timestamp)
+							}
+
+							if (updated[noteUuid] && updated[noteUuid].length === 0) {
+								delete updated[noteUuid]
+							}
+						}
+
+						this.flushToDisk(updated)
+							.then(() => {
+								didFlushToDisk = true
+							})
+							.catch(console.error)
+
+						return updated
+					})
+
+					while (!didFlushToDisk) {
+						await new Promise<void>(resolve => setTimeout(resolve, 100))
+					}
+				})
+			)
+		})
+
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
+		}
+	}
+
+	public syncDebounced(temporaryContent?: TemporaryContent): void {
+		this.syncTimeout?.cancel()
+
+		this.syncTimeout = createExecutableTimeout(() => {
+			this.sync(temporaryContent).catch(console.error)
 		}, 3000)
 	}
 
 	public executeNow(): void {
-		this.timeout?.execute()
+		this.syncTimeout?.execute()
+		this.flushTimeout?.execute()
 	}
 }
 
@@ -205,13 +216,11 @@ export const SyncHost = memo(() => {
 			return
 		}
 
-		sync.flushToDisk(temporaryContent).catch(console.error)
-		sync.sync(temporaryContent).catch(console.error)
+		sync.flushToDiskDebounced(temporaryContent)
+		sync.syncDebounced(temporaryContent)
 	}, [temporaryContent])
 
 	return null
 })
-
-SyncHost.displayName = "SyncHost"
 
 export default SyncHost

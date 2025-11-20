@@ -1,6 +1,6 @@
 import { QueryClient, type UseQueryOptions } from "@tanstack/react-query"
 import { experimental_createQueryPersister, type PersistedQuery } from "@tanstack/query-persist-client-core"
-import { useMemo } from "react"
+import { useMemo } from "@/lib/memo"
 import useFocusNotifyOnChangeProps from "@/queries/useFocusNotifyOnChangeProps"
 import useQueryFocusAware from "@/queries/useQueryFocusAware"
 import useNetInfo from "@/hooks/useNetInfo"
@@ -311,7 +311,7 @@ export class QueryUpdater {
 		return queryClient.getQueryData<T>(queryKey)
 	}
 
-	public set<T>(queryKey: unknown[], updater: T | ((prev?: T) => T)): void {
+	public set<T>(queryKey: unknown[], updater: T | ((prev?: T) => T), dataUpdatedAt?: number): void {
 		queryClient.setQueryData(
 			queryKey,
 			(oldData: T | undefined) => {
@@ -322,7 +322,7 @@ export class QueryUpdater {
 				return updater
 			},
 			{
-				updatedAt: Date.now()
+				updatedAt: typeof dataUpdatedAt === "number" ? dataUpdatedAt : Date.now()
 			}
 		)
 

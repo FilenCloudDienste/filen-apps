@@ -1,7 +1,7 @@
 import { NativeText } from "react-native-boost/runtime"
 import { withUniwind } from "uniwind"
 import type { TextProps } from "react-native"
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 import { cn } from "@filen/utils"
 
 export const UniwindText = memo(withUniwind(NativeText) as React.FC<TextProps>)
@@ -14,7 +14,5 @@ export const Text = memo((props: TextProps) => {
 		/>
 	)
 })
-
-Text.displayName = "Text"
 
 export default Text

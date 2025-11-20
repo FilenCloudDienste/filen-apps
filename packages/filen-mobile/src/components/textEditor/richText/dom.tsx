@@ -3,7 +3,7 @@
 import "quill/dist/quill.snow.css"
 
 import { type DOMProps, useDOMImperativeHandle } from "expo/dom"
-import { memo, useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef } from "react"
 import type { DOMRef } from "@/hooks/useDomEvents/useNativeDomEvents"
 import useDomDomEvents from "@/hooks/useDomEvents/useDomDomEvents"
 import Quill from "quill"
@@ -11,6 +11,7 @@ import DOMPurify from "dompurify"
 import QuillThemeCustomizer, { getThemeOptions } from "@/components/textEditor/richText/quillTheme"
 import type { Platform } from "react-native"
 import type { TextEditorEvents, Colors, Font } from "@/components/textEditor"
+import { memo, useCallback } from "@/lib/memo"
 
 export type HeaderLevel = 1 | 2 | 3 | 4 | 5 | 6
 export type ListType = "ordered" | "bullet" | "checked" | "unchecked"
@@ -345,7 +346,5 @@ const RichTextEditorDom = memo(
 		)
 	}
 )
-
-RichTextEditorDom.displayName = "RichTextEditorDom"
 
 export default RichTextEditorDom

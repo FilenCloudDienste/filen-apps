@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback } from "@/lib/memo"
 import type { DOMImperativeFactory } from "expo/dom"
 import type { WebViewMessageEvent } from "react-native-webview"
 

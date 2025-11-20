@@ -1,7 +1,8 @@
 import Text from "@/components/ui/text"
-import { memo, Fragment } from "react"
+import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
+import { memo } from "@/lib/memo"
 
 export const ChatsIndex = memo(() => {
 	return (
@@ -13,7 +14,5 @@ export const ChatsIndex = memo(() => {
 		</Fragment>
 	)
 })
-
-ChatsIndex.displayName = "ChatsIndex"
 
 export default ChatsIndex

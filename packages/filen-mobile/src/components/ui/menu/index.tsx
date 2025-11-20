@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react"
+import { memo, useCallback } from "@/lib/memo"
 import ContextMenu, { type ContextMenuAction, type ContextMenuOnPressNativeEvent } from "react-native-context-menu-view"
 import { withUniwind } from "uniwind"
 import type { StyleProp, ViewStyle, NativeSyntheticEvent } from "react-native"
@@ -10,7 +10,6 @@ export type MenuButton = ContextMenuAction & {
 export type MenuProps = {
 	children: React.ReactNode
 	type?: "dropdown" | "context"
-	className?: string
 	style?: StyleProp<ViewStyle>
 	buttons?: MenuButton[]
 }
@@ -42,8 +41,6 @@ export const MenuInner = memo(
 		)
 	}
 )
-
-MenuInner.displayName = "Menu"
 
 export const Menu = withUniwind(MenuInner) as typeof MenuInner
 

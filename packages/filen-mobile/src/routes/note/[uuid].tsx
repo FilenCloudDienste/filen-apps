@@ -1,4 +1,4 @@
-import { memo, Fragment, useMemo } from "react"
+import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import StackHeader from "@/components/ui/header"
 import { useLocalSearchParams, Redirect } from "expo-router"
@@ -8,33 +8,40 @@ import Content from "@/components/notes/content"
 import { ActivityIndicator } from "react-native"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
+import { memo, useMemo } from "@/lib/memo"
 
-export const Header = memo(({ note }: { note: TNote }) => {
-	const temporaryNoteContents = useNotesStore(useShallow(state => state.temporaryContent))
+export const Header = memo(
+	({ note }: { note: TNote }) => {
+		const isSyncing = useNotesStore(useShallow(state => (state.temporaryContent[note.uuid] ?? []).length > 0))
 
-	return (
-		<StackHeader
-			title="tbd"
-			right={() => {
-				if ((temporaryNoteContents[note.uuid] ?? []).length === 0) {
-					return null
-				}
+		return (
+			<StackHeader
+				title="tbd"
+				right={() => {
+					if (!isSyncing) {
+						return null
+					}
 
-				return (
-					<ActivityIndicator
-						size="small"
-						color="white"
-					/>
-				)
-			}}
-		/>
-	)
-})
-
-Header.displayName = "Header"
+					return (
+						<ActivityIndicator
+							size="small"
+							color="white"
+						/>
+					)
+				}}
+			/>
+		)
+	},
+	(prevProps, nextProps) => {
+		// Only re-render if the note UUID changes
+		return prevProps.note.uuid === nextProps.note.uuid
+	}
+)
 
 export const Note = memo(() => {
-	const { uuid } = useLocalSearchParams<{ uuid: string }>()
+	const { uuid } = useLocalSearchParams<{
+		uuid: string
+	}>()
 
 	const notesQuery = useNotesQuery({
 		enabled: false
@@ -57,7 +64,5 @@ export const Note = memo(() => {
 		</Fragment>
 	)
 })
-
-Note.displayName = "Note"
 
 export default Note

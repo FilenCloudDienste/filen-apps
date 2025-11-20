@@ -1,4 +1,4 @@
-import { memo, Fragment, useCallback, useMemo } from "react"
+import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import useDrivePath from "@/hooks/useDrivePath"
@@ -13,6 +13,7 @@ import Item from "@/components/drive/item"
 import type { ListRenderItemInfo } from "react-native"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
+import { memo, useCallback, useMemo } from "@/lib/memo"
 
 export const Drive = memo(() => {
 	const drivePath = useDrivePath()
@@ -84,7 +85,5 @@ export const Drive = memo(() => {
 		</Fragment>
 	)
 })
-
-Drive.displayName = "Drive"
 
 export default Drive

@@ -2,7 +2,7 @@ import * as Burnt from "burnt"
 import { Notifier, NotifierComponents } from "react-native-notifier"
 import View from "@/components/ui/view"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 
 export const NotifierErrorContainer = memo(({ children }: { children: React.ReactNode }) => {
 	const insets = useSafeAreaInsets()
@@ -18,8 +18,6 @@ export const NotifierErrorContainer = memo(({ children }: { children: React.Reac
 		</View>
 	)
 })
-
-NotifierErrorContainer.displayName = "NotifierErrorContainer"
 
 export class Alerts {
 	public error(message: unknown): void {

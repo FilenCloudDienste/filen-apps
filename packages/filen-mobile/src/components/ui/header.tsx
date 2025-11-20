@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 import { useResolveClassNames } from "uniwind"
 import { Stack } from "expo-router"
 import type { NativeStackHeaderItemProps, NativeStackHeaderItem } from "@react-navigation/native-stack"
@@ -34,7 +34,5 @@ export const Header = memo(
 		)
 	}
 )
-
-Header.displayName = "Header"
 
 export default Header

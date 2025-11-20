@@ -1,10 +1,11 @@
-import { memo, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Modal, ActivityIndicator, Platform } from "react-native"
 import { run, type DeferFn, type Result, type Options, runEffect } from "@filen/utils"
 import { FullWindowOverlay } from "react-native-screens"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { AnimatedView } from "@/components/ui/animated"
 import events from "@/lib/events"
+import { memo } from "@/lib/memo"
 
 export const FullScreenLoadingModalParent = memo(({ children, visible }: { children: React.ReactNode; visible: boolean }) => {
 	if (Platform.OS === "ios" && !visible) {
@@ -33,8 +34,6 @@ export const FullScreenLoadingModalParent = memo(({ children, visible }: { child
 		)
 	})
 })
-
-FullScreenLoadingModalParent.displayName = "FullScreenLoadingModalParent"
 
 export const FullScreenLoadingModal = memo(() => {
 	const [count, setCount] = useState<number>(0)
@@ -86,8 +85,6 @@ export const FullScreenLoadingModal = memo(() => {
 		</FullScreenLoadingModalParent>
 	)
 })
-
-FullScreenLoadingModal.displayName = "FullScreenLoadingModal"
 
 export function forceHide(): void {
 	events.emit("forceHideFullScreenLoadingModal")

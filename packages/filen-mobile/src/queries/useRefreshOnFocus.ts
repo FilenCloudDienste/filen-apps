@@ -1,6 +1,7 @@
-import { useCallback, useRef } from "react"
+import { useRef } from "react"
 import { useFocusEffect } from "@react-navigation/native"
 import type { UseQueryResult } from "@tanstack/react-query"
+import { useCallback } from "@/lib/memo"
 
 export default function useRefreshOnFocus({
 	isEnabled,

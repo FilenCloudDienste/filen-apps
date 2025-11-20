@@ -5,12 +5,13 @@ import { Platform } from "react-native"
 import crypto from "crypto"
 import { pack, unpack } from "msgpackr"
 import { run, Semaphore, runEffect } from "@filen/utils"
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef } from "react"
 import cache from "@/lib/cache"
 import events from "@/lib/events"
 import { Buffer } from "@craftzdog/react-native-buffer"
 import { IOS_APP_GROUP_IDENTIFIER } from "@/constants"
-import { isEqual } from "es-toolkit/predicate"
+import isEqual from "react-fast-compare"
+import { useCallback } from "@/lib/memo"
 
 export class SecureStore {
 	private readonly mmkv: MMKV

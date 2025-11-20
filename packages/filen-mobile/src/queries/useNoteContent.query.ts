@@ -57,21 +57,27 @@ export function useNoteContentQuery(
 
 export function noteContentQueryUpdate({
 	updater,
-	params
+	params,
+	dataUpdatedAt
 }: {
 	params: Parameters<typeof fetchData>[0]
 } & {
 	updater:
 		| Awaited<ReturnType<typeof fetchData>>
 		| ((prev: Awaited<ReturnType<typeof fetchData>>) => Awaited<ReturnType<typeof fetchData>>)
+	dataUpdatedAt?: number
 }): void {
 	const sortedParams = sortParams(params)
 
-	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY, sortedParams], prev => {
-		const currentData = prev ?? (undefined satisfies Awaited<ReturnType<typeof fetchData>>)
+	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>(
+		[BASE_QUERY_KEY, sortedParams],
+		prev => {
+			const currentData = prev ?? (undefined satisfies Awaited<ReturnType<typeof fetchData>>)
 
-		return typeof updater === "function" ? updater(currentData) : updater
-	})
+			return typeof updater === "function" ? updater(currentData) : updater
+		},
+		dataUpdatedAt
+	)
 }
 
 export async function noteContentQueryRefetch(params: Parameters<typeof fetchData>[0]): Promise<void> {

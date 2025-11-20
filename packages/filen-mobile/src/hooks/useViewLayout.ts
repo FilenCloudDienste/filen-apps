@@ -1,5 +1,6 @@
 import type { View } from "react-native"
-import { useState, useCallback, useLayoutEffect } from "react"
+import { useState, useLayoutEffect } from "react"
+import { useCallback } from "@/lib/memo"
 
 export default function useViewLayout(ref: React.RefObject<View | null>) {
 	const [layout, setLayout] = useState<{

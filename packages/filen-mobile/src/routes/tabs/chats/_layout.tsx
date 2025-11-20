@@ -1,10 +1,8 @@
 import { Stack } from "expo-router"
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 
 export const ChatsLayout = memo(() => {
 	return <Stack />
 })
-
-ChatsLayout.displayName = "ChatsLayout"
 
 export default ChatsLayout

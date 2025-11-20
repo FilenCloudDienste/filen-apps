@@ -2,6 +2,7 @@ import auth from "@/lib/auth"
 import { type Note, NoteType } from "@filen/sdk-rs"
 import { noteContentQueryUpdate } from "@/queries/useNoteContent.query"
 import { createNotePreviewFromContentText } from "@filen/utils"
+import { notesQueryUpdate } from "@/queries/useNotes.query"
 
 export class Notes {
 	public async list(signal?: AbortSignal) {
@@ -67,6 +68,10 @@ export class Notes {
 					}
 				: undefined
 		)
+
+		notesQueryUpdate({
+			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
 
 		if (updateQuery) {
 			noteContentQueryUpdate({

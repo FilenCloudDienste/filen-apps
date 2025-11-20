@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 import View from "@/components/ui/view"
 import { PressableOpacity } from "@/components/ui/pressables"
 import Menu from "@/components/ui/menu"
@@ -54,7 +54,5 @@ export const Item = memo(({ info, drivePath }: { info: ListRenderItemInfo<DriveI
 		</View>
 	)
 })
-
-Item.displayName = "Item"
 
 export default Item

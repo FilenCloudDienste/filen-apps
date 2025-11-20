@@ -1,10 +1,8 @@
 import { Stack } from "expo-router"
-import { memo } from "react"
+import { memo } from "@/lib/memo"
 
 export const HomeLayout = memo(() => {
 	return <Stack />
 })
-
-HomeLayout.displayName = "HomeLayout"
 
 export default HomeLayout

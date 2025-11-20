@@ -1,8 +1,9 @@
 import "@/global.css"
 
-import { memo, useEffect } from "react"
+import { useEffect } from "react"
 import * as NavigationBar from "expo-navigation-bar"
 import { Platform } from "react-native"
+import { memo } from "@/lib/memo"
 
 export const StyleProvider = memo(({ children }: { children: React.ReactNode }) => {
 	useEffect(() => {
@@ -13,7 +14,5 @@ export const StyleProvider = memo(({ children }: { children: React.ReactNode }) 
 
 	return children
 })
-
-StyleProvider.displayName = "StyleProvider"
 
 export default StyleProvider

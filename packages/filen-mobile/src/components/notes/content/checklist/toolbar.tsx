@@ -1,4 +1,3 @@
-import { memo, useCallback } from "react"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { BlurView, KeyboardStickyView } from "@/components/ui/view"
@@ -8,6 +7,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { PressableOpacity } from "@/components/ui/pressables"
 import alerts from "@/lib/alerts"
+import { memo, useCallback } from "@/lib/memo"
 
 export const Toolbar = memo(() => {
 	const keyboardState = useKeyboardState()
@@ -64,7 +64,5 @@ export const Toolbar = memo(() => {
 		</KeyboardStickyView>
 	)
 })
-
-Toolbar.displayName = "Toolbar"
 
 export default Toolbar
