@@ -13,6 +13,7 @@ export type Events = {
 	showFullScreenLoadingModal: void
 	hideFullScreenLoadingModal: void
 	forceHideFullScreenLoadingModal: void
+	showActionSheet: void
 }
 
 export class TypedEventEmitter<T> {

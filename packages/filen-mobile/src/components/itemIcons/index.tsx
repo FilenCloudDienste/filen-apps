@@ -258,27 +258,28 @@ export function unwrapDirColor(color?: DirColor): string {
 	}
 }
 
-export const directorySvg = memoize((color?: string | null, width?: string | number, height?: string | number) => {
-	const colors = (() => {
-		if (!color || color === "default") {
-			return {
-				path1: "#5398DF",
-				path2: "#85BCFF"
+export const directorySvg = memoize(
+	({ color, width, height }: { color?: string | null; width?: string | number; height?: string | number }) => {
+		const colors = (() => {
+			if (!color || color === "default") {
+				return {
+					path1: "#5398DF",
+					path2: "#85BCFF"
+				}
 			}
-		}
 
-		const stringToColor = directoryColorToHex(color)
+			const stringToColor = directoryColorToHex(color)
 
-		return {
-			path1: shadeColor(stringToColor, 1.3),
-			path2: stringToColor
-		}
-	})()
+			return {
+				path1: shadeColor(stringToColor, 1.3),
+				path2: stringToColor
+			}
+		})()
 
-	const w = typeof width === "number" ? `${width}px` : (width ?? "32px")
-	const h = typeof height === "number" ? `${height}px` : (height ?? "32px")
+		const w = typeof width === "number" ? `${width}px` : (width ?? "32px")
+		const h = typeof height === "number" ? `${height}px` : (height ?? "32px")
 
-	const svgTemplateString = `
+		const svgTemplateString = `
         <svg
             width="${w}"
             height="${h}"
@@ -298,14 +299,19 @@ export const directorySvg = memoize((color?: string | null, width?: string | num
         </svg>
     `.trim()
 
-	return `data:image/svg+xml;base64,${btoa(svgTemplateString)}`
-})
+		return `data:image/svg+xml;base64,${btoa(svgTemplateString)}`
+	}
+)
 
 export const DirectoryIcon = memo(
 	({ color, width, height, className }: { color?: DirColor; width?: number; height?: number; className?: string }) => {
 		const source = useMemo(() => {
 			return {
-				uri: directorySvg(unwrapDirColor(color), width, height)
+				uri: directorySvg({
+					color: unwrapDirColor(color),
+					width,
+					height
+				})
 			}
 		}, [color, width, height])
 

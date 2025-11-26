@@ -39,6 +39,7 @@ export const Button = memo(
 				case "header": {
 					return [
 						{
+							id: "header-1",
 							title: "1",
 							onPress: () => {
 								postMessage({
@@ -48,6 +49,7 @@ export const Button = memo(
 							}
 						},
 						{
+							id: "header-2",
 							title: "2",
 							onPress: () => {
 								postMessage({
@@ -57,6 +59,7 @@ export const Button = memo(
 							}
 						},
 						{
+							id: "header-3",
 							title: "3",
 							onPress: () => {
 								postMessage({
@@ -66,6 +69,7 @@ export const Button = memo(
 							}
 						},
 						{
+							id: "header-4",
 							title: "4",
 							onPress: () => {
 								postMessage({
@@ -75,6 +79,7 @@ export const Button = memo(
 							}
 						},
 						{
+							id: "header-5",
 							title: "5",
 							onPress: () => {
 								postMessage({
@@ -84,6 +89,7 @@ export const Button = memo(
 							}
 						},
 						{
+							id: "header-6",
 							title: "6",
 							onPress: () => {
 								postMessage({
@@ -93,6 +99,7 @@ export const Button = memo(
 							}
 						},
 						{
+							id: "header-normal",
 							title: "normal",
 							onPress: () => {
 								postMessage({
@@ -110,7 +117,8 @@ export const Button = memo(
 
 					return [
 						{
-							title: "open",
+							id: "open",
+							title: "tbd_open",
 							onPress: () => {
 								if (type !== "link" || !formats.link) {
 									return
@@ -120,7 +128,8 @@ export const Button = memo(
 							}
 						},
 						{
-							title: "edit",
+							id: "edit",
+							title: "tbd_edit",
 							onPress: () => {
 								if (type !== "link" || !formats.link) {
 									return
@@ -148,7 +157,8 @@ export const Button = memo(
 							}
 						},
 						{
-							title: "remove",
+							id: "remove",
+							title: "tbd_remove",
 							onPress: () => {
 								if (type !== "link" || !formats.link) {
 									return
@@ -165,7 +175,8 @@ export const Button = memo(
 				case "list": {
 					return [
 						{
-							title: "ordered",
+							id: "ordered",
+							title: "tbd_ordered",
 							onPress: () => {
 								postMessage({
 									type: "quillToggleList",
@@ -174,7 +185,8 @@ export const Button = memo(
 							}
 						},
 						{
-							title: "bullet",
+							id: "bullet",
+							title: "tbd_bullet",
 							onPress: () => {
 								postMessage({
 									type: "quillToggleList",
@@ -183,7 +195,8 @@ export const Button = memo(
 							}
 						},
 						{
-							title: "checklist",
+							id: "checklist",
+							title: "tbd_checklist",
 							onPress: () => {
 								postMessage({
 									type: "quillToggleList",
@@ -194,7 +207,8 @@ export const Button = memo(
 						...(formats.list
 							? [
 									{
-										title: "remove",
+										id: "remove",
+										title: "tbd_remove",
 										onPress: () => {
 											postMessage({
 												type: "quillRemoveList"

@@ -30,18 +30,21 @@
     "superclean": "tsx ./superclean.ts"
   },
   "dependencies": {
+    "@blazejkustra/react-native-alert": "^1.0.0",
     "@craftzdog/react-native-buffer": "^6.1.1",
+    "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/ui": "~0.2.0-beta.7",
     "@expo/vector-icons": "^15.0.3",
     "@filen/sdk-rs": "^0.3.30",
     "@filen/utils": "^0.0.4",
     "@react-native-community/netinfo": "11.4.1",
+    "@react-native-menu/menu": "^2.0.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.8.2",
     "@react-navigation/native": "^7.1.8",
     "@shopify/flash-list": "2.0.2",
-    "@tanstack/query-persist-client-core": "^5.91.9",
-    "@tanstack/react-query": "^5.90.10",
+    "@tanstack/query-persist-client-core": "^5.91.10",
+    "@tanstack/react-query": "^5.90.11",
     "@uiw/codemirror-extensions-langs": "^4.25.3",
     "@uiw/codemirror-theme-material": "^4.25.3",
     "@uiw/codemirror-theme-xcode": "^4.25.3",
@@ -55,7 +58,7 @@
     "es-toolkit": "^1.42.0",
     "eventemitter3": "^5.0.1",
     "expo": "~54.0.25",
-    "expo-audio": "~1.0.14",
+    "expo-audio": "~1.0.15",
     "expo-background-task": "~1.0.9",
     "expo-battery": "~10.0.7",
     "expo-blur": "~15.0.7",
@@ -103,7 +106,6 @@
     "react-fast-compare": "^3.2.2",
     "react-native": "0.81.5",
     "react-native-boost": "^0.6.2",
-    "react-native-context-menu-view": "^1.20.0",
     "react-native-edge-to-edge": "^1.7.0",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-keyboard-controller": "1.18.5",
@@ -122,7 +124,7 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17",
     "unist-util-visit": "^5.0.0",
-    "uniwind": "^1.0.3",
+    "uniwind": "^1.0.4",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -142,6 +144,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.47.0"
+    "typescript-eslint": "^8.48.0"
   }
 }

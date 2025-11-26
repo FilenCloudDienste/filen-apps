@@ -6,7 +6,7 @@ import "@uiw/react-markdown-preview/markdown.css"
 import { type DOMProps, useDOMImperativeHandle } from "expo/dom"
 import { useEffect, useRef, useState } from "react"
 import type { Platform } from "react-native"
-import CodeMirror, { EditorView } from "@uiw/react-codemirror"
+import CodeMirror, { EditorView, type ReactCodeMirrorRef } from "@uiw/react-codemirror"
 import { xcodeLight, xcodeDark } from "@uiw/codemirror-theme-xcode"
 import { materialDark, materialLight } from "@uiw/codemirror-theme-material"
 import type { TextEditorType, Font, Colors, TextEditorEvents } from "@/components/textEditor"
@@ -70,6 +70,7 @@ const TextEditorDOM = memo(
 	}) => {
 		const didTypeRef = useRef<boolean>(false)
 		const [value, setValue] = useState<string>(initialValue ?? "")
+		const codeMirrorRef = useRef<ReactCodeMirrorRef>(null)
 
 		const onChange = useCallback(
 			(value: string) => {
@@ -234,6 +235,7 @@ const TextEditorDOM = memo(
 
 		return (
 			<CodeMirror
+				ref={codeMirrorRef}
 				value={initialValue}
 				width="100dvw"
 				onChange={onChange}
@@ -246,7 +248,7 @@ const TextEditorDOM = memo(
 				autoCorrect="off"
 				autoSave="off"
 				spellCheck={false}
-				autoFocus={autoFocus ?? (initialValue ?? "").length === 0}
+				autoFocus={autoFocus}
 				style={{
 					width: "100dvw",
 					paddingBottom: 128

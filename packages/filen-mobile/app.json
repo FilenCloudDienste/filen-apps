@@ -57,7 +57,7 @@
 				"react-native-edge-to-edge",
 				{
 					"android": {
-						"parentTheme": "Material3Expressive.Dynamic",
+						"parentTheme": "Default",
 						"enforceNavigationBarContrast": false
 					}
 				}

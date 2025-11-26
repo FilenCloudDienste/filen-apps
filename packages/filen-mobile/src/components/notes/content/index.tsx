@@ -121,6 +121,7 @@ export const Content = memo(
 						initialValue={initialValue ?? ""}
 						onChange={onValueChange}
 						readOnly={!hasWriteAccess}
+						autoFocus={hasWriteAccess && (initialValue ?? "").length === 0}
 					/>
 				) : (
 					<TextEditor
@@ -129,6 +130,8 @@ export const Content = memo(
 						initialValue={initialValue ?? ""}
 						onValueChange={onValueChange}
 						readOnly={!hasWriteAccess}
+						autoFocus={hasWriteAccess && (initialValue ?? "").length === 0}
+						placeholder="tbd_placeholder"
 						type={
 							note.noteType === NoteType.Text
 								? "text"

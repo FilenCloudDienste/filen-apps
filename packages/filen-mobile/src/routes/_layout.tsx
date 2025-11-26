@@ -22,6 +22,7 @@ import { PressablesConfig } from "pressto"
 import * as Haptics from "expo-haptics"
 import FullScreenLoadingModal from "@/components/ui/fullScreenLoadingModal"
 import NotesSync from "@/components/notes/sync"
+import ActionSheetProvider from "@/providers/actionSheet.provider"
 
 SplashScreen.setOptions({
 	duration: 400,
@@ -81,27 +82,29 @@ export const RootLayout = memo(() => {
 					>
 						<NotifierWrapper useRNScreensOverlay={true}>
 							<QueryClientProvider client={queryClient}>
-								<View className="flex-1">
-									{isSetupDone && (
-										<Fragment>
-											<Stack
-												initialRouteName={isAuthed ? "tabs" : "auth"}
-												screenOptions={{
-													headerShown: false,
-													contentStyle: {
-														backgroundColor: bgBackground.backgroundColor as string
-													}
-												}}
-											/>
-											{isAuthed && (
-												<Fragment>
-													<NotesSync />
-												</Fragment>
-											)}
-										</Fragment>
-									)}
-									<FullScreenLoadingModal />
-								</View>
+								<ActionSheetProvider>
+									<View className="flex-1">
+										{isSetupDone && (
+											<Fragment>
+												<Stack
+													initialRouteName={isAuthed ? "tabs" : "auth"}
+													screenOptions={{
+														headerShown: false,
+														contentStyle: {
+															backgroundColor: bgBackground.backgroundColor as string
+														}
+													}}
+												/>
+												{isAuthed && (
+													<Fragment>
+														<NotesSync />
+													</Fragment>
+												)}
+											</Fragment>
+										)}
+										<FullScreenLoadingModal />
+									</View>
+								</ActionSheetProvider>
 							</QueryClientProvider>
 						</NotifierWrapper>
 					</PressablesConfig>

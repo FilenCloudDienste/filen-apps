@@ -120,7 +120,8 @@ export const TextEditor = memo(
 		readOnly,
 		onReady,
 		disableMarkdownPreview,
-		id
+		id,
+		autoFocus
 	}: {
 		initialValue?: string
 		onValueChange?: (value: string) => void
@@ -131,6 +132,7 @@ export const TextEditor = memo(
 		onReady?: () => void
 		disableMarkdownPreview?: boolean
 		id?: string
+		autoFocus?: boolean
 	}) => {
 		const ref = useRef<DOMRef>(null)
 		const textForeground = useResolveClassNames("text-foreground")
@@ -217,6 +219,7 @@ export const TextEditor = memo(
 							toolbarHeight={toolbarHeight}
 							keyboardVisible={keyboardState.isVisible}
 							readOnly={readOnly}
+							autoFocus={autoFocus}
 							font={{
 								family: text.fontFamily as string,
 								size: text.fontSize as number,
@@ -256,6 +259,7 @@ export const TextEditor = memo(
 								placeholder={placeholder}
 								readOnly={readOnly}
 								markdownPreviewActive={markdownPreviewActive}
+								autoFocus={autoFocus}
 								dom={{
 									onMessage: onDomMessage
 								}}

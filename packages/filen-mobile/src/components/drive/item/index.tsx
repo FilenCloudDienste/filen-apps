@@ -27,18 +27,7 @@ export const Item = memo(({ info, drivePath }: { info: ListRenderItemInfo<DriveI
 				<Menu
 					className="flex-row w-full h-full"
 					type="context"
-					onPress={e => {
-						console.log(e.nativeEvent)
-					}}
-					preview={<Text>{info.item.data.decryptedMeta?.name}</Text>}
-					buttons={[
-						{
-							title: "Title 1"
-						},
-						{
-							title: "Title 2"
-						}
-					]}
+					buttons={[]}
 				>
 					<View className="flex-row w-full h-full bg-transparent gap-4 items-center">
 						{info.item.type === "directory" ? (

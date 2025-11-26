@@ -3,160 +3,166 @@
 
 @layer theme {
 	:root {
-		/* Android Dark (OLED) */
+		/* ===========================================================
+		   ANDROID DARK (Material You / M3, OLED optimized)
+		   =========================================================== */
 		@variant darkandroid {
-			/* Backgrounds - Pure OLED black */
+			/* Backgrounds (OLED) */
 			--color-background: #000000;
 			--color-background-secondary: #0a0a0a;
-			--color-background-tertiary: #121212;
-			--color-card: #121212;
+			--color-background-tertiary: #111111;
+			--color-card: #111111;
 			--color-card-hover: #1a1a1a;
 			--color-popover: #1a1a1a;
-			--color-modal: #0a0a0a;
+			--color-modal: #000000;
 
-			/* Text colors */
-			--color-foreground: #ffffff;
-			--color-foreground-secondary: #b3b3b3;
-			--color-foreground-tertiary: #808080;
-			--color-muted: #808080;
-			--color-muted-foreground: #b3b3b3;
-			--color-placeholder: #666666;
+			/* Text (MD3 On-* colors) */
+			--color-foreground: #e6e1e5; /* on-surface */
+			--color-foreground-secondary: #cac4d0; /* on-surface-variant */
+			--color-foreground-tertiary: #a8a2ad;
+			--color-muted: #a8a2ad;
+			--color-muted-foreground: #cac4d0;
+			--color-placeholder: #8e8e98;
 
 			/* Borders */
-			--color-border: #2a2a2a;
+			--color-border: #49454f; /* outline */
 			--color-border-subtle: #1a1a1a;
-			--color-border-hover: #3a3a3a;
-			--color-divider: #2a2a2a;
-			--color-input: #2a2a2a;
-			--color-ring: #1976d2;
+			--color-border-hover: #5a5561;
+			--color-divider: #49454f;
+			--color-input: #49454f;
+			--color-ring: #d0bcff; /* primary tone 90 */
 
-			/* Interactive elements - Material Design 3 colors */
-			--color-primary: #1976d2;
-			--color-primary-foreground: #ffffff;
-			--color-primary-hover: #1565c0;
-			--color-primary-active: #0d47a1;
+			/* MD3 Primary/Secondary/Etc */
+			--color-primary: #d0bcff; /* primary tone 90 */
+			--color-primary-foreground: #381e72; /* on-primary */
+			--color-primary-hover: #c5aaff;
+			--color-primary-active: #b497ff;
 
-			--color-secondary: #616161;
-			--color-secondary-foreground: #ffffff;
-			--color-secondary-hover: #424242;
+			--color-secondary: #ccc2dc; /* secondary tone 90 */
+			--color-secondary-foreground: #332d41;
+			--color-secondary-hover: #bbaccf;
 
-			--color-accent: #7b1fa2;
-			--color-accent-foreground: #ffffff;
-			--color-accent-hover: #6a1b9a;
+			--color-accent: #efb8c8; /* tertiary tone 90 */
+			--color-accent-foreground: #492532;
+			--color-accent-hover: #e8aabe;
 
-			--color-destructive: #d32f2f;
-			--color-destructive-foreground: #ffffff;
-			--color-destructive-hover: #c62828;
+			--color-destructive: #f2b8b5; /* error tone 90 */
+			--color-destructive-foreground: #601410;
+			--color-destructive-hover: #e9a19c;
 
-			--color-danger: #d32f2f;
-			--color-danger-foreground: #ffffff;
-			--color-danger-hover: #c62828;
+			--color-danger: #f2b8b5;
+			--color-danger-foreground: #601410;
+			--color-danger-hover: #e9a19c;
 
-			--color-success: #388e3c;
-			--color-success-foreground: #ffffff;
-			--color-success-hover: #2e7d32;
+			--color-success: #a6d48f; /* baseline MD3 green tone 80 */
+			--color-success-foreground: #1a370f;
+			--color-success-hover: #98c982;
 
-			--color-warning: #f57c00;
-			--color-warning-foreground: #ffffff;
-			--color-warning-hover: #ef6c00;
+			--color-warning: #ffb866; /* baseline yellow tone 80 */
+			--color-warning-foreground: #402200;
+			--color-warning-hover: #f9ad53;
 
-			--color-info: #0288d1;
-			--color-info-foreground: #ffffff;
-			--color-info-hover: #0277bd;
+			--color-info: #9ccaff; /* baseline blue tone 80 */
+			--color-info-foreground: #0a2e5c;
+			--color-info-hover: #8ebeff;
 
 			/* State colors */
-			--color-link: #64b5f6;
-			--color-link-hover: #42a5f5;
-			--color-selected: #1565c0;
-			--color-selected-foreground: #ffffff;
-			--color-disabled: #2a2a2a;
-			--color-disabled-foreground: #666666;
+			--color-link: #d0bcff;
+			--color-link-hover: #c5aaff;
+			--color-selected: #381e7244;
+			--color-selected-foreground: #d0bcff;
+			--color-disabled: #1a1a1a;
+			--color-disabled-foreground: #5f5f67;
 
-			/* Overlay & Shadow */
+			/* FX */
 			--color-overlay: rgba(0, 0, 0, 0.85);
 			--color-shadow: rgba(0, 0, 0, 0.8);
 			--color-backdrop: rgba(0, 0, 0, 0.75);
 		}
 
-		/* Android Light */
+		/* ===========================================================
+		   ANDROID LIGHT (Material You / M3 baseline)
+		   =========================================================== */
 		@variant lightandroid {
-			/* Backgrounds - Material Design light */
-			--color-background: #ffffff;
-			--color-background-secondary: #f5f5f5;
-			--color-background-tertiary: #eeeeee;
+			/* Backgrounds */
+			--color-background: #fffbfe; /* surface */
+			--color-background-secondary: #f7f2fa;
+			--color-background-tertiary: #ece6f0;
 			--color-card: #ffffff;
-			--color-card-hover: #fafafa;
+			--color-card-hover: #faf7ff;
 			--color-popover: #ffffff;
 			--color-modal: #ffffff;
 
-			/* Text colors */
-			--color-foreground: #212121;
-			--color-foreground-secondary: #757575;
-			--color-foreground-tertiary: #9e9e9e;
-			--color-muted: #9e9e9e;
-			--color-muted-foreground: #757575;
-			--color-placeholder: #9e9e9e;
+			/* Text */
+			--color-foreground: #1c1b1f; /* on-surface */
+			--color-foreground-secondary: #49454f; /* on-surface-variant */
+			--color-foreground-tertiary: #6c6970;
+			--color-muted: #6c6970;
+			--color-muted-foreground: #49454f;
+			--color-placeholder: #7a767f;
 
 			/* Borders */
-			--color-border: #e0e0e0;
-			--color-border-subtle: #f5f5f5;
-			--color-border-hover: #bdbdbd;
-			--color-divider: #e0e0e0;
-			--color-input: #bdbdbd;
-			--color-ring: #1976d2;
+			--color-border: #cac4d0; /* outline */
+			--color-border-subtle: #e6e0ec;
+			--color-border-hover: #b4a8c0;
+			--color-divider: #cac4d0;
+			--color-input: #b4a8c0;
+			--color-ring: #6750a4; /* primary tone 40 */
 
-			/* Interactive elements - Material Design 3 colors */
-			--color-primary: #1976d2;
+			/* MD3 Primary/Secondary */
+			--color-primary: #6750a4; /* tone 40 primary */
 			--color-primary-foreground: #ffffff;
-			--color-primary-hover: #1565c0;
-			--color-primary-active: #0d47a1;
+			--color-primary-hover: #5c4694;
+			--color-primary-active: #4d3a7c;
 
-			--color-secondary: #616161;
+			--color-secondary: #625b71; /* tone 40 secondary */
 			--color-secondary-foreground: #ffffff;
-			--color-secondary-hover: #424242;
+			--color-secondary-hover: #544f62;
 
-			--color-accent: #7b1fa2;
+			--color-accent: #7d5260; /* tertiary tone 40 */
 			--color-accent-foreground: #ffffff;
-			--color-accent-hover: #6a1b9a;
+			--color-accent-hover: #6f4856;
 
-			--color-destructive: #d32f2f;
+			--color-destructive: #b3261e; /* error tone 40 */
 			--color-destructive-foreground: #ffffff;
-			--color-destructive-hover: #c62828;
+			--color-destructive-hover: #9a1f19;
 
-			--color-danger: #d32f2f;
+			--color-danger: #b3261e;
 			--color-danger-foreground: #ffffff;
-			--color-danger-hover: #c62828;
+			--color-danger-hover: #9a1f19;
 
-			--color-success: #388e3c;
+			--color-success: #386a20; /* green tone 40 */
 			--color-success-foreground: #ffffff;
-			--color-success-hover: #2e7d32;
+			--color-success-hover: #2f591b;
 
-			--color-warning: #f57c00;
+			--color-warning: #ad6800; /* yellow tone 40 */
 			--color-warning-foreground: #ffffff;
-			--color-warning-hover: #ef6c00;
+			--color-warning-hover: #945900;
 
-			--color-info: #0288d1;
+			--color-info: #00639a; /* blue tone 40 */
 			--color-info-foreground: #ffffff;
-			--color-info-hover: #0277bd;
+			--color-info-hover: #005684;
 
 			/* State colors */
-			--color-link: #1976d2;
-			--color-link-hover: #1565c0;
-			--color-selected: #e3f2fd;
-			--color-selected-foreground: #0d47a1;
-			--color-disabled: #e0e0e0;
-			--color-disabled-foreground: #9e9e9e;
+			--color-link: #6750a4;
+			--color-link-hover: #5c4694;
+			--color-selected: #eaddff;
+			--color-selected-foreground: #4f378b;
+			--color-disabled: #e6e0ec;
+			--color-disabled-foreground: #b4a8c0;
 
-			/* Overlay & Shadow */
+			/* FX */
 			--color-overlay: rgba(0, 0, 0, 0.4);
 			--color-shadow: rgba(0, 0, 0, 0.12);
 			--color-backdrop: rgba(0, 0, 0, 0.32);
 		}
 
-		/* iOS Dark */
+		/* ===========================================================
+		   iOS DARK (real semantic colors, OLED optimized)
+		   =========================================================== */
 		@variant dark {
-			/* Backgrounds - iOS dark gray */
-			--color-background: #000000;
+			/* Backgrounds */
+			--color-background: #000000; /* pure black for OLED */
 			--color-background-secondary: #1c1c1e;
 			--color-background-tertiary: #2c2c2e;
 			--color-card: #1c1c1e;
@@ -164,37 +170,37 @@
 			--color-popover: #2c2c2e;
 			--color-modal: #1c1c1e;
 
-			/* Text colors */
+			/* Labels (actual Apple semantic values) */
 			--color-foreground: #ffffff;
-			--color-foreground-secondary: #aeaeb2;
-			--color-foreground-tertiary: #8e8e93;
-			--color-muted: #8e8e93;
-			--color-muted-foreground: #aeaeb2;
-			--color-placeholder: #8e8e93;
+			--color-foreground-secondary: #ebebf599; /* secondaryLabel */
+			--color-foreground-tertiary: #ebebf54c; /* tertiaryLabel */
+			--color-muted: #ebebf54c;
+			--color-muted-foreground: #ebebf599;
+			--color-placeholder: #ebebf54c;
 
 			/* Borders */
-			--color-border: #38383a;
+			--color-border: #38383a; /* separator dark */
 			--color-border-subtle: #2c2c2e;
 			--color-border-hover: #48484a;
 			--color-divider: #38383a;
 			--color-input: #38383a;
 			--color-ring: #0a84ff;
 
-			/* Interactive elements - iOS system colors */
+			/* iOS system tints */
 			--color-primary: #0a84ff;
 			--color-primary-foreground: #ffffff;
 			--color-primary-hover: #0077ed;
 			--color-primary-active: #006edb;
 
-			--color-secondary: #8e8e93;
+			--color-secondary: #5e5ce6; /* real systemIndigo dark */
 			--color-secondary-foreground: #ffffff;
-			--color-secondary-hover: #636366;
+			--color-secondary-hover: #4d4bd0;
 
-			--color-accent: #bf5af2;
+			--color-accent: #bf5af2; /* systemPurple */
 			--color-accent-foreground: #ffffff;
 			--color-accent-hover: #ac44e0;
 
-			--color-destructive: #ff453a;
+			--color-destructive: #ff453a; /* systemRed dark */
 			--color-destructive-foreground: #ffffff;
 			--color-destructive-hover: #ff3b30;
 
@@ -207,14 +213,14 @@
 			--color-success-hover: #30d158;
 
 			--color-warning: #ff9f0a;
-			--color-warning-foreground: #ffffff;
+			--color-warning-foreground: #000000;
 			--color-warning-hover: #ff9500;
 
-			--color-info: #64d2ff;
+			--color-info: #64d2ff; /* systemBlue secondary tint */
 			--color-info-foreground: #000000;
 			--color-info-hover: #5ac8fa;
 
-			/* State colors */
+			/* State */
 			--color-link: #0a84ff;
 			--color-link-hover: #0077ed;
 			--color-selected: #0a84ff;
@@ -222,15 +228,17 @@
 			--color-disabled: #3a3a3c;
 			--color-disabled-foreground: #8e8e93;
 
-			/* Overlay & Shadow */
+			/* FX */
 			--color-overlay: rgba(0, 0, 0, 0.7);
 			--color-shadow: rgba(0, 0, 0, 0.55);
 			--color-backdrop: rgba(0, 0, 0, 0.6);
 		}
 
-		/* iOS Light */
+		/* ===========================================================
+		   iOS LIGHT (real semantic colors)
+		   =========================================================== */
 		@variant light {
-			/* Backgrounds - iOS light */
+			/* Backgrounds */
 			--color-background: #ffffff;
 			--color-background-secondary: #f2f2f7;
 			--color-background-tertiary: #e5e5ea;
@@ -239,37 +247,37 @@
 			--color-popover: #ffffff;
 			--color-modal: #ffffff;
 
-			/* Text colors */
+			/* Labels */
 			--color-foreground: #000000;
-			--color-foreground-secondary: #8e8e93;
-			--color-foreground-tertiary: #aeaeb2;
-			--color-muted: #aeaeb2;
-			--color-muted-foreground: #8e8e93;
-			--color-placeholder: #c7c7cc;
+			--color-foreground-secondary: #3c3c4399; /* secondaryLabel */
+			--color-foreground-tertiary: #3c3c434c; /* tertiaryLabel */
+			--color-muted: #3c3c434c;
+			--color-muted-foreground: #3c3c4399;
+			--color-placeholder: #3c3c434c;
 
 			/* Borders */
-			--color-border: #c6c6c8;
+			--color-border: #c6c6c8; /* separator */
 			--color-border-subtle: #e5e5ea;
 			--color-border-hover: #aeaeb2;
 			--color-divider: #c6c6c8;
 			--color-input: #d1d1d6;
 			--color-ring: #007aff;
 
-			/* Interactive elements - iOS system colors */
-			--color-primary: #007aff;
+			/* Tints */
+			--color-primary: #007aff; /* systemBlue */
 			--color-primary-foreground: #ffffff;
 			--color-primary-hover: #0071e3;
 			--color-primary-active: #0068d1;
 
-			--color-secondary: #8e8e93;
+			--color-secondary: #5856d6; /* systemIndigo */
 			--color-secondary-foreground: #ffffff;
-			--color-secondary-hover: #636366;
+			--color-secondary-hover: #4947c2;
 
-			--color-accent: #af52de;
+			--color-accent: #af52de; /* systemPurple */
 			--color-accent-foreground: #ffffff;
 			--color-accent-hover: #9d42cc;
 
-			--color-destructive: #ff3b30;
+			--color-destructive: #ff3b30; /* systemRed */
 			--color-destructive-foreground: #ffffff;
 			--color-destructive-hover: #ff2d20;
 
@@ -289,15 +297,15 @@
 			--color-info-foreground: #000000;
 			--color-info-hover: #32aee8;
 
-			/* State colors */
+			/* States */
 			--color-link: #007aff;
 			--color-link-hover: #0071e3;
-			--color-selected: #d1e9ff;
+			--color-selected: #e7f0ff;
 			--color-selected-foreground: #0068d1;
 			--color-disabled: #e5e5ea;
 			--color-disabled-foreground: #c7c7cc;
 
-			/* Overlay & Shadow */
+			/* FX */
 			--color-overlay: rgba(0, 0, 0, 0.4);
 			--color-shadow: rgba(0, 0, 0, 0.08);
 			--color-backdrop: rgba(0, 0, 0, 0.3);

@@ -8,6 +8,8 @@ export const Header = memo(
 		title: string
 		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
 		rightItems?: (props: NativeStackHeaderItemProps) => NativeStackHeaderItem[]
+		left?: (props: NativeStackHeaderItemProps) => React.ReactNode
+		leftItems?: (props: NativeStackHeaderItemProps) => NativeStackHeaderItem[]
 		shown?: boolean
 		largeTitle?: boolean
 	}) => {
@@ -28,7 +30,9 @@ export const Header = memo(
 					headerTintColor: textForeground.color as string,
 					headerRight: props.rightItems ? undefined : props.right,
 					unstable_headerRightItems: props.rightItems,
-					headerLargeTitle: props.largeTitle
+					headerLargeTitle: props.largeTitle,
+					headerLeft: props.leftItems ? undefined : props.left,
+					unstable_headerLeftItems: props.leftItems
 				}}
 			/>
 		)

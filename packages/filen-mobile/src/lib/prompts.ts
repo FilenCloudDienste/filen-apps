@@ -1,5 +1,4 @@
-import { Platform, Alert } from "react-native"
-import { showPrompt } from "@/modules/android-alert-prompt"
+import Alert from "@blazejkustra/react-native-alert"
 
 export type AlertPromptResult =
 	| {
@@ -22,8 +21,15 @@ export type InputPromptResult =
 			cancelled: true
 	  }
 	| {
+			type: "string"
 			cancelled: false
 			value: string
+	  }
+	| {
+			type: "credentials"
+			cancelled: false
+			login: string
+			password: string
 	  }
 
 export type InputPromptOptions = {
@@ -55,6 +61,7 @@ export class Prompts {
 					},
 					{
 						text: options?.okText ?? "OK",
+						style: "default",
 						onPress: () => {
 							resolve({
 								cancelled: false
@@ -80,106 +87,75 @@ export class Prompts {
 
 	public async input(options?: InputPromptOptions): Promise<InputPromptResult> {
 		return await new Promise<InputPromptResult>(resolve => {
-			if (Platform.OS === "ios") {
-				Alert.prompt(
-					options?.title ?? "Title",
-					options?.message,
-					[
-						{
-							text: options?.cancelText ?? "Cancel",
-							style: "cancel",
-							onPress: () => {
-								resolve({
-									cancelled: true
-								})
-							}
-						},
-						{
-							text: options?.okText ?? "OK",
-							onPress: (
-								value?:
-									| string
-									| {
-											login: string
-											password: string
-									  }
-							) => {
-								if (!value) {
-									resolve({
-										cancelled: false,
-										value: ""
-									})
-
-									return
-								}
-
-								if (typeof value === "string") {
-									resolve({
-										cancelled: false,
-										value
-									})
-
-									return
-								}
-
-								resolve({
-									cancelled: false,
-									value: value.login
-								})
-							}
-						}
-					],
-					options?.inputType ?? "plain-text",
-					undefined,
-					options?.defaultValue,
+			Alert.prompt(
+				options?.title ?? "Title",
+				options?.message,
+				[
 					{
-						cancelable: options?.cancellable ?? true,
-						onDismiss: () => {
-							if (!(options?.cancellable ?? true)) {
-								return
-							}
-
+						text: options?.cancelText ?? "Cancel",
+						style: "cancel",
+						onPress: () => {
 							resolve({
 								cancelled: true
 							})
 						}
+					},
+					{
+						text: options?.okText ?? "OK",
+						style: "default",
+						onPress: (
+							value?:
+								| string
+								| {
+										login: string
+										password: string
+								  }
+						) => {
+							if (!value) {
+								resolve({
+									cancelled: false,
+									value: "",
+									type: "string"
+								})
+
+								return
+							}
+
+							if (typeof value === "string") {
+								resolve({
+									cancelled: false,
+									type: "string",
+									value
+								})
+
+								return
+							}
+
+							resolve({
+								cancelled: false,
+								type: "credentials",
+								login: value.login,
+								password: value.password
+							})
+						}
 					}
-				)
+				],
+				options?.inputType ?? "plain-text",
+				options?.defaultValue,
+				undefined,
+				{
+					cancelable: options?.cancellable ?? true,
+					onDismiss: () => {
+						if (!(options?.cancellable ?? true)) {
+							return
+						}
 
-				return
-			}
-
-			showPrompt({
-				title: options?.title ?? "Title",
-				message: options?.message,
-				defaultValue: options?.defaultValue,
-				placeholder: options?.placeholder,
-				inputType: options?.inputType ? (options.inputType === "secure-text" ? "password" : options.inputType) : "plain-text",
-				cancelable: options?.cancellable ?? true,
-				positiveText: options?.okText ?? "OK",
-				negativeText: options?.cancelText ?? "Cancel"
-			})
-				.then(result => {
-					if (result.cancelled) {
 						resolve({
 							cancelled: true
 						})
-
-						return
 					}
-
-					resolve({
-						cancelled: false,
-						value: result.text ?? ""
-					})
-				})
-				.catch(err => {
-					console.error(err)
-
-					resolve({
-						cancelled: true
-					})
-				})
+				}
+			)
 		})
 	}
 }

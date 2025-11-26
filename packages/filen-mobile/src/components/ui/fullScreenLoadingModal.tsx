@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react"
-import { Modal, ActivityIndicator, Platform } from "react-native"
+import { Modal, ActivityIndicator, Platform, type NativeSyntheticEvent } from "react-native"
 import { run, type DeferFn, type Result, type Options, runEffect } from "@filen/utils"
 import { FullWindowOverlay } from "react-native-screens"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { AnimatedView } from "@/components/ui/animated"
 import events from "@/lib/events"
-import { memo } from "@/lib/memo"
+import alerts from "@/lib/alerts"
+import { memo, useCallback } from "@/lib/memo"
 
 export const FullScreenLoadingModalParent = memo(({ children, visible }: { children: React.ReactNode; visible: boolean }) => {
+	const onRequestClose = useCallback((e: NativeSyntheticEvent<unknown>) => {
+		e.preventDefault()
+		e.stopPropagation()
+	}, [])
+
 	if (Platform.OS === "ios" && !visible) {
 		return null
 	}
@@ -21,10 +27,7 @@ export const FullScreenLoadingModalParent = memo(({ children, visible }: { child
 				transparent={true}
 				animationType="none"
 				presentationStyle="overFullScreen"
-				onRequestClose={e => {
-					e.preventDefault()
-					e.stopPropagation()
-				}}
+				onRequestClose={onRequestClose}
 				statusBarTranslucent={true}
 				navigationBarTranslucent={true}
 				allowSwipeDismissal={false}
@@ -73,7 +76,7 @@ export const FullScreenLoadingModal = memo(() => {
 	return (
 		<FullScreenLoadingModalParent visible={count > 0}>
 			<AnimatedView
-				className="flex-1 bg-black opacity-50 justify-center items-center top-0 left-0 right-0 bottom-0 z-9999 w-full h-full absolute"
+				className="flex-1 bg-black/50 justify-center items-center top-0 left-0 right-0 bottom-0 z-9999 w-full h-full absolute"
 				entering={FadeIn}
 				exiting={FadeOut}
 			>
@@ -94,15 +97,28 @@ export async function runWithLoading<TResult, E = Error>(
 	fn: (defer: DeferFn) => TResult | Promise<TResult>,
 	options?: Options
 ): Promise<Result<TResult, E>> {
-	return await run<TResult, E>(async defer => {
-		events.emit("showFullScreenLoadingModal")
+	const result = await run<TResult, E>(
+		async defer => {
+			events.emit("showFullScreenLoadingModal")
 
-		defer(() => {
-			events.emit("hideFullScreenLoadingModal")
-		})
+			defer(() => {
+				events.emit("hideFullScreenLoadingModal")
+			})
 
-		return await fn(defer)
-	}, options)
+			return await fn(defer)
+		},
+		{
+			...options,
+			throw: false
+		}
+	)
+
+	if (!result.success) {
+		console.error(result.error)
+		alerts.error(result.error)
+	}
+
+	return result
 }
 
 export default FullScreenLoadingModal

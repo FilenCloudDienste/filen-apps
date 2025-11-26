@@ -312,7 +312,7 @@ const RichTextEditorDom = memo(
 
 				quillRef.current.clipboard.dangerouslyPasteHTML(sanitized, "silent")
 
-				if (autoFocus || sanitized.length === 0) {
+				if (autoFocus) {
 					quillRef.current.setSelection(sanitized.length, 0)
 					quillRef.current.focus()
 				}

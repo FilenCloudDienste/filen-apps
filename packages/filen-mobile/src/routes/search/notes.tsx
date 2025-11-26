@@ -72,17 +72,7 @@ export const Notes = memo(() => {
 						<Menu
 							className="flex-row w-full h-full"
 							type="context"
-							onPress={e => {
-								console.log(e.nativeEvent)
-							}}
-							buttons={[
-								{
-									title: "Title 1"
-								},
-								{
-									title: "Title 2"
-								}
-							]}
+							buttons={[]}
 						>
 							<View className="flex-1 flex-row gap-4 px-4 bg-transparent py-2">
 								<View className="gap-2 bg-transparent">
