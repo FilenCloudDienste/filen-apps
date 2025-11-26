@@ -182,7 +182,7 @@ export class SecureStore {
 				this.rwMutex.release()
 			})
 
-			if (!this.secureStoreFile.exists) {
+			if (!this.secureStoreFile.exists || this.secureStoreFile.size === 0) {
 				return null
 			}
 
@@ -194,7 +194,9 @@ export class SecureStore {
 		})
 
 		if (!result.success) {
-			throw result.error
+			console.error("SecureStore: Error reading secure store:", result.error)
+
+			return null
 		}
 
 		this.readCache = result.data
@@ -214,8 +216,10 @@ export class SecureStore {
 			const iv = crypto.randomBytes(16)
 			const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(encryptionKey, "hex"), iv)
 			const encrypted = cipher.update(pack(data))
+			const final = cipher.final()
+			const authTag = cipher.getAuthTag()
 
-			this.secureStoreFile.write(Buffer.concat([iv, encrypted, cipher.final(), cipher.getAuthTag()]))
+			this.secureStoreFile.write(new Uint8Array(Buffer.concat([iv, encrypted, final, authTag])))
 
 			this.readCache = data
 		})

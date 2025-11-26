@@ -1,6 +1,4 @@
-import { Button as JetpackComposeButton } from "@expo/ui/jetpack-compose"
-import { Button as SwiftUiButton } from "@expo/ui/swift-ui"
-import { Platform, type StyleProp, type ViewStyle } from "react-native"
+import { Platform, type StyleProp, type ViewStyle, Button as RNButton } from "react-native"
 import { useResolveClassNames } from "uniwind"
 import { memo } from "@/lib/memo"
 
@@ -12,40 +10,27 @@ export const Button = memo(
 		disabled?: boolean
 		color?: string
 		testID?: string
-		variant?: {
-			ios?: React.ComponentProps<typeof SwiftUiButton>["variant"]
-			android?: React.ComponentProps<typeof JetpackComposeButton>["variant"]
-		}
-		role?: {
-			ios?: React.ComponentProps<typeof SwiftUiButton>["role"]
-			android?: never
-		}
 	}) => {
 		const bgPrimary = useResolveClassNames("bg-primary")
 
 		return Platform.select({
 			ios: (
-				<SwiftUiButton
+				<RNButton
+					title={props.children}
 					onPress={props.onPress}
 					disabled={props.disabled ?? false}
 					color={props.color ?? (bgPrimary.backgroundColor as string)}
 					testID={props.testID}
-					variant={props.variant?.ios}
-					role={props.role?.ios}
-				>
-					{props.children}
-				</SwiftUiButton>
+				/>
 			),
 			default: (
-				<JetpackComposeButton
+				<RNButton
+					title={props.children}
 					onPress={props.onPress}
-					style={props.style}
 					disabled={props.disabled ?? false}
 					color={props.color ?? (bgPrimary.backgroundColor as string)}
-					variant={props.variant?.android}
-				>
-					{props.children}
-				</JetpackComposeButton>
+					testID={props.testID}
+				/>
 			)
 		})
 	}
