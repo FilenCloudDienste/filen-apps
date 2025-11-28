@@ -23,6 +23,9 @@ import * as Haptics from "expo-haptics"
 import FullScreenLoadingModal from "@/components/ui/fullScreenLoadingModal"
 import NotesSync from "@/components/notes/sync"
 import ActionSheetProvider from "@/providers/actionSheet.provider"
+import { enableFreeze } from "react-native-screens"
+
+enableFreeze(true)
 
 SplashScreen.setOptions({
 	duration: 400,

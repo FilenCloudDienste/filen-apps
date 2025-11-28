@@ -104,7 +104,7 @@ export const Content = memo(
 							note,
 							content: value
 						},
-						...(prev[note.uuid] ?? []).filter(c => c.timestamp > now)
+						...(prev[note.uuid] ?? []).filter(c => c.timestamp >= now)
 					]
 				}))
 			},

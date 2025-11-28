@@ -2,7 +2,6 @@ import Text from "@/components/ui/text"
 import View from "@/components/ui/view"
 import type { Note as TNote } from "@filen/sdk-rs"
 import { type ListRenderItemInfo, ActivityIndicator } from "react-native"
-import { PressableOpacity } from "@/components/ui/pressables"
 import { Paths } from "expo-file-system"
 import { useRouter } from "expo-router"
 import { useResolveClassNames } from "uniwind"
@@ -27,56 +26,52 @@ export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote
 	return (
 		<View className={cn("w-full h-auto border-b border-border flex-row", isActive && "bg-background-secondary")}>
 			<Menu
-				className="flex-row w-full h-full"
+				className="flex-row w-full h-auto"
 				type="context"
 				note={info.item}
 				origin={menuOrigin ?? "notes"}
 				isAnchoredToRight={true}
+				onPress={onPress}
 			>
-				<PressableOpacity
-					className="flex-row w-full h-full"
-					onPress={onPress}
-				>
-					<View className="flex-1 flex-row gap-4 px-4 bg-transparent py-2">
-						<View className="gap-2 bg-transparent">
-							{syncing ? (
-								<ActivityIndicator
-									size="small"
-									color={textForeground.color}
-								/>
-							) : (
-								<Icon
-									note={info.item}
-									iconSize={24}
-								/>
-							)}
-						</View>
-						<View className="gap-2 flex-1 bg-transparent">
+				<View className="flex-row gap-4 px-4 bg-transparent py-2 w-full h-auto">
+					<View className="gap-2 shrink-0 h-auto w-auto">
+						{syncing ? (
+							<ActivityIndicator
+								size="small"
+								color={textForeground.color}
+							/>
+						) : (
+							<Icon
+								note={info.item}
+								iconSize={24}
+							/>
+						)}
+					</View>
+					<View className="gap-2 w-full h-auto">
+						<Text
+							numberOfLines={1}
+							ellipsizeMode="middle"
+						>
+							{info.item.title ?? info.item.uuid}
+						</Text>
+						{info.item.preview && (
 							<Text
-								numberOfLines={1}
-								ellipsizeMode="middle"
-							>
-								{info.item.title ?? info.item.uuid}
-							</Text>
-							{info.item.preview && (
-								<Text
-									numberOfLines={2}
-									ellipsizeMode="tail"
-									className="text-muted-foreground text-xs"
-								>
-									{info.item.preview}
-								</Text>
-							)}
-							<Text
-								numberOfLines={1}
+								numberOfLines={2}
 								ellipsizeMode="tail"
 								className="text-muted-foreground text-xs"
 							>
-								{simpleDate(Number(info.item.editedTimestamp))}
+								{info.item.preview}
 							</Text>
-						</View>
+						)}
+						<Text
+							numberOfLines={1}
+							ellipsizeMode="tail"
+							className="text-muted-foreground text-xs"
+						>
+							{simpleDate(Number(info.item.editedTimestamp))}
+						</Text>
 					</View>
-				</PressableOpacity>
+				</View>
 			</Menu>
 		</View>
 	)

@@ -24,6 +24,7 @@ import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import prompts from "@/lib/prompts"
 import notesLib from "@/lib/notes"
 import { Paths } from "expo-file-system"
+import Menu from "@/components/ui/menu"
 
 export const Notes = memo(() => {
 	const notesQuery = useNotesQuery()
@@ -79,7 +80,7 @@ export const Notes = memo(() => {
 
 					return (
 						<AnimatedView
-							className="pr-4"
+							className="px-2 flex-row items-center"
 							entering={FadeIn}
 							exiting={FadeOut}
 						>
@@ -99,11 +100,30 @@ export const Notes = memo(() => {
 						</AnimatedView>
 					)
 				}}
+				rightItems={() => {
+					return [
+						{
+							type: "menu",
+							label: "menu",
+							menu: {
+								items: [
+									{
+										label: "test",
+										type: "action",
+										onPress: () => {
+											console.log("test")
+										}
+									}
+								]
+							}
+						}
+					]
+				}}
 				right={() => {
 					if (selectedNotes.length > 0) {
 						return (
 							<AnimatedView
-								className="pl-4"
+								className="px-2 flex-row items-center"
 								entering={FadeIn}
 								exiting={FadeOut}
 							>
@@ -124,62 +144,70 @@ export const Notes = memo(() => {
 
 					return (
 						<AnimatedView
-							className="pl-4 flex-row items-center gap-4"
+							className="px-2 flex-row items-center gap-4"
 							entering={FadeIn}
 							exiting={FadeOut}
 						>
-							<PressableOpacity
-								onPress={async () => {
-									const result = await run(async () => {
-										return await prompts.input({
-											title: "tbd_create_note",
-											message: "tbd_enter_note_name",
-											cancelText: "tbd_cancel",
-											okText: "tbd_create"
-										})
-									})
+							<Menu
+								type="dropdown"
+								title="tbd_create_note"
+								buttons={[
+									{
+										title: "test",
+										id: "test",
+										onPress: async () => {
+											const result = await run(async () => {
+												return await prompts.input({
+													title: "tbd_create_note",
+													message: "tbd_enter_note_name",
+													cancelText: "tbd_cancel",
+													okText: "tbd_create"
+												})
+											})
 
-									if (!result.success) {
-										console.error(result.error)
-										alerts.error(result.error)
+											if (!result.success) {
+												console.error(result.error)
+												alerts.error(result.error)
 
-										return
+												return
+											}
+
+											if (result.data.cancelled || result.data.type !== "string") {
+												return
+											}
+
+											const title = result.data.value.trim()
+
+											if (title.length === 0) {
+												return
+											}
+
+											const createResult = await runWithLoading(async () => {
+												return await notesLib.create({
+													title,
+													content: "",
+													type: NoteType.Text
+												})
+											})
+
+											if (!createResult.success) {
+												console.error(createResult.error)
+												alerts.error(createResult.error)
+
+												return
+											}
+
+											router.push(Paths.join("/", "note", createResult.data.uuid))
+										}
 									}
-
-									if (result.data.cancelled || result.data.type !== "string") {
-										return
-									}
-
-									const title = result.data.value.trim()
-
-									if (title.length === 0) {
-										return
-									}
-
-									const createResult = await runWithLoading(async () => {
-										return await notesLib.create({
-											title,
-											content: "",
-											type: NoteType.Text
-										})
-									})
-
-									if (!createResult.success) {
-										console.error(createResult.error)
-										alerts.error(createResult.error)
-
-										return
-									}
-
-									router.push(Paths.join("/", "note", createResult.data.uuid))
-								}}
+								]}
 							>
 								<MaterialIcons
 									name="add"
 									size={24}
 									color={textForeground.color as string}
 								/>
-							</PressableOpacity>
+							</Menu>
 							<PressableOpacity
 								onPress={() => {
 									router.push("/search/notes")

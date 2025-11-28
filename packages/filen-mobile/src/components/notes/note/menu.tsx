@@ -27,21 +27,7 @@ export const Menu = memo(
 		children: React.ReactNode
 		note: TNote
 		origin: NoteMenuOrigin
-	} & Pick<
-		React.ComponentPropsWithoutRef<typeof MenuComponent>,
-		| "isAnchoredToRight"
-		| "onCloseMenu"
-		| "onOpenMenu"
-		| "hitSlop"
-		| "testID"
-		| "themeVariant"
-		| "className"
-		| "style"
-		| "type"
-		| "disabled"
-		| "shouldOpenOnLongPress"
-		| "title"
-	>) => {
+	} & React.ComponentPropsWithoutRef<typeof MenuComponent>) => {
 		const stringifiedClient = useStringifiedClient()
 		const isSelected = useNotesStore(useShallow(state => state.selected.some(selectedNote => selectedNote.uuid === note.uuid)))
 		const isActive = useNotesStore(useShallow(state => state.active?.uuid === note.uuid))
@@ -556,6 +542,7 @@ export const Menu = memo(
 				buttons={buttons}
 				onOpenMenu={onOpenMenu}
 				onCloseMenu={onCloseMenu}
+				title={note.title}
 				{...rest}
 			>
 				{children}
