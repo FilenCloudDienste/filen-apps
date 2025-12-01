@@ -154,6 +154,7 @@ export const Notes = memo(() => {
 	return (
 		<Fragment>
 			<Header
+				transparent={Platform.OS === "ios"}
 				title={
 					notesViewMode === "notes"
 						? selectedNotes.length > 0

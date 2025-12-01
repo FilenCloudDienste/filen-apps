@@ -11,7 +11,9 @@ export const Header = memo(
 		shown,
 		largeTitle,
 		backVisible,
-		backTitle
+		backTitle,
+		shadowVisible,
+		transparent
 	}: {
 		title: string
 		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
@@ -20,6 +22,8 @@ export const Header = memo(
 		largeTitle?: boolean
 		backVisible?: boolean
 		backTitle?: string
+		shadowVisible?: boolean
+		transparent?: boolean
 	}) => {
 		const bgBackground = useResolveClassNames("bg-background")
 		const textForeground = useResolveClassNames("text-foreground")
@@ -29,12 +33,15 @@ export const Header = memo(
 				options={{
 					headerTitle: title,
 					headerShown: shown ?? true,
-					headerShadowVisible: false,
+					headerShadowVisible: transparent ? true : shadowVisible,
 					headerBackVisible: backVisible,
+					headerTransparent: transparent,
 					headerBackTitle: backTitle,
-					headerStyle: {
-						backgroundColor: bgBackground.backgroundColor as string
-					},
+					headerStyle: transparent
+						? undefined
+						: {
+								backgroundColor: bgBackground.backgroundColor as string
+							},
 					headerTitleStyle: {
 						color: textForeground.color as string
 					},

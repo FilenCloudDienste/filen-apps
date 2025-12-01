@@ -77,6 +77,7 @@ export const Header = memo(
 			<StackHeader
 				title={history ? simpleDate(Number(history.editedTimestamp)) : (note.title ?? note.uuid)}
 				backVisible={true}
+				transparent={Platform.OS === "ios"}
 				backTitle="tbd_back"
 				right={() => {
 					if (history) {
