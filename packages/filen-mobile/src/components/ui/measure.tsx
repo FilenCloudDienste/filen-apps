@@ -10,9 +10,9 @@ export const Measure = memo(({ children, id }: { children: React.ReactNode; id?:
 
 	if (!__DEV__) {
 		return children
+	} else {
+		console.log("Measure layout:", id, `WxH ${layout.width}x${layout.height}`)
 	}
-
-	console.log("Measure layout:", id, `WxH ${layout.width}x${layout.height}`)
 
 	return (
 		<View

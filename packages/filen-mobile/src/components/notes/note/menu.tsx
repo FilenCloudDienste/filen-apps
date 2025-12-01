@@ -13,7 +13,11 @@ import alerts from "@/lib/alerts"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import useNoteHistoryQuery from "@/queries/useNoteHistory.query"
 import { simpleDate } from "@/lib/time"
+import { useRouter } from "expo-router"
 import { actionSheet } from "@/providers/actionSheet.provider"
+import { Paths } from "expo-file-system"
+import { pack } from "msgpackr"
+import { Buffer } from "@craftzdog/react-native-buffer"
 
 export type NoteMenuOrigin = "notes" | "search" | "content"
 
@@ -29,21 +33,16 @@ export const Menu = memo(
 		origin: NoteMenuOrigin
 	} & React.ComponentPropsWithoutRef<typeof MenuComponent>) => {
 		const stringifiedClient = useStringifiedClient()
-		const isSelected = useNotesStore(useShallow(state => state.selected.some(selectedNote => selectedNote.uuid === note.uuid)))
-		const isActive = useNotesStore(useShallow(state => state.active?.uuid === note.uuid))
+		const isSelected = useNotesStore(useShallow(state => state.selectedNotes.some(selectedNote => selectedNote.uuid === note.uuid)))
+		const router = useRouter()
 
 		const notesTagsQuery = useNotesTagsQuery({
 			enabled: false
 		})
 
-		const noteHistoryQuery = useNoteHistoryQuery(
-			{
-				note
-			},
-			{
-				enabled: isActive
-			}
-		)
+		const noteHistoryQuery = useNoteHistoryQuery({
+			note
+		})
 
 		const noteHistory = useMemo(() => {
 			if (noteHistoryQuery.status !== "success") {
@@ -73,11 +72,11 @@ export const Menu = memo(
 		}, [note.ownerId, stringifiedClient?.userId])
 
 		const onOpenMenu = useCallback(() => {
-			useNotesStore.getState().setActive(note)
+			useNotesStore.getState().setActiveNote(note)
 		}, [note])
 
 		const onCloseMenu = useCallback(() => {
-			useNotesStore.getState().setActive(null)
+			useNotesStore.getState().setActiveNote(null)
 		}, [])
 
 		const buttons = useMemo(() => {
@@ -91,8 +90,10 @@ export const Menu = memo(
 				buttons.push({
 					id: isSelected ? "deselect" : "select",
 					title: isSelected ? "tbd_deselect" : "tbd_select",
+					icon: "select",
+					checked: isSelected,
 					onPress: () => {
-						useNotesStore.getState().setSelected(prev => {
+						useNotesStore.getState().setSelectedNotes(prev => {
 							if (isSelected) {
 								return prev.filter(n => n.uuid !== note.uuid)
 							} else {
@@ -107,16 +108,23 @@ export const Menu = memo(
 				buttons.push({
 					id: "history",
 					title: "tbd_history",
-					subactions: noteHistory.map(historyItem => ({
-						id: `history_${historyItem.id}`,
-						title: simpleDate(Number(historyItem.editedTimestamp)),
-						attributes: {
-							keepsMenuPresented: true
-						},
-						onPress: () => {
-							// TODO: Show history item
-						}
-					}))
+					icon: "clock",
+					subButtons: noteHistory.map(
+						historyItem =>
+							({
+								id: `history_${historyItem.id}`,
+								title: simpleDate(Number(historyItem.editedTimestamp)),
+								keepMenuOpenOnPress: true,
+								onPress: () => {
+									router.push({
+										pathname: Paths.join("/", "note", note.uuid),
+										params: {
+											historyItemPacked: Buffer.from(pack(historyItem)).toString("base64")
+										}
+									})
+								}
+							}) satisfies MenuButton
+					)
 				})
 			}
 
@@ -124,15 +132,18 @@ export const Menu = memo(
 				buttons.push({
 					id: "participants",
 					title: "tbd_participants",
-					subactions: (
+					icon: "users",
+					subButtons: (
 						[
-							...note.participants.map(participant => ({
-								type: "participant" as const,
-								participant
-							})),
 							{
 								type: "add" as const
-							}
+							},
+							...note.participants
+								.filter(participant => participant.userId !== stringifiedClient?.userId)
+								.map(participant => ({
+									type: "participant" as const,
+									participant
+								}))
 						] satisfies (
 							| {
 									type: "add"
@@ -142,14 +153,13 @@ export const Menu = memo(
 									participant: NoteParticipant
 							  }
 						)[]
-					).map(subaction => {
-						if (subaction.type === "add") {
+					).map(subButton => {
+						if (subButton.type === "add") {
 							return {
 								id: "addParticipant",
 								title: "tbd_addParticipant",
-								attributes: {
-									keepsMenuPresented: true
-								},
+								keepMenuOpenOnPress: true,
+								icon: "plus",
 								onPress: async () => {
 									// TODO: Add participant
 								}
@@ -157,14 +167,63 @@ export const Menu = memo(
 						}
 
 						return {
-							id: `participant_${subaction.participant.userId}`,
-							// TODO : Show name if available
-							title: subaction.participant.email ?? subaction.participant.userId,
-							attributes: {
-								keepsMenuPresented: true
-							},
+							id: `participant_${subButton.participant.userId}`,
+							title: subButton.participant.email,
+							keepMenuOpenOnPress: true,
+							icon: subButton.participant.permissionsWrite ? "edit" : "eye",
 							onPress: () => {
-								actionSheet.show()
+								actionSheet.show({
+									buttons: [
+										{
+											title: subButton.participant.permissionsWrite ? "tbd_set_read_only" : "tbd_set_read_write",
+											onPress: async () => {
+												runWithLoading(async () => {
+													await notes.setParticipantPermission({
+														note,
+														participant: subButton.participant,
+														permissionsWrite: !subButton.participant.permissionsWrite
+													})
+												})
+											}
+										},
+										{
+											title: "tbd_remove_participant",
+											destructive: true,
+											onPress: async () => {
+												const result = await run(async () => {
+													return await prompts.alert({
+														title: "tbd_remove_participant",
+														message: "tbd_are_you_sure_remove_participant",
+														cancelText: "tbd_cancel",
+														okText: "tbd_remove"
+													})
+												})
+
+												if (!result.success) {
+													console.error(result.error)
+													alerts.error(result.error)
+
+													return
+												}
+
+												if (result.data.cancelled) {
+													return
+												}
+
+												runWithLoading(async () => {
+													await notes.removeParticipant({
+														note,
+														participantUserId: subButton.participant.userId
+													})
+												})
+											}
+										},
+										{
+											title: "tbd_cancel",
+											cancel: true
+										}
+									]
+								})
 							}
 						} satisfies MenuButton
 					})
@@ -175,7 +234,19 @@ export const Menu = memo(
 				buttons.push({
 					id: "type",
 					title: "tbd_type",
-					subactions: [
+					icon:
+						note.noteType === NoteType.Text
+							? "text"
+							: note.noteType === NoteType.Checklist
+								? "checklist"
+								: note.noteType === NoteType.Code
+									? "code"
+									: note.noteType === NoteType.Rich
+										? "richtext"
+										: note.noteType === NoteType.Md
+											? "markdown"
+											: undefined,
+					subButtons: [
 						{
 							type: NoteType.Text,
 							typeString: "text"
@@ -201,11 +272,21 @@ export const Menu = memo(
 							({
 								id: `type_${typeString}`,
 								title: `tbd_${typeString}`,
-								state: note.noteType === type ? "on" : undefined,
-								attributes: {
-									keepsMenuPresented: true,
-									disabled: note.noteType === type
-								},
+								checked: note.noteType === type,
+								disabled: note.noteType === type,
+								icon:
+									type === NoteType.Text
+										? "text"
+										: type === NoteType.Checklist
+											? "checklist"
+											: type === NoteType.Code
+												? "code"
+												: type === NoteType.Rich
+													? "richtext"
+													: type === NoteType.Md
+														? "markdown"
+														: undefined,
+								keepMenuOpenOnPress: true,
 								onPress: () => {
 									runWithLoading(async () => {
 										const content = await notes.getContent({
@@ -226,9 +307,9 @@ export const Menu = memo(
 
 			if (writeAccess) {
 				buttons.push({
-					id: "pinned",
-					title: "tbd_pinned",
-					state: note.pinned ? "on" : undefined,
+					id: note.pinned ? "unpin" : "pin",
+					title: note.pinned ? "tbd_unpin" : "tbd_pin",
+					icon: "pin",
 					onPress: () => {
 						runWithLoading(async () => {
 							await notes.setPinned({
@@ -242,9 +323,9 @@ export const Menu = memo(
 
 			if (writeAccess) {
 				buttons.push({
-					id: "favorited",
-					title: "tbd_favorited",
-					state: note.favorite ? "on" : undefined,
+					id: note.favorite ? "unfavorite" : "favorite",
+					title: note.favorite ? "tbd_unfavorite" : "tbd_favorite",
+					icon: "heart",
 					onPress: () => {
 						runWithLoading(async () => {
 							await notes.setFavorited({
@@ -260,15 +341,16 @@ export const Menu = memo(
 				buttons.push({
 					id: "tags",
 					title: "tbd_tags",
-					subactions: (
+					icon: "tag",
+					subButtons: (
 						[
+							{
+								type: "create" as const
+							},
 							...notesTags.map(tag => ({
 								type: "tag" as const,
 								tag
-							})),
-							{
-								type: "create" as const
-							}
+							}))
 						] satisfies (
 							| {
 									type: "create"
@@ -278,14 +360,13 @@ export const Menu = memo(
 									tag: NoteTag
 							  }
 						)[]
-					).map(subaction => {
-						if (subaction.type === "create") {
+					).map(subButton => {
+						if (subButton.type === "create") {
 							return {
 								id: "createTag",
 								title: "tbd_createTag",
-								attributes: {
-									keepsMenuPresented: true
-								},
+								icon: "plus",
+								keepMenuOpenOnPress: true,
 								onPress: async () => {
 									const result = await run(async () => {
 										return await prompts.input({
@@ -322,21 +403,20 @@ export const Menu = memo(
 							} satisfies MenuButton
 						}
 
-						const tagged = note.tags.some(t => t.uuid === subaction.tag.uuid)
+						const tagged = note.tags.some(t => t.uuid === subButton.tag.uuid)
 
 						return {
-							id: `tag_${subaction.tag.uuid}`,
-							title: subaction.tag.name ?? subaction.tag.uuid,
-							state: tagged ? "on" : undefined,
-							attributes: {
-								keepsMenuPresented: true
-							},
+							id: `tag_${subButton.tag.uuid}`,
+							title: subButton.tag.name ?? subButton.tag.uuid,
+							checked: tagged,
+							icon: "tag",
+							keepMenuOpenOnPress: true,
 							onPress: () => {
 								runWithLoading(async () => {
 									if (tagged) {
 										await notes.removeTag({
 											note,
-											tag: subaction.tag
+											tag: subButton.tag
 										})
 
 										return
@@ -344,7 +424,7 @@ export const Menu = memo(
 
 									await notes.addTag({
 										note,
-										tag: subaction.tag
+										tag: subButton.tag
 									})
 								})
 							}
@@ -357,6 +437,7 @@ export const Menu = memo(
 				buttons.push({
 					id: "rename",
 					title: "tbd_rename",
+					icon: "edit",
 					onPress: async () => {
 						const result = await run(async () => {
 							return await prompts.input({
@@ -399,6 +480,7 @@ export const Menu = memo(
 				buttons.push({
 					id: "duplicate",
 					title: "tbd_duplicate",
+					icon: "copy",
 					onPress: () => {
 						runWithLoading(async () => {
 							await notes.duplicate({
@@ -412,6 +494,7 @@ export const Menu = memo(
 			buttons.push({
 				id: "export",
 				title: "tbd_export",
+				icon: "export",
 				onPress: () => {
 					//TODO: Export note
 				}
@@ -422,6 +505,7 @@ export const Menu = memo(
 					buttons.push({
 						id: "archive",
 						title: "tbd_archive",
+						icon: "archive",
 						onPress: () => {
 							runWithLoading(async () => {
 								await notes.archive({
@@ -436,6 +520,7 @@ export const Menu = memo(
 					buttons.push({
 						id: "restore",
 						title: "tbd_restore",
+						icon: "restore",
 						onPress: () => {
 							runWithLoading(async () => {
 								await notes.restore({
@@ -450,9 +535,8 @@ export const Menu = memo(
 					buttons.push({
 						id: "trash",
 						title: "tbd_trash",
-						attributes: {
-							destructive: true
-						},
+						icon: "trash",
+						destructive: true,
 						onPress: async () => {
 							const result = await run(async () => {
 								return await prompts.alert({
@@ -487,9 +571,8 @@ export const Menu = memo(
 					buttons.push({
 						id: "delete",
 						title: "tbd_delete",
-						attributes: {
-							destructive: true
-						},
+						icon: "delete",
+						destructive: true,
 						onPress: async () => {
 							const result = await run(async () => {
 								return await prompts.alert({
@@ -523,15 +606,14 @@ export const Menu = memo(
 				buttons.push({
 					id: "leave",
 					title: "tbd_leave",
-					attributes: {
-						destructive: true
-					},
+					icon: "exit",
+					destructive: true,
 					onPress: async () => {}
 				})
 			}
 
 			return buttons
-		}, [origin, writeAccess, rest.disabled, isSelected, note, notesTags, isOwner, noteHistory])
+		}, [origin, writeAccess, rest.disabled, isSelected, note, notesTags, isOwner, noteHistory, router, stringifiedClient])
 
 		if (buttons.length === 0 || rest.disabled) {
 			return <View className={rest.className}>{children}</View>
@@ -542,7 +624,6 @@ export const Menu = memo(
 				buttons={buttons}
 				onOpenMenu={onOpenMenu}
 				onCloseMenu={onCloseMenu}
-				title={note.title}
 				{...rest}
 			>
 				{children}

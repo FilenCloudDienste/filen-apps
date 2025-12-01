@@ -93,6 +93,8 @@ const RichTextEditorDom = memo(
 				return
 			}
 
+			didTypeRef.current = true
+
 			switch (message.type) {
 				case "quillToggleBold": {
 					const isBold = quillFormatsRef.current.bold

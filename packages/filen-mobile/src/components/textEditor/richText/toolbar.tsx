@@ -1,8 +1,8 @@
 import { useEffect, useRef, Fragment } from "react"
-import View, { KeyboardStickyView, BlurView } from "@/components/ui/view"
-import { type View as RNView } from "react-native"
+import View, { KeyboardStickyView, LiquidGlassView, isLiquidGlassAvailable, BlurView } from "@/components/ui/view"
+import { type View as RNView, Platform } from "react-native"
 import { useResolveClassNames, useUniwind } from "uniwind"
-import { PressableScale } from "@/components/ui/pressables"
+import { PressableOpacity } from "@/components/ui/pressables"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import useViewLayout from "@/hooks/useViewLayout"
 import { useKeyboardState } from "react-native-keyboard-controller"
@@ -19,8 +19,38 @@ import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { memo, useCallback, useMemo } from "@/lib/memo"
+import { cn } from "@filen/utils"
 
-const ICON_SIZE = 18
+const ICON_SIZE = 20
+
+export const ToolbarContainerView = memo(({ children, className }: { children: React.ReactNode; className?: string }) => {
+	const { theme } = useUniwind()
+
+	if (Platform.OS === "ios") {
+		if (isLiquidGlassAvailable()) {
+			return (
+				<LiquidGlassView
+					className={cn(className, "rounded-full")}
+					isInteractive={true}
+				>
+					{children}
+				</LiquidGlassView>
+			)
+		}
+
+		return (
+			<BlurView
+				className={cn(className, "bg-background-secondary border border-border rounded-full overflow-hidden")}
+				intensity={100}
+				tint={theme === "dark" ? "dark" : "light"}
+			>
+				{children}
+			</BlurView>
+		)
+	}
+
+	return <View className={cn(className, "bg-background-secondary border border-border rounded-full overflow-hidden")}>{children}</View>
+})
 
 export const Button = memo(
 	({ type, postMessage }: { type: keyof QuillFormats | "keyboard"; postMessage: (message: TextEditorEvents) => void }) => {
@@ -28,7 +58,6 @@ export const Button = memo(
 		const textForeground = useResolveClassNames("text-foreground")
 		const textPrimary = useResolveClassNames("text-primary")
 		const keyboardState = useKeyboardState()
-		const { theme } = useUniwind()
 
 		const menuButtons = useMemo((): MenuButton[] => {
 			if (!keyboardState.isVisible) {
@@ -145,7 +174,7 @@ export const Button = memo(
 										cancelText: "tbd"
 									})
 									.then(response => {
-										if (response.cancelled || !response.value.trim()) {
+										if (response.cancelled || response.type !== "string" || !response.value.trim()) {
 											return
 										}
 
@@ -274,7 +303,7 @@ export const Button = memo(
 							cancelText: "tbd"
 						})
 						.then(response => {
-							if (response.cancelled || !response.value.trim()) {
+							if (response.cancelled || response.type !== "string" || !response.value.trim()) {
 								return
 							}
 
@@ -311,10 +340,9 @@ export const Button = memo(
 				disabled={menuButtons.length === 0}
 				buttons={menuButtons}
 			>
-				<PressableScale
+				<PressableOpacity
 					rippleColor="transparent"
 					className="flex-row items-center justify-center shrink-0 size-9"
-					hitSlop={15}
 					enabled={menuButtons.length === 0}
 					onPress={onPress}
 				>
@@ -332,14 +360,9 @@ export const Button = memo(
 								color={formats[type] ? (textPrimary.color as string) : (textForeground.color as string)}
 							/>
 							{formats[type] && (
-								<BlurView
-									intensity={100}
-									experimentalBlurMethod="dimezisBlurView"
-									tint={theme === "dark" ? "dark" : "light"}
-									className="flex-row items-center justify-center absolute rounded-full size-4 -mt-5 -mr-5 overflow-hidden border border-border"
-								>
+								<View className="flex-row items-center justify-center absolute rounded-full size-4 -mt-5 -mr-5 overflow-hidden bg-background-secondary border border-border">
 									<Text className="text-foreground text-xs">{formats[type]}</Text>
-								</BlurView>
+								</View>
 							)}
 						</Fragment>
 					) : type === "list" ? (
@@ -377,7 +400,7 @@ export const Button = memo(
 							color={formats[type] ? (textPrimary.color as string) : (textForeground.color as string)}
 						/>
 					)}
-				</PressableScale>
+				</PressableOpacity>
 			</Menu>
 		)
 	}
@@ -385,7 +408,6 @@ export const Button = memo(
 
 export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEditorEvents) => void }) => {
 	const insets = useSafeAreaInsets()
-	const { theme } = useUniwind()
 	const viewRef = useRef<RNView>(null)
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const keyboardState = useKeyboardState()
@@ -401,6 +423,7 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 
 	return (
 		<KeyboardStickyView
+			className="bg-transparent"
 			offset={{
 				opened: 0,
 				closed: -(insets.bottom + 8)
@@ -409,69 +432,58 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 			<AnimatedView
 				entering={FadeIn}
 				exiting={FadeOut}
+				className="bg-transparent"
 			>
 				<View
 					ref={viewRef}
 					onLayout={onLayout}
 					className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
 				>
-					<BlurView
-						className="rounded-full overflow-hidden border border-border shrink-0"
-						intensity={100}
-						experimentalBlurMethod="dimezisBlurView"
-						tint={theme === "dark" ? "dark" : "light"}
-					>
-						<View className="flex-row items-center bg-transparent shrink-0 px-1">
-							<Button
-								type="header"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="bold"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="italic"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="underline"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="code-block"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="link"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="blockquote"
-								postMessage={postMessage}
-							/>
-							<Button
-								type="list"
-								postMessage={postMessage}
-							/>
-						</View>
-					</BlurView>
+					<ToolbarContainerView className="shrink-0 flex-row items-center p-2 h-12">
+						<Button
+							type="header"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="bold"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="italic"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="underline"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="code-block"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="link"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="blockquote"
+							postMessage={postMessage}
+						/>
+						<Button
+							type="list"
+							postMessage={postMessage}
+						/>
+					</ToolbarContainerView>
 					{keyboardState.isVisible && (
 						<AnimatedView
 							entering={FadeIn}
 							exiting={FadeOut}
 						>
-							<BlurView
-								className="rounded-full overflow-hidden border border-border shrink-0"
-								intensity={100}
-								experimentalBlurMethod="dimezisBlurView"
-								tint={theme === "dark" ? "dark" : "light"}
-							>
+							<ToolbarContainerView className="shrink-0 size-12 flex-row items-center justify-center">
 								<Button
 									type="keyboard"
 									postMessage={postMessage}
 								/>
-							</BlurView>
+							</ToolbarContainerView>
 						</AnimatedView>
 					)}
 				</View>

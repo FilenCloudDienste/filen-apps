@@ -5,6 +5,18 @@ import { runEffect } from "@filen/utils"
 import { ActionSheetProvider as ExpoActionSheetProvider, useActionSheet } from "@expo/react-native-action-sheet"
 import { useResolveClassNames, useUniwind } from "uniwind"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type { ViewStyle } from "react-native"
+
+export type ShowActionSheetOptions = {
+	buttons: {
+		title: string
+		destructive?: boolean
+		cancel?: boolean
+		onPress?: () => void
+	}[]
+	containerStyle?: ViewStyle
+	userInterfaceStyle?: "light" | "dark"
+}
 
 export const ActionSheetProviderInner = memo(({ children }) => {
 	const { showActionSheetWithOptions } = useActionSheet()
@@ -14,17 +26,23 @@ export const ActionSheetProviderInner = memo(({ children }) => {
 
 	useEffect(() => {
 		const { cleanup } = runEffect(defer => {
-			const showActionSheetListener = events.subscribe("showActionSheet", () => {
-				const options = ["Delete", "Save", "Cancel"]
-				const destructiveButtonIndex = 0
-				const cancelButtonIndex = 2
+			const showActionSheetListener = events.subscribe("showActionSheet", options => {
+				const buttons = options.buttons.map(button => button.title)
+				const destructiveButtonIndex = options.buttons
+					.map((button, index) => (button.destructive ? index : -1))
+					.filter(index => index !== -1)
+				const cancelButtonIndex = options.buttons
+					.map((button, index) => (button.cancel ? index : -1))
+					.filter(index => index !== -1)
+					.at(-1)
+				const buttonActions = options.buttons.map(button => button.onPress)
 
 				showActionSheetWithOptions(
 					{
-						options,
+						options: buttons,
 						cancelButtonIndex,
 						destructiveButtonIndex,
-						containerStyle: {
+						containerStyle: options.containerStyle ?? {
 							backgroundColor: bgBackgroundSecondary.backgroundColor,
 							borderTopLeftRadius: 16,
 							borderTopRightRadius: 16,
@@ -32,20 +50,13 @@ export const ActionSheetProviderInner = memo(({ children }) => {
 							paddingLeft: insets.left,
 							paddingRight: insets.right
 						},
-						userInterfaceStyle: theme === "dark" ? "dark" : "light"
+						userInterfaceStyle: options.userInterfaceStyle ?? (theme === "dark" ? "dark" : "light")
 					},
 					(selectedIndex?: number) => {
-						switch (selectedIndex) {
-							case 1:
-								// Save
-								break
+						const action = buttonActions[selectedIndex ?? -1]
 
-							case destructiveButtonIndex:
-								// Delete
-								break
-
-							case cancelButtonIndex:
-							// Canceled
+						if (action) {
+							action()
 						}
 					}
 				)
@@ -73,8 +84,8 @@ export const ActionSheetProvider = memo(({ children }: { children: React.ReactNo
 })
 
 export class ActionSheet {
-	public async show() {
-		events.emit("showActionSheet")
+	public async show(options: ShowActionSheetOptions) {
+		events.emit("showActionSheet", options)
 	}
 }
 

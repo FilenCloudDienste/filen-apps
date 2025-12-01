@@ -11,7 +11,7 @@ export const ANDROID_MIN_SDK_VERSION: number = 31
 export const ANDROID_TARGET_SDK_VERSION: number = 36
 export const ANDROID_COMPILE_SDK_VERSION: number = 36
 export const ANDROID_BUILD_TOOLS_VERSION: string = "36.0.0"
-export const IOS_DEPLOYMENT_TARGET: string = "16.0"
+export const IOS_DEPLOYMENT_TARGET: string = "18.0"
 export const NAME: string = "Filen"
 export const IDENTIFIER: string = "com.anonymous.filenmobile" // "io.filen.app"
 

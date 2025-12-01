@@ -1,17 +1,25 @@
 import { memo } from "@/lib/memo"
 import { useResolveClassNames } from "uniwind"
 import { Stack } from "expo-router"
-import type { NativeStackHeaderItemProps, NativeStackHeaderItem } from "@react-navigation/native-stack"
+import type { NativeStackHeaderItemProps } from "@react-navigation/native-stack"
 
 export const Header = memo(
-	(props: {
+	({
+		title,
+		right,
+		left,
+		shown,
+		largeTitle,
+		backVisible,
+		backTitle
+	}: {
 		title: string
 		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
-		rightItems?: (props: NativeStackHeaderItemProps) => NativeStackHeaderItem[]
 		left?: (props: NativeStackHeaderItemProps) => React.ReactNode
-		leftItems?: (props: NativeStackHeaderItemProps) => NativeStackHeaderItem[]
 		shown?: boolean
 		largeTitle?: boolean
+		backVisible?: boolean
+		backTitle?: string
 	}) => {
 		const bgBackground = useResolveClassNames("bg-background")
 		const textForeground = useResolveClassNames("text-foreground")
@@ -19,8 +27,11 @@ export const Header = memo(
 		return (
 			<Stack.Screen
 				options={{
-					headerTitle: props.title,
-					headerShown: props.shown ?? true,
+					headerTitle: title,
+					headerShown: shown ?? true,
+					headerShadowVisible: false,
+					headerBackVisible: backVisible,
+					headerBackTitle: backTitle,
 					headerStyle: {
 						backgroundColor: bgBackground.backgroundColor as string
 					},
@@ -28,11 +39,9 @@ export const Header = memo(
 						color: textForeground.color as string
 					},
 					headerTintColor: textForeground.color as string,
-					headerRight: props.rightItems ? undefined : props.right,
-					unstable_headerRightItems: props.rightItems,
-					headerLargeTitle: props.largeTitle,
-					headerLeft: props.leftItems ? undefined : props.left,
-					unstable_headerLeftItems: props.leftItems
+					headerRight: right,
+					headerLargeTitle: largeTitle,
+					headerLeft: left
 				}}
 			/>
 		)

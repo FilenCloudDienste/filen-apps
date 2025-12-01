@@ -1,5 +1,5 @@
 import auth from "@/lib/auth"
-import { type Note, NoteType, type NoteTag, type Contact, type NoteParticipant } from "@filen/sdk-rs"
+import { type Note, NoteType, type NoteTag, type Contact, type NoteParticipant, type NoteHistory } from "@filen/sdk-rs"
 import { noteContentQueryUpdate } from "@/queries/useNoteContent.query"
 import { createNotePreviewFromContentText } from "@filen/utils"
 import { notesQueryUpdate } from "@/queries/useNotes.query"
@@ -241,6 +241,26 @@ export class Notes {
 
 		note = await sdkClient.restoreNote(
 			note,
+			signal
+				? {
+						signal
+					}
+				: undefined
+		)
+
+		notesQueryUpdate({
+			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
+
+		return note
+	}
+
+	public async restoreFromHistory({ note, history, signal }: { note: Note; history: NoteHistory; signal?: AbortSignal }) {
+		const sdkClient = await auth.getSdkClient()
+
+		note = await sdkClient.restoreNoteFromHistory(
+			note,
+			history,
 			signal
 				? {
 						signal

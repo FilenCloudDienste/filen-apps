@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback } from "@/lib/memo"
-import { type Note, NoteType } from "@filen/sdk-rs"
+import { type Note, NoteType, type NoteHistory } from "@filen/sdk-rs"
 import View from "@/components/ui/view"
 import useNoteContentQuery from "@/queries/useNoteContent.query"
 import Checklist from "@/components/notes/content/checklist"
@@ -45,21 +45,34 @@ export const Loading = memo(({ children, loading, noteType }: { children: React.
 })
 
 export const Content = memo(
-	({ note }: { note: Note }) => {
+	({ note, history }: { note: Note; history?: NoteHistory | null }) => {
 		const stringifiedClient = useStringifiedClient()
-		const noteContentQuery = useNoteContentQuery({
-			note
-		})
+		const noteContentQuery = useNoteContentQuery(
+			{
+				note
+			},
+			{
+				enabled: !history
+			}
+		)
 
 		const initialValue = useMemo(() => {
+			if (history) {
+				return history.content
+			}
+
 			if (noteContentQuery.status !== "success") {
 				return null
 			}
 
 			return noteContentQuery.data
-		}, [noteContentQuery.data, noteContentQuery.status])
+		}, [noteContentQuery.data, noteContentQuery.status, history])
 
 		const loading = useMemo(() => {
+			if (history) {
+				return false
+			}
+
 			return (
 				noteContentQuery.isRefetching ||
 				noteContentQuery.isLoading ||
@@ -78,11 +91,12 @@ export const Content = memo(
 			noteContentQuery.isPending,
 			noteContentQuery.isRefetchError,
 			noteContentQuery.isRefetching,
-			initialValue
+			initialValue,
+			history
 		])
 
 		const hasWriteAccess = useMemo(() => {
-			if (!stringifiedClient) {
+			if (!stringifiedClient || history) {
 				return false
 			}
 
@@ -90,10 +104,14 @@ export const Content = memo(
 				note.ownerId === stringifiedClient.userId ||
 				note.participants.some(participant => participant.userId === stringifiedClient.userId && participant.permissionsWrite)
 			)
-		}, [stringifiedClient, note])
+		}, [stringifiedClient, note, history])
 
 		const onValueChange = useCallback(
 			(value: string) => {
+				if (history) {
+					return
+				}
+
 				const now = Date.now()
 
 				useNotesStore.getState().setTemporaryContent(prev => ({
@@ -104,11 +122,11 @@ export const Content = memo(
 							note,
 							content: value
 						},
-						...(prev[note.uuid] ?? []).filter(c => c.timestamp >= now)
+						...(prev[note.uuid] ?? []).filter(c => c.timestamp > now)
 					]
 				}))
 			},
-			[note]
+			[note, history]
 		)
 
 		return (
@@ -126,7 +144,7 @@ export const Content = memo(
 				) : (
 					<TextEditor
 						// Needs a key to reset the editor when the note changes, somehow expo-dom compontents does not update the state properly
-						key={noteContentQuery.dataUpdatedAt}
+						key={history ? undefined : noteContentQuery.dataUpdatedAt}
 						initialValue={initialValue ?? ""}
 						onValueChange={onValueChange}
 						readOnly={!hasWriteAccess}

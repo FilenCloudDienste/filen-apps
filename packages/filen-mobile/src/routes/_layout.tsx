@@ -24,6 +24,7 @@ import FullScreenLoadingModal from "@/components/ui/fullScreenLoadingModal"
 import NotesSync from "@/components/notes/sync"
 import ActionSheetProvider from "@/providers/actionSheet.provider"
 import { enableFreeze } from "react-native-screens"
+import Socket from "@/components/socket"
 
 enableFreeze(true)
 
@@ -100,6 +101,7 @@ export const RootLayout = memo(() => {
 												/>
 												{isAuthed && (
 													<Fragment>
+														<Socket />
 														<NotesSync />
 													</Fragment>
 												)}

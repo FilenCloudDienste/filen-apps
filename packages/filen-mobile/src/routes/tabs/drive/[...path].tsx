@@ -75,7 +75,6 @@ export const Drive = memo(() => {
 					className="flex-1"
 					contentInsetAdjustmentBehavior="automatic"
 					contentContainerClassName="pb-40"
-					itemHeight={36}
 					keyExtractor={keyExtractor}
 					data={data}
 					renderItem={renderItem}

@@ -150,7 +150,7 @@ export class Sync {
 						for (const [noteUuid, contents] of Object.entries(updated)) {
 							if (noteUuid === mostRecentContent.note.uuid) {
 								// Remove contents that have been synced
-								updated[noteUuid] = contents.filter(c => c.timestamp >= mostRecentContent.timestamp)
+								updated[noteUuid] = contents.filter(c => c.timestamp > mostRecentContent.timestamp)
 							}
 
 							if (updated[noteUuid] && updated[noteUuid].length === 0) {

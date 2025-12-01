@@ -9,6 +9,11 @@ import {
 	KeyboardStickyView as RNKeyboardControllerKeyboardStickyView
 } from "react-native-keyboard-controller"
 import { BlurView as ExpoBlurView } from "expo-blur"
+import {
+	GlassView as ExpoGlassView,
+	isLiquidGlassAvailable as expoIsLiquidGlassAvailable,
+	GlassContainer as ExpoGlassContainer
+} from "expo-glass-effect"
 
 export const UniwindView = memo(withUniwind(NativeView) as React.FC<ViewProps>)
 
@@ -72,6 +77,20 @@ export const UniwindBlurView = memo(withUniwind(ExpoBlurView) as React.FC<React.
 
 export const BlurView = memo((props: React.ComponentProps<typeof ExpoBlurView> & React.RefAttributes<RNView>) => {
 	return <UniwindBlurView {...props} />
+})
+
+export const UniwindLiquidGlassView = memo(withUniwind(ExpoGlassView) as React.FC<React.ComponentProps<typeof ExpoGlassView>>)
+
+export const LiquidGlassView = memo((props: React.ComponentProps<typeof ExpoGlassView> & React.RefAttributes<RNView>) => {
+	return <UniwindLiquidGlassView {...props} />
+})
+
+export const isLiquidGlassAvailable = expoIsLiquidGlassAvailable
+
+export const UniqindGlassContainerView = memo(withUniwind(ExpoGlassContainer) as React.FC<React.ComponentProps<typeof ExpoGlassContainer>>)
+
+export const LiquidGlassContainerView = memo((props: React.ComponentProps<typeof ExpoGlassContainer> & React.RefAttributes<RNView>) => {
+	return <UniqindGlassContainerView {...props} />
 })
 
 export default View

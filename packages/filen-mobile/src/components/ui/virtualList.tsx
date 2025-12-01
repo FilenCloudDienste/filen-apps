@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { withUniwind, useResolveClassNames } from "uniwind"
-import { type FlatListProps, type View as RNView, RefreshControl, FlatList, ActivityIndicator } from "react-native"
+import { type FlatListProps, type View as RNView, RefreshControl, ActivityIndicator, FlatList } from "react-native"
 import View from "@/components/ui/view"
 import useViewLayout from "@/hooks/useViewLayout"
 import { cn, run, type DeferFn } from "@filen/utils"
@@ -48,7 +48,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			return Math.max(1, Math.floor((layout.height / props.itemHeight) * itemsPerRow))
 		}
 
-		return Math.max(1, Math.ceil(layout.height / props.itemHeight))
+		return Math.max(1, Math.floor(layout.height / props.itemHeight))
 	}, [layout.height, props.itemHeight, props.grid, itemsPerRow])
 
 	const initialNumToRender = useMemo(() => {
@@ -106,7 +106,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			return undefined
 		}
 
-		return Math.max(1, itemsInView / 2)
+		return Math.max(1, itemsInView / 4)
 	}, [itemsInView])
 
 	const onRefresh = useCallback(async () => {
@@ -171,12 +171,12 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 				)}
 				<FlatList<T>
 					key={itemsPerRow}
-					windowSize={3}
+					windowSize={1}
 					initialNumToRender={initialNumToRender}
 					contentInsetAdjustmentBehavior="automatic"
 					getItemLayout={getItemLayout}
 					maxToRenderPerBatch={maxToRenderPerBatch}
-					updateCellsBatchingPeriod={100}
+					// updateCellsBatchingPeriod={50}
 					refreshing={refreshing}
 					refreshControl={refreshControl}
 					numColumns={itemsPerRow}

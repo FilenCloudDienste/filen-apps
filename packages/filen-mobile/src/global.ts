@@ -1,10 +1,13 @@
 import NetInfo from "@react-native-community/netinfo"
 import crypto from "crypto"
+import { Buffer } from "buffer"
 
-global.crypto = {
-	...global.crypto,
+globalThis.crypto = {
+	...globalThis.crypto,
 	getRandomValues: crypto.getRandomValues
 }
+
+globalThis.Buffer = Buffer
 
 NetInfo.configure({
 	reachabilityUrl: "https://gateway.filen.io",

@@ -126,7 +126,11 @@ export const Notes = memo(() => {
 
 	return (
 		<Fragment>
-			<Header title="tbd" />
+			<Header
+				title="tbd"
+				backVisible={true}
+				backTitle="tbd_back"
+			/>
 			<SafeAreaView edges={["left", "right"]}>
 				<View className="py-2 px-4">
 					<View className="flex-row items-center rounded-full px-4 bg-secondary h-12">

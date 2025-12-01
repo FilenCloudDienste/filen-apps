@@ -3,7 +3,7 @@ import { memo, useCallback } from "@/lib/memo"
 import { TextInput, type TextInputKeyPressEvent, type TextInputSubmitEditingEvent } from "react-native"
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"
 import { useResolveClassNames } from "uniwind"
-import { type ChecklistItem } from "@filen/utils"
+import { type ChecklistItem, cn } from "@filen/utils"
 import { PressableOpacity } from "@/components/ui/pressables"
 import View from "@/components/ui/view"
 import useChecklistStore from "@/stores/useChecklist.store"
@@ -218,7 +218,7 @@ export const Item = memo(
 
 		return (
 			<View className="flex-row flex-1 items-center gap-2">
-				<View className="flex-row items-center self-start shrink-0">
+				<View className={cn("flex-row items-center self-start shrink-0", readOnly && "opacity-50")}>
 					{item.checked ? (
 						<PressableOpacity
 							rippleColor="transparent"

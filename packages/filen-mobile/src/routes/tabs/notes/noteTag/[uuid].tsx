@@ -4,12 +4,12 @@ import Header from "@/components/ui/header"
 import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList from "@/components/ui/virtualList"
-import { type Note as TNote, NoteType, type NoteTag } from "@filen/sdk-rs"
-import { run, fastLocaleCompare, cn } from "@filen/utils"
+import { type Note as TNote, NoteType } from "@filen/sdk-rs"
+import { run, cn } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { type ListRenderItemInfo, Platform } from "react-native"
 import { PressableOpacity } from "@/components/ui/pressables"
-import { useRouter } from "expo-router"
+import { useRouter, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
@@ -25,71 +25,40 @@ import prompts from "@/lib/prompts"
 import notesLib from "@/lib/notes"
 import { Paths } from "expo-file-system"
 import Menu from "@/components/ui/menu"
-import { useSecureStore } from "@/lib/secureStore"
-import Tag from "@/components/notes/tag"
 
-export const Notes = memo(() => {
-	const notesQuery = useNotesQuery()
+export const NoteTag = memo(() => {
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
 	const selectedNotes = useNotesStore(useShallow(state => state.selectedNotes))
-	const selectedTags = useNotesStore(useShallow(state => state.selectedTags))
-	const notesTagsQuery = useNotesTagsQuery()
-	const [notesViewMode, setNotesViewMode] = useSecureStore<"notes" | "tags">("notesViewMode", "notes")
+	const { uuid } = useLocalSearchParams<{ uuid?: string }>()
+	const notesQuery = useNotesQuery()
+
+	const notesTagsQuery = useNotesTagsQuery({
+		enabled: false
+	})
+
+	const tag = useMemo(() => {
+		if (notesTagsQuery.status !== "success") {
+			return null
+		}
+
+		return notesTagsQuery.data.find(t => t.uuid === uuid) ?? null
+	}, [uuid, notesTagsQuery.status, notesTagsQuery.data])
 
 	const notes = useMemo(() => {
 		if (notesQuery.status !== "success") {
 			return []
 		}
 
-		return notesSorter.sort(notesQuery.data)
-	}, [notesQuery.data, notesQuery.status])
+		return notesSorter.sort(notesQuery.data).filter(note => note.tags.some(t => t.uuid === tag?.uuid))
+	}, [notesQuery.data, notesQuery.status, tag])
 
-	const notesTags = useMemo(() => {
-		if (notesTagsQuery.status !== "success") {
-			return []
-		}
-
-		return notesTagsQuery.data.sort((a, b) => fastLocaleCompare(a.name ?? a.uuid, b.name ?? b.uuid))
-	}, [notesTagsQuery.data, notesTagsQuery.status])
-
-	const notesForTag = useMemo<Record<string, TNote[]>>(() => {
-		if (notesQuery.status !== "success" || notesTagsQuery.status !== "success") {
-			return {}
-		}
-
-		return notesTagsQuery.data.reduce(
-			(acc, tag) => {
-				acc[tag.uuid] = notesQuery.data.filter(n => n.tags.some(t => t.uuid === tag.uuid))
-
-				return acc
-			},
-			{} as Record<string, TNote[]>
-		)
-	}, [notesQuery.data, notesQuery.status, notesTagsQuery.data, notesTagsQuery.status])
-
-	const renderItemNotesView = useCallback((info: ListRenderItemInfo<TNote>) => {
+	const renderItem = useCallback((info: ListRenderItemInfo<TNote>) => {
 		return <Note info={info} />
 	}, [])
 
-	const renderItemTagsView = useCallback(
-		(info: ListRenderItemInfo<NoteTag>) => {
-			return (
-				<Tag
-					info={info}
-					notesForTag={notesForTag[info.item.uuid] ?? []}
-				/>
-			)
-		},
-		[notesForTag]
-	)
-
-	const keyExtractorNotesView = useCallback((note: TNote) => {
+	const keyExtractor = useCallback((note: TNote) => {
 		return note.uuid
-	}, [])
-
-	const keyExtractorTagsView = useCallback((tag: NoteTag) => {
-		return tag.uuid
 	}, [])
 
 	const onRefresh = useCallback(async () => {
@@ -105,6 +74,10 @@ export const Notes = memo(() => {
 
 	const createNote = useCallback(
 		async (type: NoteType) => {
+			if (!tag) {
+				return
+			}
+
 			const result = await run(async () => {
 				return await prompts.input({
 					title: "tbd_create_note",
@@ -132,11 +105,18 @@ export const Notes = memo(() => {
 			}
 
 			const createResult = await runWithLoading(async () => {
-				return await notesLib.create({
+				const note = await notesLib.create({
 					title,
 					content: "",
 					type
 				})
+
+				await notesLib.addTag({
+					note,
+					tag
+				})
+
+				return note
 			})
 
 			if (!createResult.success) {
@@ -148,23 +128,15 @@ export const Notes = memo(() => {
 
 			router.push(Paths.join("/", "note", createResult.data.uuid))
 		},
-		[router]
+		[router, tag]
 	)
 
 	return (
 		<Fragment>
 			<Header
-				title={
-					notesViewMode === "notes"
-						? selectedNotes.length > 0
-							? `${selectedNotes.length} tbd_selected`
-							: "tbd_notes"
-						: selectedTags.length > 0
-							? `${selectedTags.length} tbd_selected`
-							: "tbd_tags"
-				}
+				title={selectedNotes.length > 0 ? `${selectedNotes.length} tbd_selected` : (tag?.name ?? tag?.uuid ?? "tbd_tag")}
 				left={() => {
-					if (selectedNotes.length === 0 && selectedTags.length === 0) {
+					if (selectedNotes.length === 0) {
 						return null
 					}
 
@@ -176,34 +148,16 @@ export const Notes = memo(() => {
 						>
 							<PressableOpacity
 								onPress={() => {
-									if (notesViewMode === "notes") {
-										if (selectedNotes.length === notes.length) {
-											useNotesStore.getState().setSelectedNotes([])
+									if (selectedNotes.length === notes.length) {
+										useNotesStore.getState().setSelectedNotes([])
 
-											return
-										}
-
-										useNotesStore.getState().setSelectedNotes(notes)
-									} else {
-										if (selectedTags.length === notesTags.length) {
-											useNotesStore.getState().setSelectedTags([])
-
-											return
-										}
-
-										useNotesStore.getState().setSelectedTags(notesTags)
+										return
 									}
+
+									useNotesStore.getState().setSelectedNotes(notes)
 								}}
 							>
-								<Text>
-									{notesViewMode === "notes"
-										? selectedNotes.length === notes.length
-											? "tbd_deselectAll"
-											: "tbd_selectAll"
-										: selectedTags.length === notesTags.length
-											? "tbd_deselectAll"
-											: "tbd_selectAll"}
-								</Text>
+								<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
 							</PressableOpacity>
 						</AnimatedView>
 					)
@@ -272,31 +226,6 @@ export const Notes = memo(() => {
 										]
 									},
 									{
-										id: "viewMode",
-										title: "tbd_viewMode",
-										icon: notesViewMode === "notes" ? "list" : "tag",
-										subButtons: [
-											{
-												title: "tbd_notes_view",
-												id: "notesView",
-												icon: "list",
-												checked: notesViewMode === "notes",
-												onPress: () => {
-													setNotesViewMode("notes")
-												}
-											},
-											{
-												title: "tbd_tags_view",
-												id: "tagsView",
-												icon: "tag",
-												checked: notesViewMode === "tags",
-												onPress: () => {
-													setNotesViewMode("tags")
-												}
-											}
-										]
-									},
-									{
 										id: "search",
 										title: "tbd_search",
 										icon: "search",
@@ -317,30 +246,18 @@ export const Notes = memo(() => {
 				}}
 			/>
 			<SafeAreaView edges={["left", "right"]}>
-				{notesViewMode === "notes" ? (
-					<VirtualList
-						className="flex-1"
-						contentInsetAdjustmentBehavior="automatic"
-						contentContainerClassName="pb-40"
-						keyExtractor={keyExtractorNotesView}
-						data={notes}
-						renderItem={renderItemNotesView}
-						onRefresh={onRefresh}
-					/>
-				) : (
-					<VirtualList
-						className="flex-1"
-						contentInsetAdjustmentBehavior="automatic"
-						contentContainerClassName="pb-40"
-						keyExtractor={keyExtractorTagsView}
-						data={notesTags}
-						renderItem={renderItemTagsView}
-						onRefresh={onRefresh}
-					/>
-				)}
+				<VirtualList
+					className="flex-1"
+					contentInsetAdjustmentBehavior="automatic"
+					contentContainerClassName="pb-40"
+					keyExtractor={keyExtractor}
+					data={notes}
+					renderItem={renderItem}
+					onRefresh={onRefresh}
+				/>
 			</SafeAreaView>
 		</Fragment>
 	)
 })
 
-export default Notes
+export default NoteTag

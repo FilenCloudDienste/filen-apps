@@ -1,4 +1,5 @@
 import { EventEmitter } from "eventemitter3"
+import type { ShowActionSheetOptions } from "@/providers/actionSheet.provider"
 
 export type Events = {
 	secureStoreChange: {
@@ -13,7 +14,7 @@ export type Events = {
 	showFullScreenLoadingModal: void
 	hideFullScreenLoadingModal: void
 	forceHideFullScreenLoadingModal: void
-	showActionSheet: void
+	showActionSheet: ShowActionSheetOptions
 }
 
 export class TypedEventEmitter<T> {

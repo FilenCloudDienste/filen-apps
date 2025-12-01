@@ -1,47 +1,181 @@
 import { memo, useCallback, useMemo } from "@/lib/memo"
-import { withUniwind } from "uniwind"
+import { withUniwind, useResolveClassNames } from "uniwind"
 import { type StyleProp, type ViewStyle, Platform } from "react-native"
-import { MenuView, type MenuAction, type NativeActionEvent } from "@react-native-menu/menu"
+import { MenuView, type NativeActionEvent, type MenuAction } from "@react-native-menu/menu"
 import {
-	ContextMenuView,
-	type MenuConfig,
-	ContextMenuButton,
-	type MenuElementConfig,
-	type MenuElementSize,
-	type UIMenuOptions,
-	type MenuAttributes
-	// Ref: https://github.com/dominicstop/react-native-ios-context-menu/issues/129
-	// eslint-disable-next-line import/no-unresolved
-} from "react-native-ios-context-menu"
-import { PressableOpacity } from "@/components/ui/pressables"
+	ContextMenu as SwiftUiContextMenu,
+	Host as SwiftUiHost,
+	Button as SwiftUiButton,
+	Text as SwiftUiText,
+	// Switch as SwiftUiSwitch,
+	Image as SwiftUiImage
+} from "@expo/ui/swift-ui"
+// import * as swiftUiModifiers from "@expo/ui/swift-ui/modifiers"
 
-export type MenuButton = Omit<MenuAction, "subactions"> & {
+export type MenuButton = {
 	onPress?: () => void
 	id: string
-	subactions?: MenuButton[]
-	state?: "off" | "on" | "mixed"
+	subButtons?: MenuButton[]
+	subButtonsInline?: boolean
+	checked?: boolean
 	loading?: boolean
-	iOSSize?: MenuElementSize
-	iOSUIMenuOptions?: UIMenuOptions[]
 	subTitle?: string
 	destructive?: boolean
 	hidden?: boolean
 	keepOpenOnPress?: boolean
 	disabled?: boolean
+	icon?: Icons
+	title?: string
+	keepMenuOpenOnPress?: boolean
+	titleColor?: string
+	iconColor?: string
+	testID?: string
 }
 
-export type MenuProps = {
-	children: React.ReactNode
-	type?: "dropdown" | "context"
-	style?: StyleProp<ViewStyle>
-	title?: string
-	buttons?: MenuButton[]
-	className?: string
-	disabled?: boolean
-	onPress?: () => void
-	onOpenMenu?: () => void
-	onCloseMenu?: () => void
-	isAnchoredToRight?: boolean
+export type Icons =
+	| "heart"
+	| "pin"
+	| "trash"
+	| "edit"
+	| "delete"
+	| "duplicate"
+	| "copy"
+	| "export"
+	| "archive"
+	| "clock"
+	| "select"
+	| "user"
+	| "users"
+	| "tag"
+	| "restore"
+	| "exit"
+	| "plus"
+	| "plusCircle"
+	| "plusSquare"
+	| "text"
+	| "richtext"
+	| "markdown"
+	| "code"
+	| "checklist"
+	| "search"
+	| "eye"
+	| "list"
+	| "grid"
+
+export function iconToSwiftUiIcon(name: Icons, fill?: boolean): React.ComponentPropsWithoutRef<typeof SwiftUiImage>["systemName"] {
+	switch (name) {
+		case "heart": {
+			return fill ? "heart.fill" : "heart"
+		}
+
+		case "pin": {
+			return fill ? "pin.fill" : "pin"
+		}
+
+		case "trash": {
+			return fill ? "trash.fill" : "trash"
+		}
+
+		case "edit": {
+			return fill ? "pencil" : "pencil"
+		}
+
+		case "delete": {
+			return fill ? "xmark.circle.fill" : "xmark.circle"
+		}
+
+		case "duplicate": {
+			return fill ? "doc.on.doc.fill" : "doc.on.doc"
+		}
+
+		case "copy": {
+			return fill ? "doc.on.clipboard.fill" : "doc.on.clipboard"
+		}
+
+		case "export": {
+			return fill ? "square.and.arrow.up.fill" : "square.and.arrow.up"
+		}
+
+		case "archive": {
+			return fill ? "archivebox.fill" : "archivebox"
+		}
+
+		case "clock": {
+			return fill ? "clock.fill" : "clock"
+		}
+
+		case "select": {
+			return fill ? "checkmark.circle.fill" : "checkmark.circle"
+		}
+
+		case "user": {
+			return fill ? "person.fill" : "person"
+		}
+
+		case "users": {
+			return fill ? "person.2.fill" : "person.2"
+		}
+
+		case "tag": {
+			return fill ? "tag.fill" : "tag"
+		}
+
+		case "restore": {
+			return fill ? "arrow.uturn.left" : "arrow.uturn.left"
+		}
+
+		case "exit": {
+			return fill ? "escape" : "escape"
+		}
+
+		case "plus": {
+			return fill ? "plus" : "plus"
+		}
+
+		case "plusCircle": {
+			return fill ? "plus.circle.fill" : "plus.circle"
+		}
+
+		case "plusSquare": {
+			return fill ? "plus.rectangle.fill" : "plus.rectangle"
+		}
+
+		case "text": {
+			return fill ? "textformat" : "textformat"
+		}
+
+		case "richtext": {
+			return fill ? "doc.plaintext.fill" : "doc.plaintext"
+		}
+
+		case "markdown": {
+			return fill ? "arrow.down.doc.fill" : "arrow.down.doc"
+		}
+
+		case "code": {
+			return fill ? "chevron.left.slash.chevron.right" : "chevron.left.slash.chevron.right"
+		}
+
+		case "checklist": {
+			return fill ? "checklist.checked" : "checklist"
+		}
+
+		case "search": {
+			return fill ? "magnifyingglass" : "magnifyingglass"
+		}
+
+		case "eye": {
+			return fill ? "eye.fill" : "eye"
+		}
+
+		case "list": {
+			return fill ? "list.bullet.rectangle.fill" : "list.bullet.rectangle"
+		}
+
+		case "grid": {
+			return fill ? "square.grid.2x2.fill" : "square.grid.2x2"
+		}
+	}
 }
 
 export function findButtonById(buttons: MenuButton[], id: string): MenuButton | null {
@@ -54,8 +188,8 @@ export function findButtonById(buttons: MenuButton[], id: string): MenuButton | 
 			return button
 		}
 
-		if (button.subactions) {
-			const found = findButtonById(button.subactions, id)
+		if (button.subButtons) {
+			const found = findButtonById(button.subButtons, id)
 
 			if (found) {
 				return found
@@ -77,8 +211,8 @@ export function checkIfButtonIdsAreUnique(buttons: MenuButton[]): boolean {
 
 			ids.add(button.id)
 
-			if (button.subactions) {
-				const unique = checkButtons(button.subactions)
+			if (button.subButtons) {
+				const unique = checkButtons(button.subButtons)
 
 				if (!unique) {
 					return false
@@ -92,85 +226,143 @@ export function checkIfButtonIdsAreUnique(buttons: MenuButton[]): boolean {
 	return checkButtons(buttons)
 }
 
-export function toIosMenu(
-	config: Omit<MenuConfig, "menuItems"> & {
-		subactions?: MenuButton[]
-	}
-): MenuConfig {
-	return {
-		menuTitle: config.menuTitle ?? "",
-		menuPreferredElementSize: config.menuPreferredElementSize,
-		menuItems: config.subactions?.map(subaction => {
-			if ("subactions" in subaction) {
-				return toIosSubMenu(subaction)
-			}
-
-			return toIosItem(subaction)
-		})
-	}
-}
-
-export function toIosSubMenu(button: MenuButton): MenuElementConfig {
-	if (button.loading) {
+export function toAndroidMenuActions(buttons: MenuButton[]): MenuAction[] {
+	return buttons.map(button => {
 		return {
-			type: "deferred",
-			deferredID: `${button.id}-${Date.now()}`
-		}
-	}
-
-	return {
-		menuOptions: button.iOSUIMenuOptions,
-		menuTitle: button.title ?? "",
-		menuSubtitle: button.subTitle,
-		menuPreferredElementSize: button.iOSSize,
-		menuItems: button.subactions?.map(item => {
-			if ("subactions" in item) {
-				return toIosSubMenu(item)
+			subactions: button.subButtons && button.subButtons.length > 0 ? toAndroidMenuActions(button.subButtons) : undefined,
+			id: button.id,
+			title: button.title ?? "",
+			state: button.checked ? "on" : undefined,
+			subtitle: button.subTitle,
+			titleColor: button.titleColor,
+			imageColor: button.iconColor,
+			displayInline: button.subButtonsInline,
+			attributes: {
+				destructive: button.destructive,
+				disabled: button.disabled,
+				keepsMenuPresented: button.keepMenuOpenOnPress,
+				hidden: button.hidden
 			}
-
-			return toIosItem(item)
-		})
-	}
+		} satisfies MenuAction
+	})
 }
 
-export function toIosItem(button: MenuButton): MenuElementConfig {
-	if (button.loading) {
-		return {
-			type: "deferred",
-			deferredID: `${button.id}-deferred}`
-		}
-	}
+export const ContextMenuItemsIos = memo(({ title, buttons }: { title?: string; buttons: MenuButton[] }) => {
+	const textPrimary = useResolveClassNames("text-primary")
 
-	const menuAttributes: MenuAttributes[] = []
+	return (
+		<SwiftUiContextMenu.Items>
+			{title && <SwiftUiText>{title}</SwiftUiText>}
+			{buttons.map(button => {
+				if (button.hidden) {
+					return null
+				}
 
-	if (button.destructive) {
-		menuAttributes.push("destructive")
-	}
+				if (button.subButtons && button.subButtons.length > 0) {
+					return (
+						<SwiftUiContextMenu
+							key={button.id}
+							activationMethod="singlePress"
+						>
+							<ContextMenuItemsIos buttons={button.subButtons} />
+							<SwiftUiContextMenu.Trigger>
+								<SwiftUiButton
+									role={button.destructive ? "destructive" : undefined}
+									systemImage={button.icon ? iconToSwiftUiIcon(button.icon) : undefined}
+									disabled={button.disabled}
+									testID={button.testID}
+								>
+									{button.title}
+								</SwiftUiButton>
+							</SwiftUiContextMenu.Trigger>
+						</SwiftUiContextMenu>
+					)
+				}
 
-	if (button.disabled) {
-		menuAttributes.push("disabled")
-	}
+				// TODO: Add back when updating expo/ui (sdk 55+)
+				/*
+				if (button.checked) {
+					return (
+						<SwiftUiSwitch
+							key={button.id}
+							variant="button"
+							label={button.title}
+							value={button.checked}
+							testID={button.testID}
+							modifiers={button.disabled ? [swiftUiModifiers.disabled(button.disabled)] : undefined}
+							onValueChange={e => {
+								if (e) {
+									return
+								}
 
-	if (button.hidden) {
-		menuAttributes.push("hidden")
-	}
+								button.onPress?.()
+							}}
+							systemImage={button.icon ? iconToSwiftUiIcon(button.icon) : undefined}
+						/>
+					)
+				}
 
-	if (button.keepOpenOnPress) {
-		menuAttributes.push("keepsMenuPresented")
-	}
+				 if (button.subTitle) {
+					return (
+						<SwiftUiButton
+							key={button.id}
+							onPress={button.onPress}
+							testID={button.testID}
+							role={button.destructive ? "destructive" : undefined}
+							disabled={button.disabled}
+						>
+							{button.icon && <SwiftUiImage systemName={iconToSwiftUiIcon(button.icon)} />}
+							<SwiftUiText>{button.title}</SwiftUiText>
+							<SwiftUiText>{button.subTitle}</SwiftUiText>
+						</SwiftUiButton>
+					)
+				} */
 
-	return {
-		actionKey: button.id,
-		actionTitle: button.title ?? "",
-		actionSubtitle: button.subTitle,
-		menuState: button.state,
-		menuAttributes,
-		discoverabilityTitle: button.subTitle
-	}
-}
+				return (
+					<SwiftUiButton
+						key={button.id}
+						onPress={button.onPress}
+						testID={button.testID}
+						role={button.destructive ? "destructive" : undefined}
+						systemImage={button.icon ? iconToSwiftUiIcon(button.icon) : undefined}
+						color={button.checked ? (textPrimary.color as string) : button.titleColor}
+						disabled={button.disabled}
+					>
+						{button.title}
+					</SwiftUiButton>
+				)
+			})}
+		</SwiftUiContextMenu.Items>
+	)
+})
 
 export const MenuInner = memo(
-	({ buttons, type, onPress, children, title, disabled, style, className, isAnchoredToRight, onOpenMenu, onCloseMenu }: MenuProps) => {
+	({
+		buttons,
+		type,
+		children,
+		title,
+		disabled,
+		style,
+		isAnchoredToRight,
+		onOpenMenu,
+		onCloseMenu,
+		testID,
+		renderPreview
+	}: {
+		children: React.ReactNode
+		type?: "dropdown" | "context"
+		style?: StyleProp<ViewStyle>
+		title?: string
+		buttons?: MenuButton[]
+		className?: string
+		disabled?: boolean
+		onOpenMenu?: () => void
+		onCloseMenu?: () => void
+		isAnchoredToRight?: boolean
+		testID?: string
+		renderPreview?: () => React.ReactNode
+	}) => {
 		const uniqueButtons = useMemo(() => {
 			if (!buttons) {
 				return []
@@ -196,89 +388,45 @@ export const MenuInner = memo(
 			[uniqueButtons]
 		)
 
-		const onPressMenuItem = useCallback(
-			({
-				nativeEvent
-			}: {
-				nativeEvent?: {
-					actionKey?: string
-					actionTitle?: string
-				}
-			}) => {
-				const button = findButtonById(uniqueButtons, nativeEvent?.actionKey ?? "")
-
-				if (!button) {
-					return
-				}
-
-				button?.onPress?.()
-			},
-			[uniqueButtons]
-		)
-
-		const menuConfig = useMemo(() => {
-			return toIosMenu({
-				menuTitle: title ?? "",
-				subactions: uniqueButtons
-			})
-		}, [title, uniqueButtons])
-
 		if (disabled) {
 			return children
 		}
 
 		if (Platform.OS === "ios") {
-			if (type === "dropdown") {
-				return (
-					<ContextMenuButton
-						menuConfig={menuConfig}
-						isMenuPrimaryAction={true}
-						onPressMenuItem={onPressMenuItem}
-						onMenuWillShow={onOpenMenu}
-						onMenuWillHide={onCloseMenu}
-						style={style}
-						className={className}
-					>
-						{children}
-					</ContextMenuButton>
-				)
-			}
-
 			return (
-				<ContextMenuView
-					menuConfig={menuConfig}
-					onPressMenuItem={onPressMenuItem}
-					onMenuWillShow={onOpenMenu}
-					onMenuWillHide={onCloseMenu}
+				<SwiftUiHost
 					style={style}
-					className={className}
+					testID={testID ? `${testID}-host` : undefined}
 				>
-					<PressableOpacity
-						className="flex-col w-full h-auto"
-						onPress={onPress}
+					<SwiftUiContextMenu
+						activationMethod={type === "context" ? "longPress" : "singlePress"}
+						testID={testID}
 					>
-						{children}
-					</PressableOpacity>
-				</ContextMenuView>
+						{renderPreview && <SwiftUiContextMenu.Preview>{renderPreview()}</SwiftUiContextMenu.Preview>}
+						<ContextMenuItemsIos
+							title={title}
+							buttons={uniqueButtons}
+						/>
+						<SwiftUiContextMenu.Trigger>{children}</SwiftUiContextMenu.Trigger>
+					</SwiftUiContextMenu>
+				</SwiftUiHost>
 			)
 		}
 
+		// TODO: Migrate to expo/ui ContextMenu when Android menus are stable and support dropdown/context mode + nesting
 		return (
 			<MenuView
 				shouldOpenOnLongPress={type === "context"}
-				actions={uniqueButtons}
+				actions={toAndroidMenuActions(uniqueButtons)}
 				onPressAction={onPressAction}
 				style={style}
 				isAnchoredToRight={isAnchoredToRight}
 				onOpenMenu={onOpenMenu}
 				onCloseMenu={onCloseMenu}
+				title={title}
+				testID={testID}
 			>
-				<PressableOpacity
-					className="flex-row w-full h-auto"
-					onPress={onPress}
-				>
-					{children}
-				</PressableOpacity>
+				{children}
 			</MenuView>
 		)
 	}
