@@ -16,7 +16,7 @@ import Text from "@/components/ui/text"
 import prompts from "@/lib/prompts"
 import * as Linking from "expo-linking"
 import { AnimatedView } from "@/components/ui/animated"
-import { FadeIn, FadeOut } from "react-native-reanimated"
+import { FadeInDown, FadeOutDown } from "react-native-reanimated"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import { cn } from "@filen/utils"
@@ -345,6 +345,7 @@ export const Button = memo(
 					className="flex-row items-center justify-center shrink-0 size-9"
 					enabled={menuButtons.length === 0}
 					onPress={onPress}
+					hitSlop={5}
 				>
 					{type === "keyboard" ? (
 						<FontAwesome6
@@ -423,71 +424,66 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 
 	return (
 		<KeyboardStickyView
-			className="bg-transparent"
+			className="bg-transparent absolute left-0 right-0 bottom-0"
 			offset={{
 				opened: 0,
 				closed: -(insets.bottom + 8)
 			}}
 		>
-			<AnimatedView
-				entering={FadeIn}
-				exiting={FadeOut}
-				className="bg-transparent"
-			>
-				<View
-					ref={viewRef}
-					onLayout={onLayout}
-					className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
+			{keyboardState.isVisible && (
+				<AnimatedView
+					entering={FadeInDown}
+					exiting={FadeOutDown}
+					className="bg-transparent"
 				>
-					<ToolbarContainerView className="shrink-0 flex-row items-center p-2 h-12">
-						<Button
-							type="header"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="bold"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="italic"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="underline"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="code-block"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="link"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="blockquote"
-							postMessage={postMessage}
-						/>
-						<Button
-							type="list"
-							postMessage={postMessage}
-						/>
-					</ToolbarContainerView>
-					{keyboardState.isVisible && (
-						<AnimatedView
-							entering={FadeIn}
-							exiting={FadeOut}
-						>
-							<ToolbarContainerView className="shrink-0 size-12 flex-row items-center justify-center">
-								<Button
-									type="keyboard"
-									postMessage={postMessage}
-								/>
-							</ToolbarContainerView>
-						</AnimatedView>
-					)}
-				</View>
-			</AnimatedView>
+					<View
+						ref={viewRef}
+						onLayout={onLayout}
+						className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
+					>
+						<ToolbarContainerView className="shrink-0 flex-row items-center p-2 h-12">
+							<Button
+								type="header"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="bold"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="italic"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="underline"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="code-block"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="link"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="blockquote"
+								postMessage={postMessage}
+							/>
+							<Button
+								type="list"
+								postMessage={postMessage}
+							/>
+						</ToolbarContainerView>
+						<ToolbarContainerView className="shrink-0 size-12 flex-row items-center justify-center">
+							<Button
+								type="keyboard"
+								postMessage={postMessage}
+							/>
+						</ToolbarContainerView>
+					</View>
+				</AnimatedView>
+			)}
 		</KeyboardStickyView>
 	)
 })
