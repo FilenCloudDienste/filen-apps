@@ -3,11 +3,11 @@ import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
 import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
-import VirtualList from "@/components/ui/virtualList"
+import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
 import { type Note as TNote, NoteType, type NoteTag } from "@filen/sdk-rs"
 import { run, fastLocaleCompare, cn } from "@filen/utils"
 import alerts from "@/lib/alerts"
-import { type ListRenderItemInfo, Platform } from "react-native"
+import { Platform } from "react-native"
 import { PressableOpacity } from "@/components/ui/pressables"
 import { useRouter } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
@@ -155,6 +155,7 @@ export const Notes = memo(() => {
 		<Fragment>
 			<Header
 				transparent={Platform.OS === "ios"}
+				blurEffect="systemChromeMaterial"
 				title={
 					notesViewMode === "notes"
 						? selectedNotes.length > 0

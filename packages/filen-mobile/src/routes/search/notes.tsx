@@ -1,202 +1,137 @@
-import Text from "@/components/ui/text"
-import { Fragment, useState, useRef } from "react"
+import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
-import useNotesWithContentQuery from "@/queries/useNotesWithContent.query"
+import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
-import View from "@/components/ui/view"
-import VirtualList from "@/components/ui/virtualList"
-import type { Note } from "@filen/sdk-rs"
-import { run } from "@filen/utils"
+import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
+import { type Note as TNote } from "@filen/sdk-rs"
+import { run, cn } from "@filen/utils"
 import alerts from "@/lib/alerts"
-import { type ListRenderItemInfo, TextInput } from "react-native"
-import { Menu } from "@/components/ui/menu"
+import { Platform } from "react-native"
 import { PressableOpacity } from "@/components/ui/pressables"
-import { Paths } from "expo-file-system"
 import { useRouter } from "expo-router"
-import MaterialIcons from "@expo/vector-icons/MaterialIcons"
+import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
+import { memo, useCallback, useMemo } from "@/lib/memo"
+import Note from "@/components/notes/note"
+import useNotesStore from "@/stores/useNotes.store"
+import { useShallow } from "zustand/shallow"
+import Text from "@/components/ui/text"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { memo, useCallback, useMemo } from "@/lib/memo"
+import { Paths } from "expo-file-system"
+import Menu from "@/components/ui/menu"
 
 export const Notes = memo(() => {
-	const [searchQuery, setSearchQuery] = useState<string>("")
-	const notesWithContentQuery = useNotesWithContentQuery()
+	const notesQuery = useNotesQuery()
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
-	const searchQueryInputRef = useRef<TextInput>(null)
-	const insets = useSafeAreaInsets()
+	const selectedNotes = useNotesStore(useShallow(state => state.selectedNotes))
 
 	const notes = useMemo(() => {
-		const searchQueryNormalized = searchQuery.trim().toLowerCase()
+		if (notesQuery.status !== "success") {
+			return []
+		}
 
-		return notesWithContentQuery.data && searchQueryNormalized.length > 0
-			? (
-					notesSorter.sort(notesWithContentQuery.data) as (Note & {
-						content?: string
-					})[]
-				).filter(note => {
-					if (note.title && note.title.toLowerCase().trim().includes(searchQueryNormalized)) {
-						return true
-					}
+		return notesSorter.sort(notesQuery.data)
+	}, [notesQuery.data, notesQuery.status])
 
-					if (note.preview && note.preview.toLowerCase().trim().includes(searchQueryNormalized)) {
-						return true
-					}
+	const renderItem = useCallback((info: ListRenderItemInfo<TNote>) => {
+		return <Note info={info} />
+	}, [])
 
-					if (note.content && note.content.toLowerCase().trim().includes(searchQueryNormalized)) {
-						return true
-					}
-
-					if (note.tags.some(tag => (tag.name ?? tag.uuid).toLowerCase().trim().includes(searchQueryNormalized))) {
-						return true
-					}
-
-					return false
-				})
-			: []
-	}, [notesWithContentQuery.data, searchQuery])
-
-	const renderItem = useCallback(
-		(info: ListRenderItemInfo<Note>) => {
-			return (
-				<View className="w-full h-auto border-b border-border flex-row">
-					<PressableOpacity
-						className="flex-row w-full h-full"
-						onPress={() => {
-							router.push(Paths.join("/", "note", info.item.uuid))
-						}}
-					>
-						<Menu
-							className="flex-row w-full h-full"
-							type="context"
-							buttons={[]}
-						>
-							<View className="flex-1 flex-row gap-4 px-4 bg-transparent py-2">
-								<View className="gap-2 bg-transparent">
-									<Text>{info.index}</Text>
-								</View>
-								<View className="gap-2 flex-1 bg-transparent">
-									<Text
-										numberOfLines={1}
-										ellipsizeMode="middle"
-									>
-										{info.item.title}
-									</Text>
-									<Text
-										numberOfLines={2}
-										ellipsizeMode="tail"
-										className="text-muted-foreground text-xs"
-									>
-										{info.item.preview}
-									</Text>
-									<Text
-										numberOfLines={1}
-										ellipsizeMode="tail"
-										className="text-muted-foreground text-xs"
-									>
-										{info.item.editedTimestamp}
-									</Text>
-								</View>
-							</View>
-						</Menu>
-					</PressableOpacity>
-				</View>
-			)
-		},
-		[router]
-	)
-
-	const keyExtractor = useCallback((note: Note) => {
+	const keyExtractor = useCallback((note: TNote) => {
 		return note.uuid
 	}, [])
 
 	const onRefresh = useCallback(async () => {
 		const result = await run(async () => {
-			await notesWithContentQuery.refetch()
+			await notesQuery.refetch()
 		})
 
 		if (!result.success) {
 			console.error(result.error)
 			alerts.error(result.error)
 		}
-	}, [notesWithContentQuery])
+	}, [notesQuery])
 
 	return (
 		<Fragment>
 			<Header
-				title="tbd"
-				backVisible={true}
-				backTitle="tbd_back"
+				transparent={Platform.OS === "ios"}
+				title={selectedNotes.length > 0 ? `${selectedNotes.length} tbd_selected` : "tbd_notes"}
+				left={() => {
+					if (selectedNotes.length === 0) {
+						return null
+					}
+
+					return (
+						<AnimatedView
+							className="px-2 flex-row items-center"
+							entering={FadeIn}
+							exiting={FadeOut}
+						>
+							<PressableOpacity
+								onPress={() => {
+									if (selectedNotes.length === notes.length) {
+										useNotesStore.getState().setSelectedNotes([])
+
+										return
+									}
+
+									useNotesStore.getState().setSelectedNotes(notes)
+								}}
+							>
+								<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
+							</PressableOpacity>
+						</AnimatedView>
+					)
+				}}
+				right={() => {
+					return (
+						<AnimatedView
+							className={cn(
+								"flex-row items-center justify-center",
+								Platform.select({
+									ios: "px-1.5",
+									default: ""
+								})
+							)}
+							entering={FadeIn}
+							exiting={FadeOut}
+						>
+							<Menu
+								type="dropdown"
+								buttons={[
+									{
+										id: "search",
+										title: "tbd_search",
+										icon: "search",
+										onPress: () => {
+											router.push(Paths.join("/", "search", "notes"))
+										}
+									}
+								]}
+							>
+								<Ionicons
+									name="ellipsis-horizontal"
+									size={24}
+									color={textForeground.color as string}
+								/>
+							</Menu>
+						</AnimatedView>
+					)
+				}}
 			/>
 			<SafeAreaView edges={["left", "right"]}>
-				<View className="py-2 px-4">
-					<View className="flex-row items-center rounded-full px-4 bg-secondary h-12">
-						<View className="mr-2 bg-transparent">
-							<MaterialIcons
-								name="search"
-								size={24}
-								color={textForeground.color as string}
-							/>
-						</View>
-						<TextInput
-							ref={searchQueryInputRef}
-							className="flex-1 text-base"
-							placeholder="tbd"
-							onChangeText={text => setSearchQuery(text)}
-							autoFocus={true}
-							autoCapitalize="none"
-							autoComplete="off"
-							autoCorrect={false}
-						/>
-						{searchQuery.length > 0 && (
-							<AnimatedView
-								entering={FadeIn}
-								exiting={FadeOut}
-								className="ml-2 p-1"
-							>
-								<PressableOpacity
-									onPress={() => {
-										searchQueryInputRef.current?.clear()
-
-										setSearchQuery("")
-									}}
-									rippleColor="transparent"
-								>
-									<MaterialIcons
-										name="close"
-										size={24}
-										color={textForeground.color as string}
-									/>
-								</PressableOpacity>
-							</AnimatedView>
-						)}
-					</View>
-				</View>
 				<VirtualList
 					className="flex-1"
 					contentInsetAdjustmentBehavior="automatic"
+					contentContainerClassName="pb-40"
 					keyExtractor={keyExtractor}
 					data={notes}
 					renderItem={renderItem}
 					onRefresh={onRefresh}
-					contentContainerStyle={{
-						paddingBottom: insets.bottom
-					}}
-					loading={notesWithContentQuery.status !== "success"}
-					emptyComponent={() => {
-						if (notesWithContentQuery.status === "success") {
-							return (
-								<View className="flex-1 items-center justify-center">
-									<Text className="text-muted-foreground">tbd</Text>
-								</View>
-							)
-						}
-
-						return null
-					}}
 				/>
 			</SafeAreaView>
 		</Fragment>

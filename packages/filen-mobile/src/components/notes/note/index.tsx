@@ -1,7 +1,8 @@
 import Text from "@/components/ui/text"
-import View, { LiquidGlassView, isLiquidGlassAvailable } from "@/components/ui/view"
+import View from "@/components/ui/view"
 import type { Note as TNote } from "@filen/sdk-rs"
-import { type ListRenderItemInfo, ActivityIndicator, Platform } from "react-native"
+import { ActivityIndicator, Platform } from "react-native"
+import type { ListRenderItemInfo } from "@/components/ui/virtualList"
 import { Paths } from "expo-file-system"
 import { useRouter } from "expo-router"
 import { useResolveClassNames } from "uniwind"
@@ -127,19 +128,15 @@ export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote
 								{info.item.tags.length > 0 && (
 									<View className="flex-row flex-wrap gap-2 bg-transparent">
 										{info.item.tags.map(tag => (
-											<LiquidGlassView
+											<View
 												key={tag.uuid}
 												className={cn(
 													"px-2 py-1 rounded-full border border-border",
-													isLiquidGlassAvailable()
-														? ""
-														: isActive
-															? "bg-background-tertiary"
-															: "bg-background-secondary"
+													isActive ? "bg-background-tertiary" : "bg-background-secondary"
 												)}
 											>
 												<Text className="text-xs text-accent-foreground">{tag.name ?? tag.uuid}</Text>
-											</LiquidGlassView>
+											</View>
 										))}
 									</View>
 								)}

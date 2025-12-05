@@ -1,6 +1,6 @@
 import { memo } from "@/lib/memo"
 import Text from "@/components/ui/text"
-import type { ListRenderItemInfo } from "react-native"
+import type { ListRenderItemInfo } from "@/components/ui/virtualList"
 import type { DriveItem } from "@/types"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 

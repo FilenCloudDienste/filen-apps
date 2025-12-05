@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { withUniwind, useResolveClassNames } from "uniwind"
-import { type FlatListProps, type View as RNView, RefreshControl, ActivityIndicator, FlatList } from "react-native"
+import { type View as RNView, RefreshControl, ActivityIndicator } from "react-native"
 import View from "@/components/ui/view"
 import useViewLayout from "@/hooks/useViewLayout"
 import { cn, run, type DeferFn } from "@filen/utils"
@@ -8,6 +8,12 @@ import alerts from "@/lib/alerts"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeOut } from "react-native-reanimated"
 import { memo, useCallback, useMemo } from "@/lib/memo"
+import { LegendList, type LegendListRenderItemProps, type LegendListProps, type LegendListRef } from "@legendapp/list"
+
+export type ListRenderItemInfo<
+	Item,
+	ItemType extends string | number | undefined = string | number | undefined
+> = LegendListRenderItemProps<Item, ItemType>
 
 export type VirtualListExtraProps = {
 	itemHeight?: number
@@ -21,7 +27,7 @@ export type VirtualListExtraProps = {
 	footerComponent?: () => React.ReactNode
 }
 
-export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => {
+export const VirtualListInner = memo(<T,>(props: LegendListProps<T> & React.RefAttributes<LegendListRef> & VirtualListExtraProps) => {
 	const viewRef = useRef<RNView>(null)
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
@@ -36,78 +42,8 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			return 1
 		}
 
-		return Math.max(1, Math.floor(layout.width / props.itemWidth))
+		return Math.round(Math.max(1, Math.round(layout.width / props.itemWidth)))
 	}, [props.grid, props.itemWidth, layout, props.itemsPerRow])
-
-	const itemsInView = useMemo(() => {
-		if (!props.itemHeight) {
-			return undefined
-		}
-
-		if (props.grid) {
-			return Math.max(1, Math.floor((layout.height / props.itemHeight) * itemsPerRow))
-		}
-
-		return Math.max(1, Math.floor(layout.height / props.itemHeight))
-	}, [layout.height, props.itemHeight, props.grid, itemsPerRow])
-
-	const initialNumToRender = useMemo(() => {
-		if (props.grid) {
-			if (!itemsInView) {
-				return undefined
-			}
-
-			return Math.max(1, Math.floor((itemsInView / itemsPerRow) * itemsPerRow))
-		}
-
-		return itemsInView
-	}, [props.grid, itemsInView, itemsPerRow])
-
-	const getItemLayout = useMemo(() => {
-		if (props.grid) {
-			if (!props.itemWidth) {
-				return undefined
-			}
-
-			return (_: ArrayLike<T> | null | undefined, index: number) => {
-				if (!props.itemHeight) {
-					throw new Error("itemHeight is required for getItemLayout")
-				}
-
-				const rowIndex = Math.max(0, Math.floor(index / itemsPerRow))
-
-				return {
-					length: props.itemHeight,
-					offset: props.itemHeight * rowIndex,
-					index
-				}
-			}
-		}
-
-		if (!props.itemHeight) {
-			return undefined
-		}
-
-		return (_: ArrayLike<T> | null | undefined, index: number) => {
-			if (!props.itemHeight) {
-				throw new Error("itemHeight is required for getItemLayout")
-			}
-
-			return {
-				length: props.itemHeight,
-				offset: props.itemHeight * index,
-				index
-			}
-		}
-	}, [props.itemHeight, props.grid, props.itemWidth, itemsPerRow])
-
-	const maxToRenderPerBatch = useMemo(() => {
-		if (!itemsInView) {
-			return undefined
-		}
-
-		return Math.max(1, itemsInView / 4)
-	}, [itemsInView])
 
 	const onRefresh = useCallback(async () => {
 		if (!props.onRefresh) {
@@ -169,17 +105,12 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 						/>
 					</AnimatedView>
 				)}
-				<FlatList<T>
-					key={itemsPerRow}
-					windowSize={1}
-					initialNumToRender={initialNumToRender}
+				<LegendList<T>
 					contentInsetAdjustmentBehavior="automatic"
-					getItemLayout={getItemLayout}
-					maxToRenderPerBatch={maxToRenderPerBatch}
-					// updateCellsBatchingPeriod={50}
 					refreshing={refreshing}
 					refreshControl={refreshControl}
 					numColumns={itemsPerRow}
+					recycleItems={false}
 					showsHorizontalScrollIndicator={!props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
 					showsVerticalScrollIndicator={props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
 					scrollEnabled={!props.loading && (props.data ?? []).length > 0}
@@ -210,7 +141,7 @@ export const VirtualListInner = memo(<T,>(props: FlatListProps<T> & React.RefAtt
 			</View>
 		</View>
 	)
-}) as (<T>(props: FlatListProps<T> & React.RefAttributes<FlatList<T>> & VirtualListExtraProps) => React.JSX.Element) & {
+}) as (<T>(props: LegendListProps<T> & React.RefAttributes<LegendListRef> & VirtualListExtraProps) => React.JSX.Element) & {
 	displayName?: string
 }
 

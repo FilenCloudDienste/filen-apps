@@ -2,6 +2,30 @@ import { memo } from "@/lib/memo"
 import { useResolveClassNames } from "uniwind"
 import { Stack } from "expo-router"
 import type { NativeStackHeaderItemProps } from "@react-navigation/native-stack"
+import type { BlurEffectTypes } from "react-native-screens"
+import { isLiquidGlassAvailable } from "@/components/ui/view"
+import { AnimatedView } from "@/components/ui/animated"
+import { FadeIn, FadeOut } from "react-native-reanimated"
+import { cn } from "@filen/utils"
+import { Platform } from "react-native"
+
+export const HeaderLeftRightWrapper = memo(({ children }: { children: React.ReactNode }) => {
+	return (
+		<AnimatedView
+			className={cn(
+				"flex-row items-center justify-center",
+				Platform.select({
+					ios: isLiquidGlassAvailable() ? "px-1.5" : "",
+					default: ""
+				})
+			)}
+			entering={FadeIn}
+			exiting={FadeOut}
+		>
+			{children}
+		</AnimatedView>
+	)
+})
 
 export const Header = memo(
 	({
@@ -13,7 +37,8 @@ export const Header = memo(
 		backVisible,
 		backTitle,
 		shadowVisible,
-		transparent
+		transparent,
+		blurEffect
 	}: {
 		title: string
 		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
@@ -24,6 +49,7 @@ export const Header = memo(
 		backTitle?: string
 		shadowVisible?: boolean
 		transparent?: boolean
+		blurEffect?: BlurEffectTypes
 	}) => {
 		const bgBackground = useResolveClassNames("bg-background")
 		const textForeground = useResolveClassNames("text-foreground")
@@ -34,6 +60,7 @@ export const Header = memo(
 					headerTitle: title,
 					headerShown: shown ?? true,
 					headerShadowVisible: transparent ? true : shadowVisible,
+					headerBlurEffect: !isLiquidGlassAvailable() ? blurEffect : undefined,
 					headerBackVisible: backVisible,
 					headerTransparent: transparent,
 					headerBackTitle: backTitle,
