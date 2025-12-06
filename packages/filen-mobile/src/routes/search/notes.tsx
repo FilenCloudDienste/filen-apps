@@ -5,7 +5,7 @@ import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
 import { type Note as TNote } from "@filen/sdk-rs"
-import { run, cn } from "@filen/utils"
+import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { Platform } from "react-native"
 import { PressableOpacity } from "@/components/ui/pressables"
@@ -17,8 +17,6 @@ import Note from "@/components/notes/note"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import Text from "@/components/ui/text"
-import { AnimatedView } from "@/components/ui/animated"
-import { FadeIn, FadeOut } from "react-native-reanimated"
 import { Paths } from "expo-file-system"
 import Menu from "@/components/ui/menu"
 
@@ -66,60 +64,42 @@ export const Notes = memo(() => {
 					}
 
 					return (
-						<AnimatedView
-							className="px-2 flex-row items-center"
-							entering={FadeIn}
-							exiting={FadeOut}
+						<PressableOpacity
+							onPress={() => {
+								if (selectedNotes.length === notes.length) {
+									useNotesStore.getState().setSelectedNotes([])
+
+									return
+								}
+
+								useNotesStore.getState().setSelectedNotes(notes)
+							}}
 						>
-							<PressableOpacity
-								onPress={() => {
-									if (selectedNotes.length === notes.length) {
-										useNotesStore.getState().setSelectedNotes([])
-
-										return
-									}
-
-									useNotesStore.getState().setSelectedNotes(notes)
-								}}
-							>
-								<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
-							</PressableOpacity>
-						</AnimatedView>
+							<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
+						</PressableOpacity>
 					)
 				}}
 				right={() => {
 					return (
-						<AnimatedView
-							className={cn(
-								"flex-row items-center justify-center",
-								Platform.select({
-									ios: "px-1.5",
-									default: ""
-								})
-							)}
-							entering={FadeIn}
-							exiting={FadeOut}
-						>
-							<Menu
-								type="dropdown"
-								buttons={[
-									{
-										id: "search",
-										title: "tbd_search",
-										icon: "search",
-										onPress: () => {
-											router.push(Paths.join("/", "search", "notes"))
-										}
+						<Menu
+							type="dropdown"
+							buttons={[
+								{
+									id: "search",
+									title: "tbd_search",
+									icon: "search",
+									onPress: () => {
+										router.push(Paths.join("/", "search", "notes"))
 									}
-								]}
-							>
-								<Ionicons
-									name="ellipsis-horizontal"
-									size={24}
-									color={textForeground.color as string}
-								/>
-							</Menu>
-						</AnimatedView>
+								}
+							]}
+						>
+							<Ionicons
+								name="ellipsis-horizontal"
+								size={24}
+								color={textForeground.color as string}
+							/>
+						</Menu>
 					)
 				}}
 			/>

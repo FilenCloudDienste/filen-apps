@@ -19,7 +19,7 @@ import useTextEditorStore from "@/stores/useTextEditor.store"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import { cn } from "@filen/utils"
 
-const ICON_SIZE = 20
+const ICON_SIZE = 18
 
 export const ToolbarContainerView = memo(({ children, className }: { children: React.ReactNode; className?: string }) => {
 	const { theme } = useUniwind()
@@ -434,7 +434,7 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 					onLayout={onLayout}
 					className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
 				>
-					<ToolbarContainerView className="shrink-0 flex-row items-center p-2 h-12">
+					<ToolbarContainerView className="shrink-0 flex-row items-center p-2 h-9">
 						<Button
 							type="header"
 							postMessage={postMessage}
@@ -468,7 +468,7 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 							postMessage={postMessage}
 						/>
 					</ToolbarContainerView>
-					<ToolbarContainerView className="shrink-0 size-12 flex-row items-center justify-center">
+					<ToolbarContainerView className="shrink-0 size-9 flex-row items-center justify-center">
 						<Button
 							type="keyboard"
 							postMessage={postMessage}

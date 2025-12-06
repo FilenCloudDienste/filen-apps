@@ -1,4 +1,4 @@
-import { memo } from "@/lib/memo"
+import { memo, useMemo } from "@/lib/memo"
 import { useResolveClassNames } from "uniwind"
 import { Stack } from "expo-router"
 import type { NativeStackHeaderItemProps } from "@react-navigation/native-stack"
@@ -9,23 +9,30 @@ import { FadeIn, FadeOut } from "react-native-reanimated"
 import { cn } from "@filen/utils"
 import { Platform } from "react-native"
 
-export const HeaderLeftRightWrapper = memo(({ children }: { children: React.ReactNode }) => {
-	return (
-		<AnimatedView
-			className={cn(
-				"flex-row items-center justify-center",
-				Platform.select({
-					ios: isLiquidGlassAvailable() ? "px-1.5" : "",
-					default: ""
-				})
-			)}
-			entering={FadeIn}
-			exiting={FadeOut}
-		>
-			{children}
-		</AnimatedView>
-	)
-})
+export const HeaderLeftRightWrapper = memo(
+	({ children, className, isLeft, isRight }: { children: React.ReactNode; className?: string; isLeft?: boolean; isRight?: boolean }) => {
+		const liquidGlassAvailable = useMemo(() => isLiquidGlassAvailable(), [])
+
+		return (
+			<AnimatedView
+				className={cn(
+					"flex-row items-center justify-center",
+					Platform.select({
+						ios: liquidGlassAvailable ? "size-9" : "",
+						default: ""
+					}),
+					isLeft && (Platform.OS === "android" || !liquidGlassAvailable) ? "pr-4" : "",
+					isRight && (Platform.OS === "android" || !liquidGlassAvailable) ? "pl-4" : "",
+					className
+				)}
+				entering={FadeIn}
+				exiting={FadeOut}
+			>
+				{children}
+			</AnimatedView>
+		)
+	}
+)
 
 export const Header = memo(
 	({
@@ -73,9 +80,33 @@ export const Header = memo(
 						color: textForeground.color as string
 					},
 					headerTintColor: textForeground.color as string,
-					headerRight: right,
+					headerRight: props => {
+						if (!right) {
+							return null
+						}
+
+						const rightResult = right(props)
+
+						if (!rightResult) {
+							return null
+						}
+
+						return <HeaderLeftRightWrapper isRight={true}>{rightResult}</HeaderLeftRightWrapper>
+					},
 					headerLargeTitle: largeTitle,
-					headerLeft: left
+					headerLeft: props => {
+						if (!left) {
+							return null
+						}
+
+						const leftResult = left(props)
+
+						if (!leftResult) {
+							return null
+						}
+
+						return <HeaderLeftRightWrapper isLeft={true}>{leftResult}</HeaderLeftRightWrapper>
+					}
 				}}
 			/>
 		)

@@ -5,9 +5,8 @@ import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
 import { type Note as TNote, NoteType } from "@filen/sdk-rs"
-import { run, cn } from "@filen/utils"
+import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
-import { Platform } from "react-native"
 import { PressableOpacity } from "@/components/ui/pressables"
 import { useRouter, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
@@ -17,8 +16,6 @@ import Note from "@/components/notes/note"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import Text from "@/components/ui/text"
-import { AnimatedView } from "@/components/ui/animated"
-import { FadeIn, FadeOut } from "react-native-reanimated"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import prompts from "@/lib/prompts"
@@ -141,107 +138,89 @@ export const NoteTag = memo(() => {
 					}
 
 					return (
-						<AnimatedView
-							className="px-2 flex-row items-center"
-							entering={FadeIn}
-							exiting={FadeOut}
+						<PressableOpacity
+							onPress={() => {
+								if (selectedNotes.length === notes.length) {
+									useNotesStore.getState().setSelectedNotes([])
+
+									return
+								}
+
+								useNotesStore.getState().setSelectedNotes(notes)
+							}}
 						>
-							<PressableOpacity
-								onPress={() => {
-									if (selectedNotes.length === notes.length) {
-										useNotesStore.getState().setSelectedNotes([])
-
-										return
-									}
-
-									useNotesStore.getState().setSelectedNotes(notes)
-								}}
-							>
-								<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
-							</PressableOpacity>
-						</AnimatedView>
+							<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
+						</PressableOpacity>
 					)
 				}}
 				right={() => {
 					return (
-						<AnimatedView
-							className={cn(
-								"flex-row items-center justify-center",
-								Platform.select({
-									ios: "px-1.5",
-									default: ""
-								})
-							)}
-							entering={FadeIn}
-							exiting={FadeOut}
-						>
-							<Menu
-								type="dropdown"
-								buttons={[
-									{
-										id: "create",
-										title: "tbd_create_note",
-										icon: "plus",
-										subButtons: [
-											{
-												title: "tbd_text",
-												id: "text",
-												icon: "text",
-												onPress: async () => {
-													await createNote(NoteType.Text)
-												}
-											},
-											{
-												title: "tbd_checklist",
-												id: "checklist",
-												icon: "checklist",
-												onPress: async () => {
-													await createNote(NoteType.Checklist)
-												}
-											},
-											{
-												title: "tbd_markdown",
-												id: "markdown",
-												icon: "markdown",
-												onPress: async () => {
-													await createNote(NoteType.Md)
-												}
-											},
-											{
-												title: "tbd_code",
-												id: "code",
-												icon: "code",
-												onPress: async () => {
-													await createNote(NoteType.Code)
-												}
-											},
-											{
-												title: "tbd_richtext",
-												id: "richtext",
-												icon: "richtext",
-												onPress: async () => {
-													await createNote(NoteType.Rich)
-												}
+						<Menu
+							type="dropdown"
+							buttons={[
+								{
+									id: "create",
+									title: "tbd_create_note",
+									icon: "plus",
+									subButtons: [
+										{
+											title: "tbd_text",
+											id: "text",
+											icon: "text",
+											onPress: async () => {
+												await createNote(NoteType.Text)
 											}
-										]
-									},
-									{
-										id: "search",
-										title: "tbd_search",
-										icon: "search",
-										onPress: () => {
-											router.push(Paths.join("/", "search", "notes"))
+										},
+										{
+											title: "tbd_checklist",
+											id: "checklist",
+											icon: "checklist",
+											onPress: async () => {
+												await createNote(NoteType.Checklist)
+											}
+										},
+										{
+											title: "tbd_markdown",
+											id: "markdown",
+											icon: "markdown",
+											onPress: async () => {
+												await createNote(NoteType.Md)
+											}
+										},
+										{
+											title: "tbd_code",
+											id: "code",
+											icon: "code",
+											onPress: async () => {
+												await createNote(NoteType.Code)
+											}
+										},
+										{
+											title: "tbd_richtext",
+											id: "richtext",
+											icon: "richtext",
+											onPress: async () => {
+												await createNote(NoteType.Rich)
+											}
 										}
+									]
+								},
+								{
+									id: "search",
+									title: "tbd_search",
+									icon: "search",
+									onPress: () => {
+										router.push(Paths.join("/", "search", "notes"))
 									}
-								]}
-							>
-								<Ionicons
-									name="ellipsis-horizontal"
-									size={24}
-									color={textForeground.color as string}
-								/>
-							</Menu>
-						</AnimatedView>
+								}
+							]}
+						>
+							<Ionicons
+								name="ellipsis-horizontal"
+								size={24}
+								color={textForeground.color as string}
+							/>
+						</Menu>
 					)
 				}}
 			/>

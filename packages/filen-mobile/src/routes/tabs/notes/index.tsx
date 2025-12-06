@@ -5,7 +5,7 @@ import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
 import { type Note as TNote, NoteType, type NoteTag } from "@filen/sdk-rs"
-import { run, fastLocaleCompare, cn } from "@filen/utils"
+import { run, fastLocaleCompare } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { Platform } from "react-native"
 import { PressableOpacity } from "@/components/ui/pressables"
@@ -17,8 +17,6 @@ import Note from "@/components/notes/note"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import Text from "@/components/ui/text"
-import { AnimatedView } from "@/components/ui/animated"
-import { FadeIn, FadeOut } from "react-native-reanimated"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import prompts from "@/lib/prompts"
@@ -171,150 +169,132 @@ export const Notes = memo(() => {
 					}
 
 					return (
-						<AnimatedView
-							className="px-2 flex-row items-center"
-							entering={FadeIn}
-							exiting={FadeOut}
-						>
-							<PressableOpacity
-								onPress={() => {
-									if (notesViewMode === "notes") {
-										if (selectedNotes.length === notes.length) {
-											useNotesStore.getState().setSelectedNotes([])
+						<PressableOpacity
+							onPress={() => {
+								if (notesViewMode === "notes") {
+									if (selectedNotes.length === notes.length) {
+										useNotesStore.getState().setSelectedNotes([])
 
-											return
-										}
-
-										useNotesStore.getState().setSelectedNotes(notes)
-									} else {
-										if (selectedTags.length === notesTags.length) {
-											useNotesStore.getState().setSelectedTags([])
-
-											return
-										}
-
-										useNotesStore.getState().setSelectedTags(notesTags)
+										return
 									}
-								}}
-							>
-								<Text>
-									{notesViewMode === "notes"
-										? selectedNotes.length === notes.length
-											? "tbd_deselectAll"
-											: "tbd_selectAll"
-										: selectedTags.length === notesTags.length
-											? "tbd_deselectAll"
-											: "tbd_selectAll"}
-								</Text>
-							</PressableOpacity>
-						</AnimatedView>
+
+									useNotesStore.getState().setSelectedNotes(notes)
+								} else {
+									if (selectedTags.length === notesTags.length) {
+										useNotesStore.getState().setSelectedTags([])
+
+										return
+									}
+
+									useNotesStore.getState().setSelectedTags(notesTags)
+								}
+							}}
+						>
+							<Text>
+								{notesViewMode === "notes"
+									? selectedNotes.length === notes.length
+										? "tbd_deselectAll"
+										: "tbd_selectAll"
+									: selectedTags.length === notesTags.length
+										? "tbd_deselectAll"
+										: "tbd_selectAll"}
+							</Text>
+						</PressableOpacity>
 					)
 				}}
 				right={() => {
 					return (
-						<AnimatedView
-							className={cn(
-								"flex-row items-center justify-center",
-								Platform.select({
-									ios: "px-1.5",
-									default: ""
-								})
-							)}
-							entering={FadeIn}
-							exiting={FadeOut}
-						>
-							<Menu
-								type="dropdown"
-								buttons={[
-									{
-										id: "create",
-										title: "tbd_create_note",
-										icon: "plus",
-										subButtons: [
-											{
-												title: "tbd_text",
-												id: "text",
-												icon: "text",
-												onPress: async () => {
-													await createNote(NoteType.Text)
-												}
-											},
-											{
-												title: "tbd_checklist",
-												id: "checklist",
-												icon: "checklist",
-												onPress: async () => {
-													await createNote(NoteType.Checklist)
-												}
-											},
-											{
-												title: "tbd_markdown",
-												id: "markdown",
-												icon: "markdown",
-												onPress: async () => {
-													await createNote(NoteType.Md)
-												}
-											},
-											{
-												title: "tbd_code",
-												id: "code",
-												icon: "code",
-												onPress: async () => {
-													await createNote(NoteType.Code)
-												}
-											},
-											{
-												title: "tbd_richtext",
-												id: "richtext",
-												icon: "richtext",
-												onPress: async () => {
-													await createNote(NoteType.Rich)
-												}
+						<Menu
+							type="dropdown"
+							buttons={[
+								{
+									id: "create",
+									title: "tbd_create_note",
+									icon: "plus",
+									subButtons: [
+										{
+											title: "tbd_text",
+											id: "text",
+											icon: "text",
+											onPress: async () => {
+												await createNote(NoteType.Text)
 											}
-										]
-									},
-									{
-										id: "viewMode",
-										title: "tbd_viewMode",
-										icon: notesViewMode === "notes" ? "list" : "tag",
-										subButtons: [
-											{
-												title: "tbd_notes_view",
-												id: "notesView",
-												icon: "list",
-												checked: notesViewMode === "notes",
-												onPress: () => {
-													setNotesViewMode("notes")
-												}
-											},
-											{
-												title: "tbd_tags_view",
-												id: "tagsView",
-												icon: "tag",
-												checked: notesViewMode === "tags",
-												onPress: () => {
-													setNotesViewMode("tags")
-												}
+										},
+										{
+											title: "tbd_checklist",
+											id: "checklist",
+											icon: "checklist",
+											onPress: async () => {
+												await createNote(NoteType.Checklist)
 											}
-										]
-									},
-									{
-										id: "search",
-										title: "tbd_search",
-										icon: "search",
-										onPress: () => {
-											router.push(Paths.join("/", "search", "notes"))
+										},
+										{
+											title: "tbd_markdown",
+											id: "markdown",
+											icon: "markdown",
+											onPress: async () => {
+												await createNote(NoteType.Md)
+											}
+										},
+										{
+											title: "tbd_code",
+											id: "code",
+											icon: "code",
+											onPress: async () => {
+												await createNote(NoteType.Code)
+											}
+										},
+										{
+											title: "tbd_richtext",
+											id: "richtext",
+											icon: "richtext",
+											onPress: async () => {
+												await createNote(NoteType.Rich)
+											}
 										}
+									]
+								},
+								{
+									id: "viewMode",
+									title: "tbd_viewMode",
+									icon: notesViewMode === "notes" ? "list" : "tag",
+									subButtons: [
+										{
+											title: "tbd_notes_view",
+											id: "notesView",
+											icon: "list",
+											checked: notesViewMode === "notes",
+											onPress: () => {
+												setNotesViewMode("notes")
+											}
+										},
+										{
+											title: "tbd_tags_view",
+											id: "tagsView",
+											icon: "tag",
+											checked: notesViewMode === "tags",
+											onPress: () => {
+												setNotesViewMode("tags")
+											}
+										}
+									]
+								},
+								{
+									id: "search",
+									title: "tbd_search",
+									icon: "search",
+									onPress: () => {
+										router.push(Paths.join("/", "search", "notes"))
 									}
-								]}
-							>
-								<Ionicons
-									name="ellipsis-horizontal"
-									size={24}
-									color={textForeground.color as string}
-								/>
-							</Menu>
-						</AnimatedView>
+								}
+							]}
+						>
+							<Ionicons
+								name="ellipsis-horizontal"
+								size={24}
+								color={textForeground.color as string}
+							/>
+						</Menu>
 					)
 				}}
 			/>

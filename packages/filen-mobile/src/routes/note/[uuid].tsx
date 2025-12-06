@@ -10,9 +10,7 @@ import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import { memo, useMemo, useCallback } from "@/lib/memo"
 import { simpleDate } from "@/lib/time"
-import { cn, run } from "@filen/utils"
-import { AnimatedView } from "@/components/ui/animated"
-import { FadeIn, FadeOut } from "react-native-reanimated"
+import { run } from "@filen/utils"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { PressableOpacity } from "@/components/ui/pressables"
@@ -82,28 +80,16 @@ export const Header = memo(
 				right={() => {
 					if (history) {
 						return (
-							<AnimatedView
-								className={cn(
-									"flex-row items-center justify-center",
-									Platform.select({
-										ios: "px-1.5",
-										default: ""
-									})
-								)}
-								entering={FadeIn}
-								exiting={FadeOut}
+							<PressableOpacity
+								onPress={restoreFromHistory}
+								hitSlop={32}
 							>
-								<PressableOpacity
-									onPress={restoreFromHistory}
-									hitSlop={32}
-								>
-									<Ionicons
-										name="refresh"
-										size={24}
-										color={textForeground.color as string}
-									/>
-								</PressableOpacity>
-							</AnimatedView>
+								<Ionicons
+									name="refresh"
+									size={24}
+									color={textForeground.color as string}
+								/>
+							</PressableOpacity>
 						)
 					}
 
@@ -112,22 +98,10 @@ export const Header = memo(
 					}
 
 					return (
-						<AnimatedView
-							className={cn(
-								"flex-row items-center justify-center",
-								Platform.select({
-									ios: "px-1.5",
-									default: ""
-								})
-							)}
-							entering={FadeIn}
-							exiting={FadeOut}
-						>
-							<ActivityIndicator
-								size="small"
-								color={textForeground.color as string}
-							/>
-						</AnimatedView>
+						<ActivityIndicator
+							size="small"
+							color={textForeground.color as string}
+						/>
 					)
 				}}
 			/>
