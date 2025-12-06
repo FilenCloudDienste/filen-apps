@@ -163,6 +163,7 @@ export const Notes = memo(() => {
 							? `${selectedTags.length} tbd_selected`
 							: "tbd_tags"
 				}
+				leftClassName="w-auto px-2"
 				left={() => {
 					if (selectedNotes.length === 0 && selectedTags.length === 0) {
 						return null
@@ -170,6 +171,8 @@ export const Notes = memo(() => {
 
 					return (
 						<PressableOpacity
+							className="w-full"
+							hitSlop={15}
 							onPress={() => {
 								if (notesViewMode === "notes") {
 									if (selectedNotes.length === notes.length) {
@@ -190,7 +193,11 @@ export const Notes = memo(() => {
 								}
 							}}
 						>
-							<Text>
+							<Text
+								ellipsizeMode="tail"
+								numberOfLines={1}
+								className="w-full"
+							>
 								{notesViewMode === "notes"
 									? selectedNotes.length === notes.length
 										? "tbd_deselectAll"
@@ -206,6 +213,7 @@ export const Notes = memo(() => {
 					return (
 						<Menu
 							type="dropdown"
+							hitSlop={15}
 							buttons={[
 								{
 									id: "create",
@@ -289,11 +297,16 @@ export const Notes = memo(() => {
 								}
 							]}
 						>
-							<Ionicons
-								name="ellipsis-horizontal"
-								size={24}
-								color={textForeground.color as string}
-							/>
+							<PressableOpacity
+								hitSlop={20}
+								className="w-full h-full items-center justify-center"
+							>
+								<Ionicons
+									name="ellipsis-horizontal"
+									size={24}
+									color={textForeground.color as string}
+								/>
+							</PressableOpacity>
 						</Menu>
 					)
 				}}

@@ -348,7 +348,8 @@ export const MenuInner = memo(
 		onOpenMenu,
 		onCloseMenu,
 		testID,
-		renderPreview
+		renderPreview,
+		hitSlop
 	}: {
 		children: React.ReactNode
 		type?: "dropdown" | "context"
@@ -362,6 +363,14 @@ export const MenuInner = memo(
 		isAnchoredToRight?: boolean
 		testID?: string
 		renderPreview?: () => React.ReactNode
+		hitSlop?:
+			| number
+			| {
+					top?: number
+					bottom?: number
+					left?: number
+					right?: number
+			  }
 	}) => {
 		const uniqueButtons = useMemo(() => {
 			if (!buttons) {
@@ -425,6 +434,21 @@ export const MenuInner = memo(
 				onCloseMenu={onCloseMenu}
 				title={title}
 				testID={testID}
+				hitSlop={
+					typeof hitSlop === "number"
+						? {
+								top: hitSlop,
+								bottom: hitSlop,
+								left: hitSlop,
+								right: hitSlop
+							}
+						: {
+								top: hitSlop?.top ?? 0,
+								bottom: hitSlop?.bottom ?? 0,
+								left: hitSlop?.left ?? 0,
+								right: hitSlop?.right ?? 0
+							}
+				}
 			>
 				{children}
 			</MenuView>

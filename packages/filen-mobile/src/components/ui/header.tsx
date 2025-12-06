@@ -38,7 +38,9 @@ export const Header = memo(
 	({
 		title,
 		right,
+		rightClassName,
 		left,
+		leftClassName,
 		shown,
 		largeTitle,
 		backVisible,
@@ -50,6 +52,8 @@ export const Header = memo(
 		title: string
 		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
 		left?: (props: NativeStackHeaderItemProps) => React.ReactNode
+		rightClassName?: string
+		leftClassName?: string
 		shown?: boolean
 		largeTitle?: boolean
 		backVisible?: boolean
@@ -91,7 +95,14 @@ export const Header = memo(
 							return null
 						}
 
-						return <HeaderLeftRightWrapper isRight={true}>{rightResult}</HeaderLeftRightWrapper>
+						return (
+							<HeaderLeftRightWrapper
+								isRight={true}
+								className={rightClassName}
+							>
+								{rightResult}
+							</HeaderLeftRightWrapper>
+						)
 					},
 					headerLargeTitle: largeTitle,
 					headerLeft: props => {
@@ -105,7 +116,14 @@ export const Header = memo(
 							return null
 						}
 
-						return <HeaderLeftRightWrapper isLeft={true}>{leftResult}</HeaderLeftRightWrapper>
+						return (
+							<HeaderLeftRightWrapper
+								isLeft={true}
+								className={leftClassName}
+							>
+								{leftResult}
+							</HeaderLeftRightWrapper>
+						)
 					}
 				}}
 			/>

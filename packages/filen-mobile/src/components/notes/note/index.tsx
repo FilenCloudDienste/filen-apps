@@ -16,14 +16,18 @@ import Menu, { NoteMenuOrigin } from "@/components/notes/note/menu"
 import { cn } from "@filen/utils"
 import { PressableOpacity } from "@/components/ui/pressables"
 import { Image } from "@/components/ui/image"
+import { Checkbox } from "@/components/ui/checkbox"
+import { AnimatedView } from "@/components/ui/animated"
+import { FadeIn, FadeOut } from "react-native-reanimated"
 
 export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote>; menuOrigin?: NoteMenuOrigin }) => {
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
-	const syncing = useNotesStore(useShallow(state => (state.temporaryContent[info.item.uuid] ?? []).length > 0))
+	const isSyncing = useNotesStore(useShallow(state => (state.temporaryContent[info.item.uuid] ?? []).length > 0))
 	const isActive = useNotesStore(useShallow(state => state.activeNote?.uuid === info.item.uuid))
 	const stringifiedClient = useStringifiedClient()
-	const selected = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.uuid === info.item.uuid)))
+	const isSelected = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.uuid === info.item.uuid)))
+	const areNotesSelected = useNotesStore(useShallow(state => state.selectedNotes.length > 0))
 
 	const onPress = useCallback(() => {
 		if (useNotesStore.getState().selectedNotes.length > 0) {
@@ -69,12 +73,21 @@ export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote
 										ios: "",
 										default: "bg-transparent"
 									}),
-							selected ? "bg-background-secondary" : ""
+							isSelected ? "bg-background-secondary" : ""
 						)}
 					>
 						<View className="flex-1 flex-row gap-4 px-4 py-3 w-full h-auto bg-transparent">
+							{areNotesSelected && (
+								<AnimatedView
+									className="flex-row h-full items-center justify-center bg-transparent pr-2"
+									entering={FadeIn}
+									exiting={FadeOut}
+								>
+									<Checkbox value={isSelected} />
+								</AnimatedView>
+							)}
 							<View className="gap-2 shrink-0 h-auto w-auto bg-transparent">
-								{syncing ? (
+								{isSyncing ? (
 									<ActivityIndicator
 										size="small"
 										color={textForeground.color}
@@ -132,7 +145,7 @@ export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote
 												key={tag.uuid}
 												className={cn(
 													"px-2 py-1 rounded-full border border-border",
-													isActive ? "bg-background-tertiary" : "bg-background-secondary"
+													isActive || isSelected ? "bg-background-tertiary" : "bg-background-secondary"
 												)}
 											>
 												<Text className="text-xs text-accent-foreground">{tag.name ?? tag.uuid}</Text>
