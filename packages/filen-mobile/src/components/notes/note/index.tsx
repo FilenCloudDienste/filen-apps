@@ -13,7 +13,7 @@ import { useStringifiedClient } from "@/lib/auth"
 import { simpleDate } from "@/lib/time"
 import Icon from "@/components/notes/note/icon"
 import Menu, { NoteMenuOrigin } from "@/components/notes/note/menu"
-import { cn } from "@filen/utils"
+import { cn, fastLocaleCompare } from "@filen/utils"
 import { PressableOpacity } from "@/components/ui/pressables"
 import { Image } from "@/components/ui/image"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -50,6 +50,10 @@ export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote
 	const participantsWithoutCurrentUser = useMemo(() => {
 		return info.item.participants.filter(participant => participant.userId !== stringifiedClient?.userId)
 	}, [info.item.participants, stringifiedClient])
+
+	const tags = useMemo(() => {
+		return info.item.tags.sort((a, b) => fastLocaleCompare(a.name ?? a.uuid, b.name ?? b.uuid))
+	}, [info.item.tags])
 
 	return (
 		<View className="w-full h-auto border-b border-border flex-col">
@@ -138,9 +142,9 @@ export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote
 										})}
 									</View>
 								)}
-								{info.item.tags.length > 0 && (
+								{tags.length > 0 && (
 									<View className="flex-row flex-wrap gap-2 bg-transparent">
-										{info.item.tags.map(tag => (
+										{tags.map(tag => (
 											<View
 												key={tag.uuid}
 												className={cn(

@@ -24,6 +24,7 @@ export class SecureStore {
 	private readonly rwMutex: Semaphore = new Semaphore(1)
 	private readonly keyMutex: Semaphore = new Semaphore(1)
 	private readonly initMutex: Semaphore = new Semaphore(1)
+	private readonly modMutex: Semaphore = new Semaphore(1)
 
 	public readonly uncachedKeys: string[] = []
 
@@ -187,10 +188,11 @@ export class SecureStore {
 			}
 
 			const [encryptionKey, bytes] = await Promise.all([this.getEncryptionKey(), this.secureStoreFile.bytes()])
-			const cipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(encryptionKey, "hex"), bytes.subarray(0, 16))
-			const decrypted = cipher.update(bytes.subarray(16, bytes.length - 16))
+			const cipher = crypto.createDecipheriv("aes-256-gcm", Buffer.from(encryptionKey, "hex"), bytes.subarray(0, 12))
+			const decrypted = cipher.update(bytes.subarray(12, bytes.length - 16))
+			const final = cipher.final()
 
-			return unpack(Buffer.concat([decrypted, cipher.final()]))
+			return unpack(Buffer.concat([decrypted, final])) as Record<string, unknown>
 		})
 
 		if (!result.success) {
@@ -213,7 +215,7 @@ export class SecureStore {
 			})
 
 			const encryptionKey = await this.getEncryptionKey()
-			const iv = crypto.randomBytes(16)
+			const iv = crypto.randomBytes(12)
 			const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(encryptionKey, "hex"), iv)
 			const encrypted = cipher.update(pack(data))
 			const final = cipher.final()
@@ -232,62 +234,113 @@ export class SecureStore {
 	public async set(key: string, value: unknown): Promise<void> {
 		await this.waitForInit()
 
-		const current = this.readCache ?? (await this.read()) ?? {}
-		const modified = {
-			...current,
-			[key]: value
-		}
+		const result = await run(async defer => {
+			await this.modMutex.acquire()
 
-		await this.write(modified)
+			defer(() => {
+				this.modMutex.release()
+			})
 
-		cache.secureStore.set(key, value)
+			const current = this.readCache ?? (await this.read()) ?? {}
+			const modified = {
+				...current,
+				[key]: value
+			}
 
-		events.emit("secureStoreChange", {
-			key,
-			value
+			await this.write(modified)
+
+			cache.secureStore.set(key, value)
+
+			events.emit("secureStoreChange", {
+				key,
+				value
+			})
 		})
+
+		if (!result.success) {
+			throw result.error
+		}
 	}
 
 	public async get<T>(key: string): Promise<T | null> {
 		await this.waitForInit()
 
-		const current = this.readCache ?? (await this.read()) ?? {}
-		const value = current[key]
+		const result = await run(async defer => {
+			await this.modMutex.acquire()
 
-		if (!value) {
-			return null
+			defer(() => {
+				this.modMutex.release()
+			})
+
+			const current = this.readCache ?? (await this.read()) ?? {}
+			const value = current[key]
+
+			if (!value) {
+				return null
+			}
+
+			cache.secureStore.set(key, value)
+
+			return value as T
+		})
+
+		if (!result.success) {
+			throw result.error
 		}
 
-		cache.secureStore.set(key, value)
-
-		return value as T
+		return result.data
 	}
 
 	public async remove(key: string): Promise<void> {
 		await this.waitForInit()
 
-		const current = this.readCache ?? (await this.read()) ?? {}
+		const result = await run(async defer => {
+			await this.modMutex.acquire()
 
-		delete current[key]
+			defer(() => {
+				this.modMutex.release()
+			})
 
-		await this.write(current)
+			const current = this.readCache ?? (await this.read()) ?? {}
 
-		cache.secureStore.delete(key)
+			delete current[key]
 
-		events.emit("secureStoreRemove", {
-			key
+			await this.write(current)
+
+			cache.secureStore.delete(key)
+
+			events.emit("secureStoreRemove", {
+				key
+			})
 		})
+
+		if (!result.success) {
+			throw result.error
+		}
 	}
 
 	public async clear(): Promise<void> {
 		await this.waitForInit()
 
-		this.readCache = null
-		this.secureStoreFile.delete()
+		const result = await run(async defer => {
+			await Promise.all([this.rwMutex.acquire(), this.modMutex.acquire()])
 
-		cache.secureStore.clear()
+			defer(() => {
+				this.rwMutex.release()
+				this.modMutex.release()
+			})
 
-		events.emit("secureStoreClear")
+			this.readCache = null
+			this.secureStoreFile.delete()
+
+			cache.secureStore.clear()
+
+			events.emit("secureStoreClear")
+		})
+
+		if (!result.success) {
+			throw result.error
+		}
 	}
 }
 
