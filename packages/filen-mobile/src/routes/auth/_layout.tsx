@@ -6,7 +6,7 @@ export const AuthLayout = memo(() => {
 	const isAuthed = useIsAuthed()
 
 	if (isAuthed) {
-		return <Redirect href="/tabs/home" />
+		return <Redirect href="/tabs/drive" />
 	}
 
 	return <Stack />

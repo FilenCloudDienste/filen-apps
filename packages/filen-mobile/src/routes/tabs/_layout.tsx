@@ -26,22 +26,6 @@ export const TabsLayout = memo(() => {
 			indicatorColor={bgBackgroundSecondary.backgroundColor as string}
 			tintColor={textForeground.color as string}
 		>
-			<NativeTabs.Trigger name="home">
-				<Label>tbd</Label>
-				{Platform.select({
-					ios: <Icon sf="house.fill" />,
-					default: (
-						<Icon
-							src={
-								<VectorIcon
-									family={MaterialIcons}
-									name="home"
-								/>
-							}
-						/>
-					)
-				})}
-			</NativeTabs.Trigger>
 			<NativeTabs.Trigger name="drive">
 				<Label>tbd</Label>
 				{Platform.select({
@@ -100,6 +84,22 @@ export const TabsLayout = memo(() => {
 								<VectorIcon
 									family={MaterialIcons}
 									name="messenger"
+								/>
+							}
+						/>
+					)
+				})}
+			</NativeTabs.Trigger>
+			<NativeTabs.Trigger name="settings">
+				<Label>tbd</Label>
+				{Platform.select({
+					ios: <Icon sf="gearshape.fill" />,
+					default: (
+						<Icon
+							src={
+								<VectorIcon
+									family={MaterialIcons}
+									name="settings"
 								/>
 							}
 						/>

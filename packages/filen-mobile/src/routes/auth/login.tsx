@@ -33,7 +33,7 @@ export const Login = memo(() => {
 
 							console.log("Logged in")
 
-							router.replace("/tabs/home")
+							router.replace("/tabs/drive")
 						}}
 					>
 						Login
