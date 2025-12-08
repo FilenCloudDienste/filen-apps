@@ -35,14 +35,20 @@ export const Menu = memo(
 		const stringifiedClient = useStringifiedClient()
 		const isSelected = useNotesStore(useShallow(state => state.selectedNotes.some(selectedNote => selectedNote.uuid === note.uuid)))
 		const router = useRouter()
+		const isActive = useNotesStore(useShallow(state => state.activeNote?.uuid === note.uuid))
 
 		const notesTagsQuery = useNotesTagsQuery({
 			enabled: false
 		})
 
-		const noteHistoryQuery = useNoteHistoryQuery({
-			note
-		})
+		const noteHistoryQuery = useNoteHistoryQuery(
+			{
+				note
+			},
+			{
+				enabled: isActive
+			}
+		)
 
 		const noteHistory = useMemo(() => {
 			if (noteHistoryQuery.status !== "success") {
@@ -621,6 +627,7 @@ export const Menu = memo(
 
 		return (
 			<MenuComponent
+				key={`note-menu-${note.uuid}`}
 				buttons={buttons}
 				onOpenMenu={onOpenMenu}
 				onCloseMenu={onCloseMenu}

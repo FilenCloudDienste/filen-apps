@@ -1,6 +1,7 @@
 import { parseNumbersFromString } from "@filen/utils"
 import type { DriveItem } from "@/types"
 import type { Note } from "@filen/sdk-rs"
+import type { ListItem as NoteListItem, Item as NoteItem } from "@/components/notes/note"
 
 export type SortByType =
 	| "nameAsc"
@@ -341,7 +342,19 @@ export class ItemSorter {
 export const itemSorter = new ItemSorter()
 
 export class NotesSorter {
-	public sort(notes: Note[]): Note[] {
+	public sort(
+		notes: (
+			| Note
+			| (Note & {
+					content?: string
+			  })
+		)[]
+	): (
+		| Note
+		| (Note & {
+				content?: string
+		  })
+	)[] {
 		return notes.sort((a, b) => {
 			if (a.pinned !== b.pinned) {
 				return b.pinned ? 1 : -1
@@ -365,6 +378,347 @@ export class NotesSorter {
 
 			return Number(b.editedTimestamp) - Number(a.editedTimestamp)
 		})
+	}
+
+	public group({
+		notes,
+		groupPinned,
+		groupFavorited,
+		groupArchived,
+		groupTrashed
+	}: {
+		notes: (
+			| Note
+			| (Note & {
+					content?: string
+			  })
+		)[]
+		groupPinned?: boolean
+		groupFavorited?: boolean
+		groupArchived?: boolean
+		groupTrashed?: boolean
+	}): NoteListItem[] {
+		const now = Date.now()
+		const result: NoteListItem[] = []
+		const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+		const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
+		const sevenDaysAgo = now - sevenDaysMs
+		const thirtyDaysAgo = now - thirtyDaysMs
+		const nowDate = new Date(now)
+		const currentYear = nowDate.getFullYear()
+		const currentMonth = nowDate.getMonth()
+		const oneMonthAgo = new Date(currentYear, currentMonth - 1, nowDate.getDate()).getTime()
+		const twoMonthsAgo = new Date(currentYear, currentMonth - 2, nowDate.getDate()).getTime()
+		const oneYearAgo = new Date(currentYear - 1, currentMonth, nowDate.getDate()).getTime()
+		const last7Days: NoteItem[] = []
+		const last30Days: NoteItem[] = []
+		const previousMonth1: NoteItem[] = []
+		const previousMonth2: NoteItem[] = []
+		const trashed: NoteItem[] = []
+		const archived: NoteItem[] = []
+		const pinned: NoteItem[] = []
+		const favorited: NoteItem[] = []
+		const yearBuckets: {
+			[year: number]: NoteItem[]
+		} = {}
+
+		const len = notes.length
+
+		for (let i = 0; i < len; i++) {
+			const note = notes[i]
+
+			if (!note) {
+				continue
+			}
+
+			// Order is important here
+			// 1. Pinned notes
+			// 2. Favorited notes
+			// 3. Notes from last 7 days
+			// 4. Notes from last 30 days
+			// 5. Notes from previous month
+			// 6. Notes from two months ago
+			// 7. Notes from previous years
+			// 8. Archived notes
+			// 9. Trashed notes
+
+			if (groupPinned && note.pinned) {
+				pinned.push(note)
+
+				continue
+			}
+
+			if (groupFavorited && note.favorite) {
+				favorited.push(note)
+
+				continue
+			}
+
+			if (groupArchived && note.archive) {
+				archived.push(note)
+
+				continue
+			}
+
+			if (groupTrashed && note.trash) {
+				trashed.push(note)
+
+				continue
+			}
+
+			const editedTimestamp = Number(note.editedTimestamp ?? note.createdTimestamp)
+
+			if (editedTimestamp >= sevenDaysAgo) {
+				last7Days.push(note)
+			} else if (editedTimestamp >= thirtyDaysAgo) {
+				last30Days.push(note)
+			} else if (editedTimestamp >= twoMonthsAgo) {
+				previousMonth1.push(note)
+			} else if (editedTimestamp >= oneYearAgo) {
+				previousMonth2.push(note)
+			} else {
+				const year = new Date(editedTimestamp).getFullYear()
+
+				if (!yearBuckets[year]) {
+					yearBuckets[year] = []
+				}
+
+				yearBuckets[year].push(note)
+			}
+		}
+
+		const sortDesc = (a: NoteItem, b: NoteItem) => {
+			return Number(b.editedTimestamp ?? b.createdTimestamp) - Number(a.editedTimestamp ?? a.createdTimestamp)
+		}
+
+		if (groupPinned && pinned.length > 0) {
+			pinned.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-pinned",
+				title: "tbd_pinned"
+			})
+
+			for (let i = 0; i < pinned.length; i++) {
+				const notes = pinned[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (groupFavorited && favorited.length > 0) {
+			favorited.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-favorited",
+				title: "tbd_favorited"
+			})
+
+			for (let i = 0; i < favorited.length; i++) {
+				const notes = favorited[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (last7Days.length > 0) {
+			last7Days.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-7days",
+				title: "tbd_prev_7_days"
+			})
+
+			for (let i = 0; i < last7Days.length; i++) {
+				const notes = last7Days[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (last30Days.length > 0) {
+			last30Days.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-30days",
+				title: "tbd_prev_30_days"
+			})
+
+			for (let i = 0; i < last30Days.length; i++) {
+				const notes = last30Days[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (previousMonth1.length > 0) {
+			previousMonth1.sort(sortDesc)
+
+			const date = new Date(oneMonthAgo)
+
+			result.push({
+				type: "header",
+				id: "header-month1",
+				title: `tbd_month_${date.getMonth().toString()}`
+			})
+
+			for (let i = 0; i < previousMonth1.length; i++) {
+				const notes = previousMonth1[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (previousMonth2.length > 0) {
+			previousMonth2.sort(sortDesc)
+
+			const date = new Date(twoMonthsAgo)
+
+			result.push({
+				type: "header",
+				id: "header-month2",
+				title: `tbd_month_${date.getMonth().toString()}`
+			})
+
+			for (let i = 0; i < previousMonth2.length; i++) {
+				const notes = previousMonth2[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		const years = Object.keys(yearBuckets)
+			.map(Number)
+			.sort((a, b) => b - a)
+
+		for (let i = 0; i < years.length; i++) {
+			const year = years[i]
+
+			if (!year) {
+				continue
+			}
+
+			const yearNotes = yearBuckets[year]
+
+			if (!yearNotes) {
+				continue
+			}
+
+			yearNotes.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: `header-${year}`,
+				title: year.toString()
+			})
+
+			for (let j = 0; j < yearNotes.length; j++) {
+				const notes = yearNotes[j]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (archived.length > 0) {
+			archived.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-archived",
+				title: "tbd_archived"
+			})
+
+			for (let i = 0; i < archived.length; i++) {
+				const notes = archived[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (trashed.length > 0) {
+			trashed.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-trashed",
+				title: "tbd_trashed"
+			})
+
+			for (let i = 0; i < trashed.length; i++) {
+				const notes = trashed[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		return result
 	}
 }
 

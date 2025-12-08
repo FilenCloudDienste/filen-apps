@@ -14,156 +14,276 @@ import { simpleDate } from "@/lib/time"
 import Icon from "@/components/notes/note/icon"
 import Menu, { NoteMenuOrigin } from "@/components/notes/note/menu"
 import { cn, fastLocaleCompare } from "@filen/utils"
-import { PressableOpacity } from "@/components/ui/pressables"
+import { PressableScale } from "@/components/ui/pressables"
 import { Image } from "@/components/ui/image"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
+import Ionicons from "@expo/vector-icons/Ionicons"
 
-export const Note = memo(({ info, menuOrigin }: { info: ListRenderItemInfo<TNote>; menuOrigin?: NoteMenuOrigin }) => {
-	const router = useRouter()
-	const textForeground = useResolveClassNames("text-foreground")
-	const isSyncing = useNotesStore(useShallow(state => (state.temporaryContent[info.item.uuid] ?? []).length > 0))
-	const isActive = useNotesStore(useShallow(state => state.activeNote?.uuid === info.item.uuid))
-	const stringifiedClient = useStringifiedClient()
-	const isSelected = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.uuid === info.item.uuid)))
-	const areNotesSelected = useNotesStore(useShallow(state => state.selectedNotes.length > 0))
+export type Item = TNote & {
+	content?: string
+}
 
-	const onPress = useCallback(() => {
-		if (useNotesStore.getState().selectedNotes.length > 0) {
-			useNotesStore.getState().setSelectedNotes(prev => {
-				const prevSelected = prev.some(n => n.uuid === info.item.uuid)
+export type SectionHeader = {
+	type: "header"
+	id: string
+	title: string
+}
 
-				if (prevSelected) {
-					return prev.filter(n => n.uuid !== info.item.uuid)
-				}
+export type DataItem = Item & {
+	type: "note"
+}
 
-				return [...prev.filter(n => n.uuid !== info.item.uuid), info.item]
-			})
+export type ListItem = SectionHeader | DataItem
 
-			return
+export const Note = memo(
+	({
+		info,
+		menuOrigin,
+		nextNote,
+		prevNote
+	}: {
+		info: ListRenderItemInfo<ListItem>
+		menuOrigin?: NoteMenuOrigin
+		nextNote?: ListItem
+		prevNote?: ListItem
+	}) => {
+		const router = useRouter()
+		const textForeground = useResolveClassNames("text-foreground")
+		const textRed500 = useResolveClassNames("text-red-500")
+		const itemUuid = useMemo(() => (info.item.type === "header" ? info.item.id : info.item.uuid), [info.item])
+		const isSyncing = useNotesStore(useShallow(state => (state.temporaryContent[itemUuid] ?? []).length > 0))
+		const isActive = useNotesStore(useShallow(state => state.activeNote?.uuid === itemUuid))
+		const stringifiedClient = useStringifiedClient()
+		const isSelected = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.uuid === itemUuid)))
+		const areNotesSelected = useNotesStore(useShallow(state => state.selectedNotes.length > 0))
+
+		const onPress = useCallback(() => {
+			if (info.item.type === "header") {
+				return
+			}
+
+			if (useNotesStore.getState().selectedNotes.length > 0) {
+				useNotesStore.getState().setSelectedNotes(prev => {
+					if (info.item.type === "header") {
+						return prev
+					}
+
+					const prevSelected = prev.some(n => n.uuid === itemUuid)
+
+					if (prevSelected) {
+						return prev.filter(n => n.uuid !== itemUuid)
+					}
+
+					return [...prev.filter(n => n.uuid !== itemUuid), info.item]
+				})
+
+				return
+			}
+
+			router.push(Paths.join("/", "note", itemUuid))
+		}, [router, info.item, itemUuid])
+
+		const participantsWithoutCurrentUser = useMemo(() => {
+			if (info.item.type === "header") {
+				return []
+			}
+
+			return info.item.participants.filter(participant => participant.userId !== stringifiedClient?.userId)
+		}, [info.item, stringifiedClient])
+
+		const tags = useMemo(() => {
+			if (info.item.type === "header") {
+				return []
+			}
+
+			return info.item.tags.sort((a, b) => fastLocaleCompare(a.name ?? a.uuid, b.name ?? b.uuid))
+		}, [info.item])
+
+		if (info.item.type === "header") {
+			return (
+				<View className="w-full h-auto px-4 py-4 pb-2">
+					<Text className="text-lg">{info.item.title}</Text>
+				</View>
+			)
 		}
 
-		router.push(Paths.join("/", "note", info.item.uuid))
-	}, [router, info.item])
-
-	const participantsWithoutCurrentUser = useMemo(() => {
-		return info.item.participants.filter(participant => participant.userId !== stringifiedClient?.userId)
-	}, [info.item.participants, stringifiedClient])
-
-	const tags = useMemo(() => {
-		return info.item.tags.sort((a, b) => fastLocaleCompare(a.name ?? a.uuid, b.name ?? b.uuid))
-	}, [info.item.tags])
-
-	return (
-		<View className="w-full h-auto border-b border-border flex-col">
-			<Menu
-				className="flex-row w-full h-auto"
-				type="context"
-				note={info.item}
-				origin={menuOrigin ?? "notes"}
-				isAnchoredToRight={true}
-			>
-				<PressableOpacity
-					onPress={onPress}
-					className="w-full h-auto flex-row"
+		return (
+			<View className="w-full h-auto flex-col">
+				<Menu
+					className={cn(
+						"flex-row w-full h-auto",
+						Platform.OS === "android" && cn("px-4", nextNote?.type === "note" ? "pb-0" : "pb4")
+					)}
+					type="context"
+					note={info.item}
+					origin={menuOrigin ?? "notes"}
+					isAnchoredToRight={true}
 				>
-					<View
+					<PressableScale
+						onPress={onPress}
 						className={cn(
 							"w-full h-auto flex-row",
-							isActive
-								? "bg-background-secondary"
-								: Platform.select({
-										ios: "",
-										default: "bg-transparent"
-									}),
-							isSelected ? "bg-background-secondary" : ""
+							Platform.OS === "ios" && cn("px-4", nextNote?.type === "note" ? "pb-0" : "pb4"),
+							nextNote?.type === "note" && prevNote?.type === "note" && "rounded-none",
+							nextNote?.type === "header" && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
+							nextNote?.type === "note" && prevNote?.type === "header" && "rounded-t-4xl rounded-b-none",
+							nextNote?.type === "header" && prevNote?.type === "header" && "rounded-4xl",
+							!nextNote && prevNote?.type === "header" && "rounded-4xl",
+							!prevNote && nextNote?.type === "note" && "rounded-t-4xl rounded-b-none",
+							!nextNote && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none"
 						)}
+						style={{
+							borderCurve: "continuous"
+						}}
 					>
-						<View className="flex-1 flex-row gap-4 px-4 py-3 w-full h-auto bg-transparent">
-							{areNotesSelected && (
-								<AnimatedView
-									className="flex-row h-full items-center justify-center bg-transparent pr-2"
-									entering={FadeIn}
-									exiting={FadeOut}
-								>
-									<Checkbox value={isSelected} />
-								</AnimatedView>
+						<View
+							className={cn(
+								"w-full h-auto flex-row px-4",
+								nextNote?.type === "note" && prevNote?.type === "note" && "rounded-none",
+								nextNote?.type === "header" && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
+								nextNote?.type === "note" && prevNote?.type === "header" && "rounded-t-4xl rounded-b-none",
+								nextNote?.type === "header" && prevNote?.type === "header" && "rounded-4xl",
+								!nextNote && prevNote?.type === "header" && "rounded-4xl",
+								!prevNote && nextNote?.type === "note" && "rounded-t-4xl rounded-b-none",
+								!nextNote && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
+								isActive
+									? Platform.select({
+											ios: "bg-background-tertiary rounded-4xl",
+											default: "bg-background-tertiary"
+										})
+									: "bg-background-secondary",
+								isSelected && "bg-background-tertiary"
 							)}
-							<View className="gap-2 shrink-0 h-auto w-auto bg-transparent">
-								{isSyncing ? (
-									<ActivityIndicator
-										size="small"
-										color={textForeground.color}
-									/>
-								) : (
-									<Icon
-										note={info.item}
-										iconSize={24}
-									/>
+							style={{
+								borderCurve: "continuous"
+							}}
+						>
+							<View
+								className={cn(
+									"flex-1 flex-row gap-4 w-full h-auto bg-transparent py-3",
+									nextNote?.type === "note" &&
+										Platform.select({
+											ios: isActive ? "" : "border-b border-border",
+											default: "border-b border-border"
+										})
 								)}
-							</View>
-							<View className="gap-2 w-full h-auto bg-transparent flex-col flex-1">
-								<Text
-									numberOfLines={1}
-									ellipsizeMode="middle"
-								>
-									{info.item.title ?? info.item.uuid}
-								</Text>
-								{info.item.preview && (
+							>
+								{areNotesSelected && (
+									<AnimatedView
+										className="flex-row h-full items-center justify-center bg-transparent pr-2"
+										entering={FadeIn}
+										exiting={FadeOut}
+									>
+										<Checkbox value={isSelected} />
+									</AnimatedView>
+								)}
+								<View className="shrink-0 h-auto w-auto bg-transparent flex-col gap-2 items-center justify-start">
+									<View className="flex-row items-center justify-center p-1 rounded-full border border-border size-8 bg-background-tertiary">
+										{isSyncing ? (
+											<ActivityIndicator
+												size="small"
+												color={textForeground.color}
+											/>
+										) : (
+											<Icon
+												note={info.item}
+												iconSize={18}
+											/>
+										)}
+									</View>
+									{info.item.pinned && (
+										<View className="flex-row items-center justify-center p-1 rounded-full border border-border size-8 bg-background-tertiary">
+											<Ionicons
+												name="pin-outline"
+												size={18}
+												color={textForeground.color}
+											/>
+										</View>
+									)}
+									{info.item.favorite && (
+										<View className="flex-row items-center justify-center p-1 rounded-full border border-border size-8 bg-background-tertiary">
+											<Ionicons
+												name="heart-outline"
+												size={18}
+												color={textRed500.color}
+											/>
+										</View>
+									)}
+								</View>
+								<View className="gap-1 w-full h-auto bg-transparent flex-col flex-1">
 									<Text
-										numberOfLines={2}
+										numberOfLines={1}
+										ellipsizeMode="middle"
+									>
+										{info.item.title ?? info.item.uuid}
+									</Text>
+									{info.item.preview && (
+										<Text
+											numberOfLines={2}
+											ellipsizeMode="tail"
+											className="text-muted-foreground text-xs"
+										>
+											{info.item.preview}
+										</Text>
+									)}
+									<Text
+										numberOfLines={1}
 										ellipsizeMode="tail"
 										className="text-muted-foreground text-xs"
 									>
-										{info.item.preview}
+										{simpleDate(Number(info.item.editedTimestamp))}
 									</Text>
-								)}
-								<Text
-									numberOfLines={1}
-									ellipsizeMode="tail"
-									className="text-muted-foreground text-xs"
-								>
-									{simpleDate(Number(info.item.editedTimestamp))}
-								</Text>
-								{participantsWithoutCurrentUser.length > 0 && (
-									<View className="flex-row flex-wrap gap-2 bg-transparent">
-										{participantsWithoutCurrentUser.map(participant => {
-											return (
-												<Image
-													key={participant.userId}
-													source={{
-														uri: participant.avatar?.startsWith("https://") ? participant.avatar : undefined
-													}}
-													className="w-6 h-6 rounded-full bg-secondary-foreground"
-													cachePolicy="disk"
-												/>
-											)
-										})}
-									</View>
-								)}
-								{tags.length > 0 && (
-									<View className="flex-row flex-wrap gap-2 bg-transparent">
-										{tags.map(tag => (
-											<View
-												key={tag.uuid}
-												className={cn(
-													"px-2 py-1 rounded-full border border-border",
-													isActive || isSelected ? "bg-background-tertiary" : "bg-background-secondary"
-												)}
-											>
-												<Text className="text-xs text-accent-foreground">{tag.name ?? tag.uuid}</Text>
-											</View>
-										))}
-									</View>
-								)}
+									{participantsWithoutCurrentUser.length > 0 && (
+										<View className="flex-row flex-wrap gap-2 bg-transparent pt-1">
+											{participantsWithoutCurrentUser.map(participant => {
+												return (
+													<Image
+														key={participant.userId}
+														source={{
+															uri: participant.avatar?.startsWith("https://") ? participant.avatar : undefined
+														}}
+														className="w-6 h-6 rounded-full bg-secondary-foreground"
+														cachePolicy="disk"
+													/>
+												)
+											})}
+										</View>
+									)}
+									{tags.length > 0 && (
+										<View className="flex-row flex-wrap gap-1.5 bg-transparent pt-1">
+											{tags.map(tag => (
+												<View
+													key={tag.uuid}
+													className="px-2 py-1 rounded-full border border-border flex-row items-center gap-1 bg-background-tertiary"
+												>
+													{tag.favorite && (
+														<Ionicons
+															name="heart-outline"
+															size={12}
+															color={textRed500.color}
+														/>
+													)}
+													<Text
+														className="text-xs text-muted-foreground"
+														ellipsizeMode="middle"
+														numberOfLines={1}
+													>
+														{tag.name ?? tag.uuid}
+													</Text>
+												</View>
+											))}
+										</View>
+									)}
+								</View>
 							</View>
 						</View>
-					</View>
-				</PressableOpacity>
-			</Menu>
-		</View>
-	)
-})
+					</PressableScale>
+				</Menu>
+			</View>
+		)
+	}
+)
 
 export default Note

@@ -4,7 +4,7 @@ import Header from "@/components/ui/header"
 import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
-import { type Note as TNote, NoteType } from "@filen/sdk-rs"
+import { NoteType } from "@filen/sdk-rs"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { PressableOpacity } from "@/components/ui/pressables"
@@ -12,7 +12,7 @@ import { useRouter, useLocalSearchParams } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
-import Note from "@/components/notes/note"
+import Note, { type ListItem as NoteListItem } from "@/components/notes/note"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import Text from "@/components/ui/text"
@@ -42,20 +42,26 @@ export const NoteTag = memo(() => {
 		return notesTagsQuery.data.find(t => t.uuid === uuid) ?? null
 	}, [uuid, notesTagsQuery.status, notesTagsQuery.data])
 
-	const notes = useMemo(() => {
+	const notes = useMemo((): NoteListItem[] => {
 		if (notesQuery.status !== "success") {
 			return []
 		}
 
-		return notesSorter.sort(notesQuery.data).filter(note => note.tags.some(t => t.uuid === tag?.uuid))
+		return notesSorter
+			.sort(notesQuery.data)
+			.filter(note => note.tags.some(t => t.uuid === tag?.uuid))
+			.map(n => ({
+				...n,
+				type: "note"
+			}))
 	}, [notesQuery.data, notesQuery.status, tag])
 
-	const renderItem = useCallback((info: ListRenderItemInfo<TNote>) => {
+	const renderItem = useCallback((info: ListRenderItemInfo<NoteListItem>) => {
 		return <Note info={info} />
 	}, [])
 
-	const keyExtractor = useCallback((note: TNote) => {
-		return note.uuid
+	const keyExtractor = useCallback((note: NoteListItem) => {
+		return note.type === "header" ? note.id : note.uuid
 	}, [])
 
 	const onRefresh = useCallback(async () => {
@@ -146,7 +152,7 @@ export const NoteTag = memo(() => {
 									return
 								}
 
-								useNotesStore.getState().setSelectedNotes(notes)
+								useNotesStore.getState().setSelectedNotes(notes.filter(n => n.type === "note"))
 							}}
 						>
 							<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>

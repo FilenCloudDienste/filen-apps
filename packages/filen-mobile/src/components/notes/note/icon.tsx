@@ -10,22 +10,7 @@ export enum NoteTypeExtended {
 
 export type IconKey = NoteType | NoteTypeExtended
 
-export const ICON_PROPS: Record<
-	IconKey,
-	{
-		name:
-			| "text-outline"
-			| "logo-markdown"
-			| "code-outline"
-			| "document-text-outline"
-			| "checkbox-outline"
-			| "trash-outline"
-			| "archive-outline"
-			| "person-outline"
-			| "eye-outline"
-		color?: string
-	}
-> = {
+export const ICON_PROPS = {
 	[NoteType.Text]: {
 		name: "text-outline",
 		color: "#3b82f6"
@@ -43,7 +28,7 @@ export const ICON_PROPS: Record<
 		color: "#06b6d4"
 	},
 	[NoteType.Checklist]: {
-		name: "checkbox-outline",
+		name: "checkmark-circle-outline",
 		color: "#a855f7"
 	},
 	[NoteTypeExtended.Trash]: {
@@ -54,7 +39,7 @@ export const ICON_PROPS: Record<
 		name: "archive-outline",
 		color: "#eab308"
 	}
-}
+} as const
 
 export const Icon = memo(
 	({ note, iconSize }: { note: Note; iconSize: number }) => {

@@ -121,15 +121,15 @@ export const VirtualListInner = memo(<T,>(props: LegendListProps<T> & React.RefA
 
 						if (props.emptyComponent) {
 							return (
-								<AnimatedView
-									className="flex-1"
+								<View
+									className="flex-1 bg-transparent"
 									style={{
 										width: layout.width,
 										height: layout.height
 									}}
 								>
 									{props.emptyComponent()}
-								</AnimatedView>
+								</View>
 							)
 						}
 

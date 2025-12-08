@@ -1,45 +1,75 @@
-import { Fragment } from "react"
+import { Fragment, useState } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import Header from "@/components/ui/header"
-import useNotesQuery from "@/queries/useNotes.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
-import { type Note as TNote } from "@filen/sdk-rs"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { Platform } from "react-native"
-import { PressableOpacity } from "@/components/ui/pressables"
+import { PressableScale } from "@/components/ui/pressables"
 import { useRouter } from "expo-router"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
-import Note from "@/components/notes/note"
+import Note, { type ListItem as NoteListItem } from "@/components/notes/note"
+import useNotesWithContentQuery from "@/queries/useNotesWithContent.query"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import Text from "@/components/ui/text"
 import { Paths } from "expo-file-system"
 import Menu from "@/components/ui/menu"
+import View from "@/components/ui/view"
 
 export const Notes = memo(() => {
-	const notesQuery = useNotesQuery()
+	const notesQuery = useNotesWithContentQuery()
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
 	const selectedNotes = useNotesStore(useShallow(state => state.selectedNotes))
+	const [searchQuery, setSearchQuery] = useState<string>("")
 
-	const notes = useMemo(() => {
+	const notes = useMemo((): NoteListItem[] => {
 		if (notesQuery.status !== "success") {
 			return []
 		}
 
-		return notesSorter.sort(notesQuery.data)
-	}, [notesQuery.data, notesQuery.status])
+		const grouped = notesSorter
+			.group({
+				notes: notesQuery.data,
+				groupArchived: true,
+				groupTrashed: true,
+				groupFavorited: true,
+				groupPinned: true
+			})
+			.filter(n => n.type === "note")
 
-	const renderItem = useCallback((info: ListRenderItemInfo<TNote>) => {
-		return <Note info={info} />
-	}, [])
+		if (searchQuery.trim() === "") {
+			return grouped
+		}
 
-	const keyExtractor = useCallback((note: TNote) => {
-		return note.uuid
+		return grouped.filter(note => {
+			const query = searchQuery.toLowerCase().trim()
+
+			return (
+				(note.title?.toLowerCase().trim().includes(query) ?? false) || (note.content?.toLowerCase().trim().includes(query) ?? false)
+			)
+		})
+	}, [notesQuery.data, notesQuery.status, searchQuery])
+
+	const renderItem = useCallback(
+		(info: ListRenderItemInfo<NoteListItem>) => {
+			return (
+				<Note
+					info={info}
+					nextNote={notes[info.index + 1]}
+					prevNote={notes[info.index - 1]}
+				/>
+			)
+		},
+		[notes]
+	)
+
+	const keyExtractor = useCallback((note: NoteListItem) => {
+		return note.type === "header" ? note.id : note.uuid
 	}, [])
 
 	const onRefresh = useCallback(async () => {
@@ -63,26 +93,30 @@ export const Notes = memo(() => {
 						return null
 					}
 
+					const onlyNotes = notes.filter(n => n.type === "note")
+
 					return (
-						<PressableOpacity
+						<PressableScale
+							hitSlop={20}
 							onPress={() => {
-								if (selectedNotes.length === notes.length) {
+								if (selectedNotes.length === onlyNotes.length) {
 									useNotesStore.getState().setSelectedNotes([])
 
 									return
 								}
 
-								useNotesStore.getState().setSelectedNotes(notes)
+								useNotesStore.getState().setSelectedNotes(onlyNotes)
 							}}
 						>
-							<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
-						</PressableOpacity>
+							<Text>{selectedNotes.length === onlyNotes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
+						</PressableScale>
 					)
 				}}
 				right={() => {
 					return (
 						<Menu
 							type="dropdown"
+							hitSlop={20}
 							buttons={[
 								{
 									id: "search",
@@ -94,22 +128,45 @@ export const Notes = memo(() => {
 								}
 							]}
 						>
-							<Ionicons
-								name="ellipsis-horizontal"
-								size={24}
-								color={textForeground.color as string}
-							/>
+							<PressableScale
+								hitSlop={20}
+								className="w-full h-full items-center justify-center"
+							>
+								<Ionicons
+									name="ellipsis-horizontal"
+									size={24}
+									color={textForeground.color as string}
+								/>
+							</PressableScale>
 						</Menu>
 					)
 				}}
+				searchBarOptions={{
+					placeholder: "tbd_search_notes",
+					onChangeText(e) {
+						setSearchQuery(e.nativeEvent.text)
+					},
+					autoFocus: true,
+					autoCapitalize: "none"
+				}}
 			/>
-			<SafeAreaView edges={["left", "right"]}>
+			<SafeAreaView
+				edges={["left", "right"]}
+				className="flex-col gap-4"
+			>
 				<VirtualList
 					className="flex-1"
 					contentInsetAdjustmentBehavior="automatic"
 					contentContainerClassName="pb-40"
 					keyExtractor={keyExtractor}
-					data={notes}
+					data={searchQuery.trim().length > 0 ? notes : []}
+					emptyComponent={() => {
+						return (
+							<View className="flex-1 items-center justify-center">
+								<Text>search</Text>
+							</View>
+						)
+					}}
 					renderItem={renderItem}
 					onRefresh={onRefresh}
 				/>

@@ -2,7 +2,7 @@ import { memo, useMemo } from "@/lib/memo"
 import { useResolveClassNames } from "uniwind"
 import { Stack } from "expo-router"
 import type { NativeStackHeaderItemProps } from "@react-navigation/native-stack"
-import type { BlurEffectTypes } from "react-native-screens"
+import type { BlurEffectTypes, SearchBarProps } from "react-native-screens"
 import { isLiquidGlassAvailable } from "@/components/ui/view"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
@@ -16,9 +16,9 @@ export const HeaderLeftRightWrapper = memo(
 		return (
 			<AnimatedView
 				className={cn(
-					"flex-row items-center justify-center",
+					"flex-row items-center justify-center gap-4",
 					Platform.select({
-						ios: liquidGlassAvailable ? "size-9" : "",
+						ios: liquidGlassAvailable ? "h-9 min-w-9" : "",
 						default: ""
 					}),
 					isLeft && (Platform.OS === "android" || !liquidGlassAvailable) ? "pr-4" : "",
@@ -47,7 +47,8 @@ export const Header = memo(
 		backTitle,
 		shadowVisible,
 		transparent,
-		blurEffect
+		blurEffect,
+		searchBarOptions
 	}: {
 		title: string
 		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
@@ -61,6 +62,7 @@ export const Header = memo(
 		shadowVisible?: boolean
 		transparent?: boolean
 		blurEffect?: BlurEffectTypes
+		searchBarOptions?: SearchBarProps
 	}) => {
 		const bgBackground = useResolveClassNames("bg-background")
 		const textForeground = useResolveClassNames("text-foreground")
@@ -75,6 +77,8 @@ export const Header = memo(
 					headerBackVisible: backVisible,
 					headerTransparent: transparent,
 					headerBackTitle: backTitle,
+					headerLargeTitle: largeTitle,
+					headerTitleAlign: largeTitle || !left ? "left" : "center",
 					headerStyle: transparent
 						? undefined
 						: {
@@ -84,6 +88,7 @@ export const Header = memo(
 						color: textForeground.color as string
 					},
 					headerTintColor: textForeground.color as string,
+					headerSearchBarOptions: searchBarOptions,
 					headerRight: props => {
 						if (!right) {
 							return null
@@ -104,7 +109,6 @@ export const Header = memo(
 							</HeaderLeftRightWrapper>
 						)
 					},
-					headerLargeTitle: largeTitle,
 					headerLeft: props => {
 						if (!left) {
 							return null
