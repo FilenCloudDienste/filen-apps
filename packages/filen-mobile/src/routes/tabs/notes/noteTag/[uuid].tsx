@@ -7,21 +7,17 @@ import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualLis
 import { NoteType } from "@filen/sdk-rs"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
-import { PressableOpacity } from "@/components/ui/pressables"
 import { useRouter, useLocalSearchParams } from "expo-router"
-import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import Note, { type ListItem as NoteListItem } from "@/components/notes/note"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
-import Text from "@/components/ui/text"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import prompts from "@/lib/prompts"
 import notesLib from "@/lib/notes"
 import { Paths } from "expo-file-system"
-import Menu from "@/components/ui/menu"
 
 export const NoteTag = memo(() => {
 	const router = useRouter()
@@ -138,96 +134,113 @@ export const NoteTag = memo(() => {
 		<Fragment>
 			<Header
 				title={selectedNotes.length > 0 ? `${selectedNotes.length} tbd_selected` : (tag?.name ?? tag?.uuid ?? "tbd_tag")}
-				left={() => {
+				leftItems={() => {
 					if (selectedNotes.length === 0) {
 						return null
 					}
 
-					return (
-						<PressableOpacity
-							onPress={() => {
-								if (selectedNotes.length === notes.length) {
-									useNotesStore.getState().setSelectedNotes([])
+					return [
+						{
+							type: "button",
+							props: {
+								hitSlop: 20,
+								onPress: () => {
+									if (selectedNotes.length === notes.length) {
+										useNotesStore.getState().setSelectedNotes([])
 
-									return
-								}
-
-								useNotesStore.getState().setSelectedNotes(notes.filter(n => n.type === "note"))
-							}}
-						>
-							<Text>{selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
-						</PressableOpacity>
-					)
-				}}
-				right={() => {
-					return (
-						<Menu
-							type="dropdown"
-							buttons={[
-								{
-									id: "create",
-									title: "tbd_create_note",
-									icon: "plus",
-									subButtons: [
-										{
-											title: "tbd_text",
-											id: "text",
-											icon: "text",
-											onPress: async () => {
-												await createNote(NoteType.Text)
-											}
-										},
-										{
-											title: "tbd_checklist",
-											id: "checklist",
-											icon: "checklist",
-											onPress: async () => {
-												await createNote(NoteType.Checklist)
-											}
-										},
-										{
-											title: "tbd_markdown",
-											id: "markdown",
-											icon: "markdown",
-											onPress: async () => {
-												await createNote(NoteType.Md)
-											}
-										},
-										{
-											title: "tbd_code",
-											id: "code",
-											icon: "code",
-											onPress: async () => {
-												await createNote(NoteType.Code)
-											}
-										},
-										{
-											title: "tbd_richtext",
-											id: "richtext",
-											icon: "richtext",
-											onPress: async () => {
-												await createNote(NoteType.Rich)
-											}
-										}
-									]
-								},
-								{
-									id: "search",
-									title: "tbd_search",
-									icon: "search",
-									onPress: () => {
-										router.push(Paths.join("/", "search", "notes"))
+										return
 									}
+
+									useNotesStore.getState().setSelectedNotes(notes.filter(n => n.type === "note"))
 								}
-							]}
-						>
-							<Ionicons
-								name="ellipsis-horizontal"
-								size={24}
-								color={textForeground.color as string}
-							/>
-						</Menu>
-					)
+							},
+							text: {
+								children: selectedNotes.length === notes.length ? "tbd_deselectAll" : "tbd_selectAll"
+							}
+						}
+					]
+				}}
+				rightItems={() => {
+					return [
+						{
+							type: "button",
+							props: {
+								hitSlop: 20,
+								onPress: () => {
+									router.push(Paths.join("/", "search", "notesTags"))
+								}
+							},
+							icon: {
+								name: "search",
+								size: 24,
+								color: textForeground.color
+							}
+						},
+						{
+							type: "menu",
+							props: {
+								type: "dropdown",
+								hitSlop: 20,
+								buttons: [
+									{
+										id: "create",
+										title: "tbd_create_note",
+										icon: "plus",
+										subButtons: [
+											{
+												title: "tbd_text",
+												id: "text",
+												icon: "text",
+												onPress: async () => {
+													await createNote(NoteType.Text)
+												}
+											},
+											{
+												title: "tbd_checklist",
+												id: "checklist",
+												icon: "checklist",
+												onPress: async () => {
+													await createNote(NoteType.Checklist)
+												}
+											},
+											{
+												title: "tbd_markdown",
+												id: "markdown",
+												icon: "markdown",
+												onPress: async () => {
+													await createNote(NoteType.Md)
+												}
+											},
+											{
+												title: "tbd_code",
+												id: "code",
+												icon: "code",
+												onPress: async () => {
+													await createNote(NoteType.Code)
+												}
+											},
+											{
+												title: "tbd_richtext",
+												id: "richtext",
+												icon: "richtext",
+												onPress: async () => {
+													await createNote(NoteType.Rich)
+												}
+											}
+										]
+									}
+								]
+							},
+							triggerProps: {
+								hitSlop: 20
+							},
+							icon: {
+								name: "ellipsis-horizontal",
+								size: 24,
+								color: textForeground.color
+							}
+						}
+					]
 				}}
 			/>
 			<SafeAreaView edges={["left", "right"]}>

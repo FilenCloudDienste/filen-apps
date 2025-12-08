@@ -15,6 +15,8 @@ export type ListRenderItemInfo<
 	ItemType extends string | number | undefined = string | number | undefined
 > = LegendListRenderItemProps<Item, ItemType>
 
+export type ListRef = LegendListRef
+
 export type VirtualListExtraProps = {
 	itemHeight?: number
 	parentClassName?: string

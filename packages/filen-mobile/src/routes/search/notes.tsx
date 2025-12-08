@@ -5,10 +5,7 @@ import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
-import { Platform } from "react-native"
-import { PressableScale } from "@/components/ui/pressables"
 import { useRouter } from "expo-router"
-import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import Note, { type ListItem as NoteListItem } from "@/components/notes/note"
@@ -17,8 +14,8 @@ import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import Text from "@/components/ui/text"
 import { Paths } from "expo-file-system"
-import Menu from "@/components/ui/menu"
-import View from "@/components/ui/view"
+import View, { KeyboardAvoidingView } from "@/components/ui/view"
+import { Platform, TextInput } from "react-native"
 
 export const Notes = memo(() => {
 	const notesQuery = useNotesWithContentQuery()
@@ -86,90 +83,122 @@ export const Notes = memo(() => {
 	return (
 		<Fragment>
 			<Header
-				transparent={Platform.OS === "ios"}
+				transparent={false}
+				shadowVisible={false}
 				title={selectedNotes.length > 0 ? `${selectedNotes.length} tbd_selected` : "tbd_notes"}
-				left={() => {
+				leftItems={() => {
 					if (selectedNotes.length === 0) {
 						return null
 					}
 
 					const onlyNotes = notes.filter(n => n.type === "note")
 
-					return (
-						<PressableScale
-							hitSlop={20}
-							onPress={() => {
-								if (selectedNotes.length === onlyNotes.length) {
-									useNotesStore.getState().setSelectedNotes([])
+					return [
+						{
+							type: "button",
+							props: {
+								hitSlop: 20,
+								onPress: () => {
+									if (selectedNotes.length === onlyNotes.length) {
+										useNotesStore.getState().setSelectedNotes([])
 
-									return
-								}
-
-								useNotesStore.getState().setSelectedNotes(onlyNotes)
-							}}
-						>
-							<Text>{selectedNotes.length === onlyNotes.length ? "tbd_deselectAll" : "tbd_selectAll"}</Text>
-						</PressableScale>
-					)
-				}}
-				right={() => {
-					return (
-						<Menu
-							type="dropdown"
-							hitSlop={20}
-							buttons={[
-								{
-									id: "search",
-									title: "tbd_search",
-									icon: "search",
-									onPress: () => {
-										router.push(Paths.join("/", "search", "notes"))
+										return
 									}
+
+									useNotesStore.getState().setSelectedNotes(onlyNotes)
 								}
-							]}
-						>
-							<PressableScale
-								hitSlop={20}
-								className="w-full h-full items-center justify-center"
-							>
-								<Ionicons
-									name="ellipsis-horizontal"
-									size={24}
-									color={textForeground.color as string}
-								/>
-							</PressableScale>
-						</Menu>
-					)
+							},
+							text: {
+								children: selectedNotes.length === onlyNotes.length ? "tbd_deselectAll" : "tbd_selectAll"
+							}
+						}
+					]
 				}}
-				searchBarOptions={{
-					placeholder: "tbd_search_notes",
-					onChangeText(e) {
-						setSearchQuery(e.nativeEvent.text)
+				rightItems={() => {
+					if (selectedNotes.length === 0) {
+						return null
+					}
+
+					return [
+						{
+							type: "menu",
+							props: {
+								type: "dropdown",
+								hitSlop: 20,
+								buttons: [
+									{
+										id: "search",
+										title: "tbd_search",
+										icon: "search",
+										onPress: () => {
+											router.push(Paths.join("/", "search", "notes"))
+										}
+									}
+								]
+							},
+							icon: {
+								name: "ellipsis-horizontal",
+								size: 24,
+								color: textForeground.color
+							},
+							triggerProps: {
+								hitSlop: 20
+							}
+						}
+					]
+				}}
+				searchBarOptions={Platform.select({
+					ios: {
+						placeholder: "tbd_search_notes",
+						onChangeText(e) {
+							setSearchQuery(e.nativeEvent.text)
+						},
+						autoFocus: true,
+						autoCapitalize: "none",
+						placement: "stacked"
 					},
-					autoFocus: true,
-					autoCapitalize: "none"
-				}}
+					default: undefined
+				})}
 			/>
-			<SafeAreaView
-				edges={["left", "right"]}
-				className="flex-col gap-4"
-			>
-				<VirtualList
-					className="flex-1"
-					contentInsetAdjustmentBehavior="automatic"
-					contentContainerClassName="pb-40"
-					keyExtractor={keyExtractor}
-					data={searchQuery.trim().length > 0 ? notes : []}
-					emptyComponent={() => {
-						return (
-							<View className="flex-1 items-center justify-center">
-								<Text>search</Text>
+			<SafeAreaView edges={["left", "right"]}>
+				<KeyboardAvoidingView
+					className="flex-1 flex-col"
+					behavior="padding"
+				>
+					{Platform.select({
+						android: (
+							<View className="px-4 py-2 shrink-0">
+								<TextInput
+									className="bg-background-secondary px-5 py-4 rounded-full"
+									placeholder="tbd_search_notes"
+									onChangeText={setSearchQuery}
+									autoCapitalize="none"
+									autoCorrect={false}
+									returnKeyType="search"
+									autoComplete="off"
+									autoFocus={true}
+								/>
 							</View>
-						)
-					}}
-					renderItem={renderItem}
-					onRefresh={onRefresh}
-				/>
+						),
+						default: null
+					})}
+					<VirtualList
+						className="flex-1"
+						contentInsetAdjustmentBehavior="automatic"
+						contentContainerClassName="pb-40 pt-4"
+						keyExtractor={keyExtractor}
+						data={searchQuery.trim().length > 0 ? notes : []}
+						emptyComponent={() => {
+							return (
+								<View className="flex-1 items-center justify-center">
+									<Text>search</Text>
+								</View>
+							)
+						}}
+						renderItem={renderItem}
+						onRefresh={onRefresh}
+					/>
+				</KeyboardAvoidingView>
 			</SafeAreaView>
 		</Fragment>
 	)

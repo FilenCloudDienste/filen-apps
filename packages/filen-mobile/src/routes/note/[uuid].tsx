@@ -5,15 +5,13 @@ import { useLocalSearchParams, Redirect, useRouter } from "expo-router"
 import useNotesQuery from "@/queries/useNotes.query"
 import type { Note as TNote, NoteHistory } from "@filen/sdk-rs"
 import Content from "@/components/notes/content"
-import { ActivityIndicator, Platform } from "react-native"
+import { Platform } from "react-native"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
 import { memo, useMemo, useCallback } from "@/lib/memo"
 import { simpleDate } from "@/lib/time"
 import { run } from "@filen/utils"
-import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
-import { PressableOpacity } from "@/components/ui/pressables"
 import prompts from "@/lib/prompts"
 import notes from "@/lib/notes"
 import alerts from "@/lib/alerts"
@@ -77,32 +75,37 @@ export const Header = memo(
 				backVisible={true}
 				transparent={Platform.OS === "ios"}
 				backTitle="tbd_back"
-				right={() => {
+				rightItems={() => {
 					if (history) {
-						return (
-							<PressableOpacity
-								onPress={restoreFromHistory}
-								hitSlop={32}
-							>
-								<Ionicons
-									name="refresh"
-									size={24}
-									color={textForeground.color as string}
-								/>
-							</PressableOpacity>
-						)
+						return [
+							{
+								type: "button",
+								props: {
+									onPress: restoreFromHistory,
+									hitSlop: 32
+								},
+								icon: {
+									name: "refresh",
+									size: 24,
+									color: textForeground.color
+								}
+							}
+						]
 					}
 
 					if (!isSyncing) {
 						return null
 					}
 
-					return (
-						<ActivityIndicator
-							size="small"
-							color={textForeground.color as string}
-						/>
-					)
+					return [
+						{
+							type: "loader",
+							props: {
+								color: textForeground.color,
+								size: "small"
+							}
+						}
+					]
 				}}
 			/>
 		)

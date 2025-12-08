@@ -101,6 +101,19 @@ export const Note = memo(
 			return info.item.tags.sort((a, b) => fastLocaleCompare(a.name ?? a.uuid, b.name ?? b.uuid))
 		}, [info.item])
 
+		const roundedCn = useMemo(() => {
+			return cn(
+				nextNote?.type === "note" && prevNote?.type === "note" && "rounded-none",
+				nextNote?.type === "header" && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
+				nextNote?.type === "note" && prevNote?.type === "header" && "rounded-t-4xl rounded-b-none",
+				nextNote?.type === "header" && prevNote?.type === "header" && "rounded-4xl",
+				!nextNote && prevNote?.type === "header" && "rounded-4xl",
+				!prevNote && nextNote?.type === "note" && "rounded-t-4xl rounded-b-none",
+				!nextNote && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
+				!nextNote && !prevNote && "rounded-4xl"
+			)
+		}, [nextNote, prevNote])
+
 		if (info.item.type === "header") {
 			return (
 				<View className="w-full h-auto px-4 py-4 pb-2">
@@ -126,13 +139,7 @@ export const Note = memo(
 						className={cn(
 							"w-full h-auto flex-row",
 							Platform.OS === "ios" && cn("px-4", nextNote?.type === "note" ? "pb-0" : "pb4"),
-							nextNote?.type === "note" && prevNote?.type === "note" && "rounded-none",
-							nextNote?.type === "header" && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
-							nextNote?.type === "note" && prevNote?.type === "header" && "rounded-t-4xl rounded-b-none",
-							nextNote?.type === "header" && prevNote?.type === "header" && "rounded-4xl",
-							!nextNote && prevNote?.type === "header" && "rounded-4xl",
-							!prevNote && nextNote?.type === "note" && "rounded-t-4xl rounded-b-none",
-							!nextNote && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none"
+							roundedCn
 						)}
 						style={{
 							borderCurve: "continuous"
@@ -141,13 +148,7 @@ export const Note = memo(
 						<View
 							className={cn(
 								"w-full h-auto flex-row px-4",
-								nextNote?.type === "note" && prevNote?.type === "note" && "rounded-none",
-								nextNote?.type === "header" && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
-								nextNote?.type === "note" && prevNote?.type === "header" && "rounded-t-4xl rounded-b-none",
-								nextNote?.type === "header" && prevNote?.type === "header" && "rounded-4xl",
-								!nextNote && prevNote?.type === "header" && "rounded-4xl",
-								!prevNote && nextNote?.type === "note" && "rounded-t-4xl rounded-b-none",
-								!nextNote && prevNote?.type === "note" && "rounded-b-4xl rounded-t-none",
+								roundedCn,
 								isActive
 									? Platform.select({
 											ios: "bg-background-tertiary rounded-4xl",

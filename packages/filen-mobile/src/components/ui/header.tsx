@@ -1,22 +1,54 @@
 import { memo, useMemo } from "@/lib/memo"
 import { useResolveClassNames } from "uniwind"
 import { Stack } from "expo-router"
-import type { NativeStackHeaderItemProps } from "@react-navigation/native-stack"
 import type { BlurEffectTypes, SearchBarProps } from "react-native-screens"
-import { isLiquidGlassAvailable } from "@/components/ui/view"
-import { AnimatedView } from "@/components/ui/animated"
-import { FadeIn, FadeOut } from "react-native-reanimated"
+import { isLiquidGlassAvailable, View } from "@/components/ui/view"
 import { cn } from "@filen/utils"
-import { Platform } from "react-native"
+import { Platform, ActivityIndicator } from "react-native"
+import Menu from "@/components/ui/menu"
+import Ionicons from "@expo/vector-icons/Ionicons"
+import Text from "@/components/ui/text"
+import { PressableScale } from "@/components/ui/pressables"
+
+export type HeaderItem =
+	| {
+			type: "text"
+			props?: React.ComponentProps<typeof Text>
+	  }
+	| {
+			type: "menu"
+			props?: Omit<React.ComponentProps<typeof Menu>, "children">
+			text?: React.ComponentProps<typeof Text>
+			icon?: React.ComponentProps<typeof Ionicons>
+			triggerProps?: React.ComponentProps<typeof PressableScale>
+	  }
+	| {
+			type: "button"
+			props?: React.ComponentProps<typeof PressableScale>
+			text?: React.ComponentProps<typeof Text>
+			icon?: React.ComponentProps<typeof Ionicons>
+	  }
+	| {
+			type: "custom"
+			children: React.ReactNode
+	  }
+	| {
+			type: "loader"
+			props?: React.ComponentProps<typeof ActivityIndicator>
+	  }
 
 export const HeaderLeftRightWrapper = memo(
-	({ children, className, isLeft, isRight }: { children: React.ReactNode; className?: string; isLeft?: boolean; isRight?: boolean }) => {
+	({ className, isLeft, isRight, items }: { className?: string; isLeft?: boolean; isRight?: boolean; items?: HeaderItem[] }) => {
 		const liquidGlassAvailable = useMemo(() => isLiquidGlassAvailable(), [])
 
 		return (
-			<AnimatedView
+			<View
 				className={cn(
-					"flex-row items-center justify-center gap-4",
+					"flex-row items-center justify-center gap-4 bg-transparent",
+					Platform.select({
+						ios: items && items.length > 1 && liquidGlassAvailable ? "px-2" : "",
+						default: ""
+					}),
 					Platform.select({
 						ios: liquidGlassAvailable ? "h-9 min-w-9" : "",
 						default: ""
@@ -25,22 +57,95 @@ export const HeaderLeftRightWrapper = memo(
 					isRight && (Platform.OS === "android" || !liquidGlassAvailable) ? "pl-4" : "",
 					className
 				)}
-				entering={FadeIn}
-				exiting={FadeOut}
 			>
-				{children}
-			</AnimatedView>
+				{items?.map((item, index) => {
+					switch (item.type) {
+						case "text": {
+							return (
+								<Text
+									key={index}
+									{...item.props}
+								/>
+							)
+						}
+
+						case "button": {
+							return (
+								<PressableScale
+									key={index}
+									{...item.props}
+								>
+									{item.icon ? (
+										<Ionicons
+											{...item.icon}
+											size={ICON_SIZE}
+										/>
+									) : (
+										<Text {...item.text} />
+									)}
+								</PressableScale>
+							)
+						}
+
+						case "menu": {
+							return (
+								<Menu
+									key={index}
+									{...item.props}
+									type="dropdown"
+								>
+									<PressableScale {...item.triggerProps}>
+										{item.icon ? (
+											<Ionicons
+												{...item.icon}
+												size={ICON_SIZE}
+											/>
+										) : (
+											<Text {...item.text} />
+										)}
+									</PressableScale>
+								</Menu>
+							)
+						}
+
+						case "custom": {
+							return (
+								<View
+									className="bg-transparent"
+									key={index}
+								>
+									{item.children}
+								</View>
+							)
+						}
+
+						case "loader": {
+							return (
+								<ActivityIndicator
+									key={index}
+									{...item.props}
+								/>
+							)
+						}
+
+						default: {
+							return null
+						}
+					}
+				})}
+			</View>
 		)
 	}
 )
 
+export const ICON_SIZE = Platform.select({
+	ios: 24,
+	default: 24
+})
+
 export const Header = memo(
 	({
 		title,
-		right,
-		rightClassName,
-		left,
-		leftClassName,
 		shown,
 		largeTitle,
 		backVisible,
@@ -48,13 +153,11 @@ export const Header = memo(
 		shadowVisible,
 		transparent,
 		blurEffect,
-		searchBarOptions
+		searchBarOptions,
+		leftItems,
+		rightItems
 	}: {
 		title: string
-		right?: (props: NativeStackHeaderItemProps) => React.ReactNode
-		left?: (props: NativeStackHeaderItemProps) => React.ReactNode
-		rightClassName?: string
-		leftClassName?: string
 		shown?: boolean
 		largeTitle?: boolean
 		backVisible?: boolean
@@ -63,6 +166,8 @@ export const Header = memo(
 		transparent?: boolean
 		blurEffect?: BlurEffectTypes
 		searchBarOptions?: SearchBarProps
+		leftItems?: HeaderItem[] | (() => HeaderItem[] | null | undefined | void)
+		rightItems?: HeaderItem[] | (() => HeaderItem[] | null | undefined | void)
 	}) => {
 		const bgBackground = useResolveClassNames("bg-background")
 		const textForeground = useResolveClassNames("text-foreground")
@@ -78,7 +183,7 @@ export const Header = memo(
 					headerTransparent: transparent,
 					headerBackTitle: backTitle,
 					headerLargeTitle: largeTitle,
-					headerTitleAlign: largeTitle || !left ? "left" : "center",
+					headerTitleAlign: "left",
 					headerStyle: transparent
 						? undefined
 						: {
@@ -89,44 +194,32 @@ export const Header = memo(
 					},
 					headerTintColor: textForeground.color as string,
 					headerSearchBarOptions: searchBarOptions,
-					headerRight: props => {
-						if (!right) {
-							return null
-						}
+					headerRight: () => {
+						const items = typeof rightItems === "function" ? rightItems() : rightItems
 
-						const rightResult = right(props)
-
-						if (!rightResult) {
+						if (!items || items.length === 0) {
 							return null
 						}
 
 						return (
 							<HeaderLeftRightWrapper
 								isRight={true}
-								className={rightClassName}
-							>
-								{rightResult}
-							</HeaderLeftRightWrapper>
+								items={items}
+							/>
 						)
 					},
-					headerLeft: props => {
-						if (!left) {
-							return null
-						}
+					headerLeft: () => {
+						const items = typeof leftItems === "function" ? leftItems() : leftItems
 
-						const leftResult = left(props)
-
-						if (!leftResult) {
+						if (!items || items.length === 0) {
 							return null
 						}
 
 						return (
 							<HeaderLeftRightWrapper
 								isLeft={true}
-								className={leftClassName}
-							>
-								{leftResult}
-							</HeaderLeftRightWrapper>
+								items={items}
+							/>
 						)
 					}
 				}}

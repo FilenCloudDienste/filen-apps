@@ -471,7 +471,8 @@ export const MenuInner = memo(
 		onCloseMenu,
 		testID,
 		renderPreview,
-		hitSlop
+		hitSlop,
+		iosLib
 	}: {
 		children: React.ReactNode
 		type?: "dropdown" | "context"
@@ -493,6 +494,7 @@ export const MenuInner = memo(
 					left?: number
 					right?: number
 			  }
+		iosLib?: "expo-ui" | "react-native-ios-context-menu"
 	}) => {
 		const uniqueButtons = useMemo(() => {
 			if (!buttons) {
@@ -537,7 +539,10 @@ export const MenuInner = memo(
 		}
 
 		if (Platform.OS === "ios") {
-			if (type === "context") {
+			// TODO
+			// We have to fallback to react-native-ios-context-menu for context menus due to bugs with expo/ui ContextMenu. Expo/ui ContextMenu does not like being in a ScrollView.
+			// We almost always use context menus in a ScrollView, so we have to use the more stable library for now.
+			if (type === "context" && iosLib !== "expo-ui") {
 				return (
 					<ContextMenuView
 						hitSlop={hitSlop}
@@ -579,7 +584,7 @@ export const MenuInner = memo(
 					testID={testID ? `${testID}-host` : undefined}
 				>
 					<SwiftUiContextMenu
-						activationMethod="singlePress"
+						activationMethod={type === "context" ? "longPress" : "singlePress"}
 						testID={testID}
 					>
 						{renderPreview && <SwiftUiContextMenu.Preview>{renderPreview()}</SwiftUiContextMenu.Preview>}

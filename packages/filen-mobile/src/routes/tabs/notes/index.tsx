@@ -8,24 +8,19 @@ import { type Note as TNote, NoteType, type NoteTag } from "@filen/sdk-rs"
 import { run, fastLocaleCompare } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { Platform } from "react-native"
-import { PressableScale } from "@/components/ui/pressables"
 import { useRouter } from "expo-router"
-import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import Note, { type ListItem as NoteListItem } from "@/components/notes/note"
 import useNotesStore from "@/stores/useNotes.store"
 import { useShallow } from "zustand/shallow"
-import Text from "@/components/ui/text"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import prompts from "@/lib/prompts"
 import notesLib from "@/lib/notes"
 import { Paths } from "expo-file-system"
-import Menu from "@/components/ui/menu"
 import { useSecureStore } from "@/lib/secureStore"
 import Tag from "@/components/notes/tag"
-import View from "@/components/ui/view"
 
 export const Notes = memo(() => {
 	const notesQuery = useNotesQuery()
@@ -179,68 +174,73 @@ export const Notes = memo(() => {
 							? `${selectedTags.length} tbd_selected`
 							: "tbd_tags"
 				}
-				left={() => {
+				leftItems={() => {
 					if (selectedNotes.length === 0 && selectedTags.length === 0) {
 						return null
 					}
 
 					const onlyNotes = notes.filter(n => n.type === "note")
 
-					return (
-						<PressableScale
-							hitSlop={20}
-							onPress={() => {
-								if (notesViewMode === "notes") {
-									if (selectedNotes.length === onlyNotes.length) {
-										useNotesStore.getState().setSelectedNotes([])
+					return [
+						{
+							type: "button",
+							props: {
+								hitSlop: 20,
+								onPress: () => {
+									if (notesViewMode === "notes") {
+										if (selectedNotes.length === onlyNotes.length) {
+											useNotesStore.getState().setSelectedNotes([])
 
-										return
+											return
+										}
+
+										useNotesStore.getState().setSelectedNotes(onlyNotes)
+									} else {
+										if (selectedTags.length === notesTags.length) {
+											useNotesStore.getState().setSelectedTags([])
+
+											return
+										}
+
+										useNotesStore.getState().setSelectedTags(notesTags)
 									}
-
-									useNotesStore.getState().setSelectedNotes(onlyNotes)
-								} else {
-									if (selectedTags.length === notesTags.length) {
-										useNotesStore.getState().setSelectedTags([])
-
-										return
-									}
-
-									useNotesStore.getState().setSelectedTags(notesTags)
 								}
-							}}
-						>
-							<Text>
-								{notesViewMode === "notes"
-									? selectedNotes.length === onlyNotes.length
-										? "tbd_deselectAll"
-										: "tbd_selectAll"
-									: selectedTags.length === notesTags.length
-										? "tbd_deselectAll"
-										: "tbd_selectAll"}
-							</Text>
-						</PressableScale>
-					)
+							},
+							text: {
+								children:
+									notesViewMode === "notes"
+										? selectedNotes.length === onlyNotes.length
+											? "tbd_deselectAll"
+											: "tbd_selectAll"
+										: selectedTags.length === notesTags.length
+											? "tbd_deselectAll"
+											: "tbd_selectAll"
+							}
+						}
+					]
 				}}
-				right={() => {
-					return (
-						<View className="bg-transparent flex-row items-center gap-4 px-2">
-							<PressableScale
-								hitSlop={20}
-								className="items-center justify-center"
-								onPress={() => {
+				rightItems={() => {
+					return [
+						{
+							type: "button",
+							props: {
+								hitSlop: 20,
+								onPress: () => {
 									router.push(Paths.join("/", "search", "notes"))
-								}}
-							>
-								<Ionicons
-									name="search-outline"
-									size={24}
-									color={textForeground.color as string}
-								/>
-							</PressableScale>
-							<Menu
-								type="dropdown"
-								hitSlop={20}
-								buttons={[
+								}
+							},
+							icon: {
+								name: "search",
+								size: 24,
+								color: textForeground.color
+							}
+						},
+						{
+							type: "menu",
+							props: {
+								type: "dropdown",
+								hitSlop: 20,
+								buttons: [
 									{
 										id: "create",
 										title: "tbd_create_note",
@@ -313,18 +313,18 @@ export const Notes = memo(() => {
 											}
 										]
 									}
-								]}
-							>
-								<PressableScale hitSlop={20}>
-									<Ionicons
-										name="ellipsis-horizontal"
-										size={24}
-										color={textForeground.color as string}
-									/>
-								</PressableScale>
-							</Menu>
-						</View>
-					)
+								]
+							},
+							triggerProps: {
+								hitSlop: 20
+							},
+							icon: {
+								name: "ellipsis-horizontal",
+								size: 24,
+								color: textForeground.color
+							}
+						}
+					]
 				}}
 			/>
 			<SafeAreaView edges={["left", "right"]}>
