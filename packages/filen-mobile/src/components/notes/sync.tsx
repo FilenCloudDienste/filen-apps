@@ -14,7 +14,6 @@ export class Sync {
 	private syncTimeout: ReturnType<typeof createExecutableTimeout> | null = null
 	public readonly sqliteKvKey: string = "temporaryNoteContents"
 	private initDone: boolean = false
-	private flushTimeout: ReturnType<typeof createExecutableTimeout> | null = null
 
 	public constructor() {
 		this.restoreFromDisk()
@@ -37,7 +36,9 @@ export class Sync {
 
 			const [fromDisk, fromCloud] = await Promise.all([sqlite.kvAsync.get<TemporaryContent>(this.sqliteKvKey), notes.list()])
 
-			if (!fromDisk) {
+			console.log("fromDisk", fromDisk)
+
+			if (!fromDisk || Object.keys(fromDisk).length === 0) {
 				return
 			}
 
@@ -91,40 +92,53 @@ export class Sync {
 		this.initDone = true
 	}
 
-	private async flushToDisk(temporaryContent?: TemporaryContent): Promise<void> {
+	public async flushToDisk(temporaryContent: TemporaryContent, requireMutex: boolean = true): Promise<void> {
 		const result = await run(async defer => {
-			await Promise.all([this.storageMutex.acquire(), this.waitForInit()])
+			await Promise.all([!requireMutex ? Promise.resolve() : this.storageMutex.acquire(), this.waitForInit()])
 
 			defer(() => {
-				this.storageMutex.release()
+				if (requireMutex) {
+					this.storageMutex.release()
+				}
 			})
 
-			await sqlite.kvAsync.set(this.sqliteKvKey, temporaryContent ?? useNotesStore.getState().temporaryContent)
+			if (Object.keys(temporaryContent).length === 0) {
+				await sqlite.kvAsync.remove(this.sqliteKvKey)
+
+				console.log("Flushed note sync to disk (deleted)", 0)
+
+				return
+			}
+
+			await sqlite.kvAsync.set(this.sqliteKvKey, temporaryContent)
+
+			console.log("Flushed note sync to disk", Object.keys(temporaryContent).length)
 		})
 
 		if (!result.success) {
 			console.error("Error flushing note sync to disk:", result.error)
 		}
+
+		console.log("temp", await sqlite.kvAsync.get<TemporaryContent>(this.sqliteKvKey))
 	}
 
-	public flushToDiskDebounced(temporaryContent?: TemporaryContent): void {
-		this.flushTimeout?.cancel()
-
-		this.flushTimeout = createExecutableTimeout(() => {
-			this.flushToDisk(temporaryContent).catch(console.error)
-		}, 3000)
-	}
-
-	private async sync(temporaryContent?: TemporaryContent): Promise<void> {
+	private async sync(): Promise<void> {
 		const result = await run(async defer => {
-			await Promise.all([this.mutex.acquire(), this.waitForInit()])
+			await Promise.all([this.mutex.acquire(), this.waitForInit(), this.storageMutex.acquire()])
 
 			defer(() => {
 				this.mutex.release()
+				this.storageMutex.release()
 			})
 
+			const fromDisk = await sqlite.kvAsync.get<TemporaryContent>(this.sqliteKvKey)
+
+			if (!fromDisk || Object.keys(fromDisk).length === 0) {
+				return
+			}
+
 			await Promise.all(
-				Object.entries(temporaryContent ?? useNotesStore.getState().temporaryContent).map(async ([_, contents]) => {
+				Object.entries(fromDisk).map(async ([_, contents]) => {
 					if (contents.length === 0) {
 						return
 					}
@@ -158,7 +172,9 @@ export class Sync {
 							}
 						}
 
-						this.flushToDisk(updated)
+						console.log(updated)
+
+						this.flushToDisk(updated, false)
 							.then(() => {
 								didFlushToDisk = true
 							})
@@ -178,19 +194,20 @@ export class Sync {
 			console.error(result.error)
 			alerts.error(result.error)
 		}
+
+		console.log("Sync completed")
 	}
 
-	public syncDebounced(temporaryContent?: TemporaryContent): void {
+	public syncDebounced(): void {
 		this.syncTimeout?.cancel()
 
 		this.syncTimeout = createExecutableTimeout(() => {
-			this.sync(temporaryContent).catch(console.error)
+			this.sync().catch(console.error)
 		}, 3000)
 	}
 
 	public executeNow(): void {
 		this.syncTimeout?.execute()
-		this.flushTimeout?.execute()
 	}
 }
 
@@ -216,8 +233,11 @@ export const SyncHost = memo(() => {
 			return
 		}
 
-		sync.flushToDiskDebounced(temporaryContent)
-		sync.syncDebounced(temporaryContent)
+		sync.flushToDisk(temporaryContent)
+			.then(() => {
+				sync.syncDebounced()
+			})
+			.catch(console.error)
 	}, [temporaryContent])
 
 	return null

@@ -220,6 +220,7 @@ export class Sqlite {
 		},
 		clear: async (): Promise<void> => {
 			const db = await this.openDb()
+
 			await db.runAsync("DELETE FROM kv")
 		},
 		contains: async (key: string): Promise<boolean> => {

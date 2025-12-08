@@ -18,6 +18,7 @@ import { actionSheet } from "@/providers/actionSheet.provider"
 import { Paths } from "expo-file-system"
 import { pack } from "msgpackr"
 import { Buffer } from "@craftzdog/react-native-buffer"
+import { Platform } from "react-native"
 
 export type NoteMenuOrigin = "notes" | "search" | "content"
 
@@ -120,7 +121,7 @@ export const Menu = memo(
 							({
 								id: `history_${historyItem.id}`,
 								title: simpleDate(Number(historyItem.editedTimestamp)),
-								keepMenuOpenOnPress: true,
+								keepMenuOpenOnPress: Platform.OS === "android",
 								onPress: () => {
 									router.push({
 										pathname: Paths.join("/", "note", note.uuid),
@@ -164,7 +165,7 @@ export const Menu = memo(
 							return {
 								id: "addParticipant",
 								title: "tbd_addParticipant",
-								keepMenuOpenOnPress: true,
+								keepMenuOpenOnPress: Platform.OS === "android",
 								icon: "plus",
 								onPress: async () => {
 									// TODO: Add participant
@@ -175,7 +176,7 @@ export const Menu = memo(
 						return {
 							id: `participant_${subButton.participant.userId}`,
 							title: subButton.participant.email,
-							keepMenuOpenOnPress: true,
+							keepMenuOpenOnPress: Platform.OS === "android",
 							icon: subButton.participant.permissionsWrite ? "edit" : "eye",
 							onPress: () => {
 								actionSheet.show({
@@ -292,7 +293,7 @@ export const Menu = memo(
 													: type === NoteType.Md
 														? "markdown"
 														: undefined,
-								keepMenuOpenOnPress: true,
+								keepMenuOpenOnPress: Platform.OS === "android",
 								onPress: () => {
 									runWithLoading(async () => {
 										const content = await notes.getContent({
@@ -372,7 +373,7 @@ export const Menu = memo(
 								id: "createTag",
 								title: "tbd_createTag",
 								icon: "plus",
-								keepMenuOpenOnPress: true,
+								keepMenuOpenOnPress: Platform.OS === "android",
 								onPress: async () => {
 									const result = await run(async () => {
 										return await prompts.input({
@@ -416,7 +417,7 @@ export const Menu = memo(
 							title: subButton.tag.name ?? subButton.tag.uuid,
 							checked: tagged,
 							icon: "tag",
-							keepMenuOpenOnPress: true,
+							keepMenuOpenOnPress: Platform.OS === "android",
 							onPress: () => {
 								runWithLoading(async () => {
 									if (tagged) {

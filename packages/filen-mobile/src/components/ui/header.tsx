@@ -37,6 +37,11 @@ export type HeaderItem =
 			props?: React.ComponentProps<typeof ActivityIndicator>
 	  }
 
+export const ICON_SIZE = Platform.select({
+	ios: 24,
+	default: 24
+})
+
 export const HeaderLeftRightWrapper = memo(
 	({ className, isLeft, isRight, items }: { className?: string; isLeft?: boolean; isRight?: boolean; items?: HeaderItem[] }) => {
 		const liquidGlassAvailable = useMemo(() => isLiquidGlassAvailable(), [])
@@ -44,13 +49,14 @@ export const HeaderLeftRightWrapper = memo(
 		return (
 			<View
 				className={cn(
-					"flex-row items-center justify-center gap-4 bg-transparent",
-					Platform.select({
-						ios: items && items.length > 1 && liquidGlassAvailable ? "px-2" : "",
-						default: ""
-					}),
+					"flex-row items-center justify-center bg-transparent",
 					Platform.select({
 						ios: liquidGlassAvailable ? "h-9 min-w-9" : "",
+						default: ""
+					}),
+					items && items.length >= 2 ? "gap-4" : "",
+					Platform.select({
+						ios: items && items.length >= 2 && liquidGlassAvailable ? "px-2" : "",
 						default: ""
 					}),
 					isLeft && (Platform.OS === "android" || !liquidGlassAvailable) ? "pr-4" : "",
@@ -138,11 +144,6 @@ export const HeaderLeftRightWrapper = memo(
 	}
 )
 
-export const ICON_SIZE = Platform.select({
-	ios: 24,
-	default: 24
-})
-
 export const Header = memo(
 	({
 		title,
@@ -171,6 +172,27 @@ export const Header = memo(
 	}) => {
 		const bgBackground = useResolveClassNames("bg-background")
 		const textForeground = useResolveClassNames("text-foreground")
+		const liquidGlassAvailable = useMemo(() => isLiquidGlassAvailable(), [])
+
+		const headerRightItems = useMemo(() => {
+			const items = typeof rightItems === "function" ? rightItems() : rightItems
+
+			if (!items || items.length === 0) {
+				return []
+			}
+
+			return items
+		}, [rightItems])
+
+		const headerLeftItems = useMemo(() => {
+			const items = typeof leftItems === "function" ? leftItems() : leftItems
+
+			if (!items || items.length === 0) {
+				return []
+			}
+
+			return items
+		}, [leftItems])
 
 		return (
 			<Stack.Screen
@@ -178,7 +200,7 @@ export const Header = memo(
 					headerTitle: title,
 					headerShown: shown ?? true,
 					headerShadowVisible: transparent ? true : shadowVisible,
-					headerBlurEffect: !isLiquidGlassAvailable() ? blurEffect : undefined,
+					headerBlurEffect: !liquidGlassAvailable ? blurEffect : undefined,
 					headerBackVisible: backVisible,
 					headerTransparent: transparent,
 					headerBackTitle: backTitle,
@@ -194,34 +216,24 @@ export const Header = memo(
 					},
 					headerTintColor: textForeground.color as string,
 					headerSearchBarOptions: searchBarOptions,
-					headerRight: () => {
-						const items = typeof rightItems === "function" ? rightItems() : rightItems
-
-						if (!items || items.length === 0) {
-							return null
-						}
-
-						return (
-							<HeaderLeftRightWrapper
-								isRight={true}
-								items={items}
-							/>
-						)
-					},
-					headerLeft: () => {
-						const items = typeof leftItems === "function" ? leftItems() : leftItems
-
-						if (!items || items.length === 0) {
-							return null
-						}
-
-						return (
-							<HeaderLeftRightWrapper
-								isLeft={true}
-								items={items}
-							/>
-						)
-					}
+					headerRight:
+						headerRightItems.length > 0
+							? () => (
+									<HeaderLeftRightWrapper
+										isRight={true}
+										items={headerRightItems}
+									/>
+								)
+							: undefined,
+					headerLeft:
+						headerLeftItems.length > 0
+							? () => (
+									<HeaderLeftRightWrapper
+										isLeft={true}
+										items={headerLeftItems}
+									/>
+								)
+							: undefined
 				}}
 			/>
 		)
