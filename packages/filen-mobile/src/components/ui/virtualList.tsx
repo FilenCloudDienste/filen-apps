@@ -113,6 +113,7 @@ export const VirtualListInner = memo(<T,>(props: LegendListProps<T> & React.RefA
 					refreshControl={refreshControl}
 					numColumns={itemsPerRow}
 					recycleItems={false}
+					maintainVisibleContentPosition={true}
 					showsHorizontalScrollIndicator={!props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
 					showsVerticalScrollIndicator={props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
 					scrollEnabled={!props.loading && (props.data ?? []).length > 0}

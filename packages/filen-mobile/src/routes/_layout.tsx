@@ -60,7 +60,9 @@ export const RootLayout = memo(() => {
 
 		setIsSetupDone(true)
 
-		SplashScreen.hideAsync().catch(console.error)
+		setTimeout(() => {
+			SplashScreen.hideAsync().catch(console.error)
+		}, 1)
 	}, [])
 
 	useEffect(() => {
@@ -73,7 +75,7 @@ export const RootLayout = memo(() => {
 			<GestureHandlerRootView
 				style={{
 					flex: 1,
-					backgroundColor: bgBackground.backgroundColor as string
+					backgroundColor: bgBackground.backgroundColor
 				}}
 			>
 				<KeyboardProvider>
@@ -95,7 +97,7 @@ export const RootLayout = memo(() => {
 													screenOptions={{
 														headerShown: false,
 														contentStyle: {
-															backgroundColor: bgBackground.backgroundColor as string
+															backgroundColor: bgBackground.backgroundColor
 														}
 													}}
 												/>

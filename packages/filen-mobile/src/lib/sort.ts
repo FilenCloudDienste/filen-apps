@@ -1,6 +1,6 @@
 import { parseNumbersFromString } from "@filen/utils"
 import type { DriveItem } from "@/types"
-import type { Note } from "@filen/sdk-rs"
+import type { Note, NoteTag } from "@filen/sdk-rs"
 import type { ListItem as NoteListItem, Item as NoteItem } from "@/components/notes/note"
 
 export type SortByType =
@@ -385,7 +385,8 @@ export class NotesSorter {
 		groupPinned,
 		groupFavorited,
 		groupArchived,
-		groupTrashed
+		groupTrashed,
+		tag
 	}: {
 		notes: (
 			| Note
@@ -397,7 +398,12 @@ export class NotesSorter {
 		groupFavorited?: boolean
 		groupArchived?: boolean
 		groupTrashed?: boolean
+		tag?: NoteTag
 	}): NoteListItem[] {
+		if (tag) {
+			notes = notes.filter(note => note.tags.some(t => t.uuid === tag.uuid))
+		}
+
 		const now = Date.now()
 		const result: NoteListItem[] = []
 		const sevenDaysMs = 7 * 24 * 60 * 60 * 1000

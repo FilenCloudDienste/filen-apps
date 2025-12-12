@@ -19,12 +19,12 @@ export const TabsLayout = memo(() => {
 
 	return (
 		<NativeTabs
-			backgroundColor={bgBackground.backgroundColor as string}
-			iconColor={textForeground.color as string}
-			badgeBackgroundColor={textRed500.color as string}
-			rippleColor={bgBackgroundSecondary.backgroundColor as string}
-			indicatorColor={bgBackgroundSecondary.backgroundColor as string}
-			tintColor={textForeground.color as string}
+			backgroundColor={bgBackground.backgroundColor}
+			iconColor={textForeground.color}
+			badgeBackgroundColor={textRed500.color}
+			rippleColor={bgBackgroundSecondary.backgroundColor}
+			indicatorColor={bgBackgroundSecondary.backgroundColor}
+			tintColor={textForeground.color}
 		>
 			<NativeTabs.Trigger name="drive">
 				<Label>tbd</Label>

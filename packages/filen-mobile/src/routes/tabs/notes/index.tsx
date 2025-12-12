@@ -8,7 +8,7 @@ import { type Note as TNote, NoteType, type NoteTag } from "@filen/sdk-rs"
 import { run, fastLocaleCompare } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { Platform } from "react-native"
-import { useRouter } from "expo-router"
+import { useRouter, useLocalSearchParams } from "expo-router"
 import { useResolveClassNames } from "uniwind"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import Note, { type ListItem as NoteListItem } from "@/components/notes/note"
@@ -21,6 +21,8 @@ import notesLib from "@/lib/notes"
 import { Paths } from "expo-file-system"
 import { useSecureStore } from "@/lib/secureStore"
 import Tag from "@/components/notes/tag"
+import View from "@/components/ui/view"
+import Text from "@/components/ui/text"
 
 export const Notes = memo(() => {
 	const notesQuery = useNotesQuery()
@@ -28,8 +30,19 @@ export const Notes = memo(() => {
 	const textForeground = useResolveClassNames("text-foreground")
 	const selectedNotes = useNotesStore(useShallow(state => state.selectedNotes))
 	const selectedTags = useNotesStore(useShallow(state => state.selectedTags))
-	const notesTagsQuery = useNotesTagsQuery()
 	const [notesViewMode, setNotesViewMode] = useSecureStore<"notes" | "tags">("notesViewMode", "notes")
+	const { tagUuid } = useLocalSearchParams<{
+		tagUuid?: string
+	}>()
+	const notesTagsQuery = useNotesTagsQuery()
+
+	const tag = useMemo(() => {
+		if (notesTagsQuery.status !== "success" || !tagUuid) {
+			return null
+		}
+
+		return notesTagsQuery.data.find(t => t.uuid === tagUuid) ?? null
+	}, [tagUuid, notesTagsQuery.status, notesTagsQuery.data])
 
 	const notes = useMemo((): NoteListItem[] => {
 		if (notesQuery.status !== "success") {
@@ -41,9 +54,10 @@ export const Notes = memo(() => {
 			groupArchived: true,
 			groupTrashed: true,
 			groupFavorited: true,
-			groupPinned: true
+			groupPinned: true,
+			tag: tag ?? undefined
 		})
-	}, [notesQuery.data, notesQuery.status])
+	}, [notesQuery.data, notesQuery.status, tag])
 
 	const notesTags = useMemo(() => {
 		if (notesTagsQuery.status !== "success") {
@@ -141,11 +155,20 @@ export const Notes = memo(() => {
 			}
 
 			const createResult = await runWithLoading(async () => {
-				return await notesLib.create({
+				const newNote = await notesLib.create({
 					title,
 					content: "",
 					type
 				})
+
+				if (tag) {
+					await notesLib.addTag({
+						note: newNote,
+						tag
+					})
+				}
+
+				return newNote
 			})
 
 			if (!createResult.success) {
@@ -157,14 +180,54 @@ export const Notes = memo(() => {
 
 			router.push(Paths.join("/", "note", createResult.data.uuid))
 		},
-		[router]
+		[router, tag]
 	)
+
+	const createTag = useCallback(async () => {
+		const result = await run(async () => {
+			return await prompts.input({
+				title: "tbd_create_tag",
+				message: "tbd_enter_tag_name",
+				cancelText: "tbd_cancel",
+				okText: "tbd_create"
+			})
+		})
+
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
+
+			return
+		}
+
+		if (result.data.cancelled || result.data.type !== "string") {
+			return
+		}
+
+		const tagName = result.data.value.trim()
+
+		if (tagName.length === 0) {
+			return
+		}
+
+		const createResult = await runWithLoading(async () => {
+			return await notesLib.createTag({
+				name: tagName
+			})
+		})
+
+		if (!createResult.success) {
+			console.error(createResult.error)
+			alerts.error(createResult.error)
+
+			return
+		}
+	}, [])
 
 	return (
 		<Fragment>
 			<Header
 				transparent={Platform.OS === "ios"}
-				blurEffect="systemChromeMaterial"
 				title={
 					notesViewMode === "notes"
 						? selectedNotes.length > 0
@@ -241,78 +304,94 @@ export const Notes = memo(() => {
 								type: "dropdown",
 								hitSlop: 20,
 								buttons: [
+									...(notesViewMode === "notes" || !!tag
+										? [
+												{
+													id: "create",
+													title: "tbd_create_note",
+													icon: "plus" as const,
+													subButtons: [
+														{
+															title: "tbd_text",
+															id: "text",
+															icon: "text" as const,
+															onPress: async () => {
+																await createNote(NoteType.Text)
+															}
+														},
+														{
+															title: "tbd_checklist",
+															id: "checklist",
+															icon: "checklist" as const,
+															onPress: async () => {
+																await createNote(NoteType.Checklist)
+															}
+														},
+														{
+															title: "tbd_markdown",
+															id: "markdown",
+															icon: "markdown" as const,
+															onPress: async () => {
+																await createNote(NoteType.Md)
+															}
+														},
+														{
+															title: "tbd_code",
+															id: "code",
+															icon: "code" as const,
+															onPress: async () => {
+																await createNote(NoteType.Code)
+															}
+														},
+														{
+															title: "tbd_richtext",
+															id: "richtext",
+															icon: "richtext" as const,
+															onPress: async () => {
+																await createNote(NoteType.Rich)
+															}
+														}
+													]
+												}
+											]
+										: []),
 									{
-										id: "create",
-										title: "tbd_create_note",
-										icon: "plus",
-										subButtons: [
-											{
-												title: "tbd_text",
-												id: "text",
-												icon: "text",
-												onPress: async () => {
-													await createNote(NoteType.Text)
-												}
-											},
-											{
-												title: "tbd_checklist",
-												id: "checklist",
-												icon: "checklist",
-												onPress: async () => {
-													await createNote(NoteType.Checklist)
-												}
-											},
-											{
-												title: "tbd_markdown",
-												id: "markdown",
-												icon: "markdown",
-												onPress: async () => {
-													await createNote(NoteType.Md)
-												}
-											},
-											{
-												title: "tbd_code",
-												id: "code",
-												icon: "code",
-												onPress: async () => {
-													await createNote(NoteType.Code)
-												}
-											},
-											{
-												title: "tbd_richtext",
-												id: "richtext",
-												icon: "richtext",
-												onPress: async () => {
-													await createNote(NoteType.Rich)
-												}
-											}
-										]
+										id: "createTag",
+										title: "tbd_create_tag",
+										icon: "plus" as const,
+										onPress: async () => {
+											await createTag()
+										}
 									},
-									{
-										id: "viewMode",
-										title: "tbd_viewMode",
-										icon: notesViewMode === "notes" ? "list" : "tag",
-										subButtons: [
-											{
-												title: "tbd_notes_view",
-												id: "notesView",
-												icon: "list",
-												checked: notesViewMode === "notes",
-												onPress: () => {
-													setNotesViewMode("notes")
+									...(!tag
+										? [
+												{
+													id: "viewMode",
+													title: "tbd_viewMode",
+													icon: notesViewMode === "notes" ? ("list" as const) : ("tag" as const),
+													subButtons: [
+														{
+															title: "tbd_notes_view",
+															id: "notesView",
+															icon: "list" as const,
+															checked: notesViewMode === "notes",
+															onPress: () => {
+																setNotesViewMode("notes")
+															}
+														},
+														{
+															title: "tbd_tags_view",
+															id: "tagsView",
+															icon: "tag" as const,
+															checked: notesViewMode === "tags",
+															onPress: () => {
+																setNotesViewMode("tags")
+															}
+														}
+													]
 												}
-											},
-											{
-												title: "tbd_tags_view",
-												id: "tagsView",
-												icon: "tag",
-												checked: notesViewMode === "tags",
-												onPress: () => {
-													setNotesViewMode("tags")
-												}
-											}
-										]
-									}
+											]
+										: [])
 								]
 							},
 							triggerProps: {
@@ -328,7 +407,7 @@ export const Notes = memo(() => {
 				}}
 			/>
 			<SafeAreaView edges={["left", "right"]}>
-				{notesViewMode === "notes" ? (
+				{notesViewMode === "notes" || !!tag ? (
 					<VirtualList
 						className="flex-1"
 						contentInsetAdjustmentBehavior="automatic"
@@ -337,6 +416,13 @@ export const Notes = memo(() => {
 						data={notes}
 						renderItem={renderItemNotesView}
 						onRefresh={onRefresh}
+						emptyComponent={() => {
+							return (
+								<View className="flex-1 items-center justify-center">
+									<Text>tbd</Text>
+								</View>
+							)
+						}}
 					/>
 				) : (
 					<VirtualList
@@ -347,6 +433,13 @@ export const Notes = memo(() => {
 						data={notesTags}
 						renderItem={renderItemTagsView}
 						onRefresh={onRefresh}
+						emptyComponent={() => {
+							return (
+								<View className="flex-1 items-center justify-center">
+									<Text>tbd</Text>
+								</View>
+							)
+						}}
 					/>
 				)}
 			</SafeAreaView>

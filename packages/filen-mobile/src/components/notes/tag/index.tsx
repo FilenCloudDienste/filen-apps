@@ -12,13 +12,14 @@ import { memo, useCallback } from "@/lib/memo"
 import { simpleDate } from "@/lib/time"
 import Menu from "@/components/notes/tag/menu"
 import { cn } from "@filen/utils"
-import { PressableOpacity } from "@/components/ui/pressables"
+import { PressableScale } from "@/components/ui/pressables"
 import Ionicons from "@expo/vector-icons/Ionicons"
 
 export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteTag>; notesForTag: Note[] }) => {
 	const router = useRouter()
 	const textForeground = useResolveClassNames("text-foreground")
 	const textRed500 = useResolveClassNames("text-red-500")
+	const textPrimary = useResolveClassNames("text-primary")
 	const isActive = useNotesStore(useShallow(state => state.activeTag?.uuid === info.item.uuid))
 	const selected = useNotesStore(useShallow(state => state.selectedTags.some(t => t.uuid === info.item.uuid)))
 
@@ -43,11 +44,16 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 			return
 		}
 
-		router.push(Paths.join("/", "tabs", "notes", "noteTag", info.item.uuid))
+		router.push({
+			pathname: Paths.join("/", "tabs", "notes"),
+			params: {
+				tagUuid: info.item.uuid
+			}
+		})
 	}, [router, info.item])
 
 	return (
-		<View className="w-full h-auto border-b border-border flex-col">
+		<View className="w-full h-auto">
 			<Menu
 				className="flex-row w-full h-auto"
 				type="context"
@@ -55,7 +61,7 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 				origin="tags"
 				isAnchoredToRight={true}
 			>
-				<PressableOpacity
+				<PressableScale
 					onPress={onPress}
 					className="w-full h-auto flex-row"
 				>
@@ -71,32 +77,55 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 							selected ? "bg-background-secondary" : ""
 						)}
 					>
-						<View className="flex-1 flex-row gap-4 px-4 py-3 w-full h-auto bg-transparent items-center">
-							<View className="gap-2 shrink-0 h-auto w-auto bg-transparent">
-								{syncing ? (
-									<ActivityIndicator
-										size="small"
-										color={textForeground.color}
-									/>
-								) : (
-									<Ionicons
-										name="pricetag-outline"
-										size={24}
-										color={textForeground.color}
-									/>
-								)}
-							</View>
-							<View className="gap-1 w-full h-auto bg-transparent flex-col flex-1">
-								<View className="flex-1 flex-row gap-1.5 items-center w-full h-auto bg-transparent">
+						<View className="flex-1 flex-row gap-4 px-4 w-full h-auto bg-transparent items-center">
+							<View className="gap-2 shrink-0 h-auto w-auto bg-transparent flex-row items-center">
+								<View className="bg-transparent">
+									{notesForTag.length > 0 ? (
+										<Ionicons
+											name="chevron-forward-outline"
+											size={18}
+											color={textPrimary.color}
+										/>
+									) : (
+										<View className="size-[18px] bg-transparent" />
+									)}
+								</View>
+								<View
+									className={cn(
+										"rounded-lg p-2 shadow-md",
+										isActive ? "bg-background-tertiary" : "bg-background-secondary"
+									)}
+								>
 									{info.item.favorite && (
-										<View className="shrink-0 bg-transparent">
+										<View className="shrink-0 bg-transparent absolute -bottom-1.5 -right-1.5">
 											<Ionicons
 												name="heart"
-												size={textForeground.fontSize}
+												size={16}
 												color={textRed500.color}
 											/>
 										</View>
 									)}
+									{syncing ? (
+										<ActivityIndicator
+											size="small"
+											color={textForeground.color}
+										/>
+									) : (
+										<Ionicons
+											name="pricetags-outline"
+											size={20}
+											color={textForeground.color}
+										/>
+									)}
+								</View>
+							</View>
+							<View
+								className={cn(
+									"gap-1 w-full h-auto bg-transparent flex-col flex-1 py-2.5",
+									isActive && Platform.OS === "ios" ? "" : "border-b border-border"
+								)}
+							>
+								<View className="flex-1 flex-row gap-1.5 items-center w-full h-auto bg-transparent">
 									<Text
 										numberOfLines={1}
 										ellipsizeMode="middle"
@@ -115,7 +144,7 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 							</View>
 						</View>
 					</View>
-				</PressableOpacity>
+				</PressableScale>
 			</Menu>
 		</View>
 	)

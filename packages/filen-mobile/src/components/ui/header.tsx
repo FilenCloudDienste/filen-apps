@@ -80,6 +80,11 @@ export const HeaderLeftRightWrapper = memo(
 								<PressableScale
 									key={index}
 									{...item.props}
+									className={
+										!item.icon && Platform.OS === "ios" && liquidGlassAvailable
+											? cn("px-2", item.props?.className)
+											: item.props?.className
+									}
 								>
 									{item.icon ? (
 										<Ionicons
@@ -100,7 +105,14 @@ export const HeaderLeftRightWrapper = memo(
 									{...item.props}
 									type="dropdown"
 								>
-									<PressableScale {...item.triggerProps}>
+									<PressableScale
+										{...item.triggerProps}
+										className={
+											!item.icon && Platform.OS === "ios" && liquidGlassAvailable
+												? cn("px-2", item.props?.className)
+												: item.props?.className
+										}
+									>
 										{item.icon ? (
 											<Ionicons
 												{...item.icon}
@@ -200,7 +212,7 @@ export const Header = memo(
 					headerTitle: title,
 					headerShown: shown ?? true,
 					headerShadowVisible: transparent ? true : shadowVisible,
-					headerBlurEffect: !liquidGlassAvailable ? blurEffect : undefined,
+					headerBlurEffect: !liquidGlassAvailable && Platform.OS === "ios" ? (blurEffect ?? "systemChromeMaterial") : undefined,
 					headerBackVisible: backVisible,
 					headerTransparent: transparent,
 					headerBackTitle: backTitle,

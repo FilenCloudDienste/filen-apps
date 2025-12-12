@@ -191,7 +191,7 @@ export const Notes = memo(() => {
 						emptyComponent={() => {
 							return (
 								<View className="flex-1 items-center justify-center">
-									<Text>search</Text>
+									<Text>tbd</Text>
 								</View>
 							)
 						}}
