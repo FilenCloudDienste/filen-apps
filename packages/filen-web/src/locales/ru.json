@@ -143,5 +143,41 @@
                 "title": "Заметки"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Все",
+            "archived": "В архиве",
+            "favorited": "Избранное",
+            "pinned": "Закреплено",
+            "shared": "Поделено",
+            "trash": "Корзина",
+            "untagged": "Без тегов"
+        },
+        "menu": {
+            "addParticipants": "Добавить участников",
+            "archive": "Архивировать",
+            "createNote": "Создать заметку",
+            "delete": "Удалить",
+            "duplicate": "Дублировать",
+            "export": "Экспорт",
+            "favorited": "Избранное",
+            "history": "История",
+            "leave": "Покинуть",
+            "participants": "Участники",
+            "pinned": "Закреплено",
+            "rename": "Переименовать",
+            "restore": "Восстановить",
+            "share": "Поделиться",
+            "tags": "Теги",
+            "trash": "Корзина",
+            "type": "Тип",
+            "typeChecklist": "Контрольный список",
+            "typeCode": "Код",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Форматированный текст",
+            "typeText": "Текст"
+        },
+        "tag": "Тег"
     }
 }

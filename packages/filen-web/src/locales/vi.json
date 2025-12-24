@@ -143,5 +143,41 @@
                 "title": "Ghi chú"
             }
         }
+    },
+    "notes": {
+        "defaultTags": {
+            "all": "Tất cả",
+            "archived": "Đã lưu trữ",
+            "favorited": "Đã yêu thích",
+            "pinned": "Ghim",
+            "shared": "Đã chia sẻ",
+            "trash": "Thùng rác",
+            "untagged": "Không thẻ"
+        },
+        "menu": {
+            "addParticipants": "Thêm người tham gia",
+            "archive": "Lưu trữ",
+            "createNote": "Tạo ghi chú",
+            "delete": "Xóa",
+            "duplicate": "Sao chép",
+            "export": "Xuất",
+            "favorited": "Đã yêu thích",
+            "history": "Lịch sử",
+            "leave": "Rời đi",
+            "participants": "Người tham gia",
+            "pinned": "Ghim",
+            "rename": "Đổi tên",
+            "restore": "Khôi phục",
+            "share": "Chia sẻ",
+            "tags": "Các thẻ",
+            "trash": "Thùng rác",
+            "type": "Loại",
+            "typeChecklist": "Danh sách cần làm",
+            "typeCode": "Mã",
+            "typeMarkdown": "Markdown",
+            "typeRichtext": "Văn bản phong phú",
+            "typeText": "Văn bản"
+        },
+        "tag": "Thẻ"
     }
 }
