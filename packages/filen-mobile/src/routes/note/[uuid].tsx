@@ -147,7 +147,7 @@ export const Note = memo(() => {
 			<SafeAreaView edges={["left", "right"]}>
 				<Content
 					note={note}
-					history={history}
+					history={history ?? undefined}
 				/>
 			</SafeAreaView>
 		</Fragment>
