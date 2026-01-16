@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { withUniwind, useResolveClassNames } from "uniwind"
-import { type View as RNView, RefreshControl, ActivityIndicator } from "react-native"
+import { type View as RNView, RefreshControl, ActivityIndicator, Platform } from "react-native"
 import View from "@/components/ui/view"
 import useViewLayout from "@/hooks/useViewLayout"
 import { cn, run, type DeferFn } from "@filen/utils"
@@ -8,14 +8,16 @@ import alerts from "@/lib/alerts"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeOut } from "react-native-reanimated"
 import { memo, useCallback, useMemo } from "@/lib/memo"
-import { LegendList, type LegendListRenderItemProps, type LegendListProps, type LegendListRef } from "@legendapp/list"
+import {
+	FlashList,
+	type FlashListProps,
+	type FlashListRef,
+	type ListRenderItemInfo as FlashListListRenderItemInfo
+} from "@shopify/flash-list"
 
-export type ListRenderItemInfo<
-	Item,
-	ItemType extends string | number | undefined = string | number | undefined
-> = LegendListRenderItemProps<Item, ItemType>
+export type ListRenderItemInfo<T> = FlashListListRenderItemInfo<T>
 
-export type ListRef = LegendListRef
+export type ListRef<T> = FlashListRef<T>
 
 export type VirtualListExtraProps = {
 	itemHeight?: number
@@ -27,9 +29,10 @@ export type VirtualListExtraProps = {
 	loading?: boolean
 	emptyComponent?: () => React.ReactNode
 	footerComponent?: () => React.ReactNode
+	headerComponent?: () => React.ReactNode
 }
 
-export const VirtualListInner = memo(<T,>(props: LegendListProps<T> & React.RefAttributes<LegendListRef> & VirtualListExtraProps) => {
+export const VirtualListInner = memo(<T,>(props: FlashListProps<T> & React.RefAttributes<ListRef<T>> & VirtualListExtraProps) => {
 	const viewRef = useRef<RNView>(null)
 	const { layout, onLayout } = useViewLayout(viewRef)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
@@ -90,61 +93,60 @@ export const VirtualListInner = memo(<T,>(props: LegendListProps<T> & React.RefA
 	}
 
 	return (
-		<View className="flex-1">
-			<View
-				ref={viewRef}
-				className={cn("flex-1", props.parentClassName)}
-				onLayout={onLayout}
-			>
-				{props.loading && (
-					<AnimatedView
-						className="absolute inset-0 z-99 bg-background items-center justify-center"
-						exiting={FadeOut}
-					>
-						<ActivityIndicator
-							size="large"
-							color={textForeground.color as string}
-						/>
-					</AnimatedView>
-				)}
-				<LegendList<T>
-					contentInsetAdjustmentBehavior="automatic"
-					refreshing={refreshing}
-					refreshControl={refreshControl}
-					numColumns={itemsPerRow}
-					recycleItems={false}
-					maintainVisibleContentPosition={true}
-					showsHorizontalScrollIndicator={!props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
-					showsVerticalScrollIndicator={props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
-					scrollEnabled={!props.loading && (props.data ?? []).length > 0}
-					ListEmptyComponent={() => {
-						if (props.loading) {
-							return null
-						}
-
-						if (props.emptyComponent) {
-							return (
-								<View
-									className="flex-1 bg-transparent"
-									style={{
-										width: layout.width,
-										height: layout.height
-									}}
-								>
-									{props.emptyComponent()}
-								</View>
-							)
-						}
-
+		<View
+			ref={viewRef}
+			className={cn("flex-1", props.parentClassName)}
+			onLayout={onLayout}
+		>
+			{props.loading && (
+				<AnimatedView
+					className="absolute inset-0 z-99 bg-background items-center justify-center"
+					exiting={FadeOut}
+				>
+					<ActivityIndicator
+						size="large"
+						color={textForeground.color as string}
+					/>
+				</AnimatedView>
+			)}
+			<FlashList<T>
+				contentInsetAdjustmentBehavior="automatic"
+				refreshing={refreshing}
+				refreshControl={refreshControl}
+				numColumns={itemsPerRow}
+				maxItemsInRecyclePool={0}
+				removeClippedSubviews={Platform.OS === "android"}
+				showsHorizontalScrollIndicator={!props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
+				showsVerticalScrollIndicator={props.horizontal ? false : (props.data ?? []).length > 0 && !props.loading}
+				scrollEnabled={!props.loading && (props.data ?? []).length > 0}
+				ListEmptyComponent={() => {
+					if (props.loading) {
 						return null
-					}}
-					ListFooterComponent={props.footerComponent}
-					{...props}
-				/>
-			</View>
+					}
+
+					if (props.emptyComponent) {
+						return (
+							<View
+								className="flex-1 bg-transparent"
+								style={{
+									width: layout.width,
+									height: layout.height
+								}}
+							>
+								{props.emptyComponent()}
+							</View>
+						)
+					}
+
+					return null
+				}}
+				ListFooterComponent={props.footerComponent}
+				ListHeaderComponent={props.headerComponent}
+				{...props}
+			/>
 		</View>
 	)
-}) as (<T>(props: LegendListProps<T> & React.RefAttributes<LegendListRef> & VirtualListExtraProps) => React.JSX.Element) & {
+}) as (<T>(props: FlashListProps<T> & React.RefAttributes<ListRef<T>> & VirtualListExtraProps) => React.JSX.Element) & {
 	displayName?: string
 }
 

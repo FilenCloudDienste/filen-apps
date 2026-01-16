@@ -1,10 +1,8 @@
-import { useEffect, useRef, Fragment } from "react"
-import View, { KeyboardStickyView, LiquidGlassView, isLiquidGlassAvailable, BlurView } from "@/components/ui/view"
-import { type View as RNView, Platform } from "react-native"
-import { useResolveClassNames, useUniwind } from "uniwind"
+import { Fragment } from "react"
+import View, { KeyboardStickyView, CrossGlassContainerView } from "@/components/ui/view"
+import { useResolveClassNames } from "uniwind"
 import { PressableOpacity } from "@/components/ui/pressables"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import useViewLayout from "@/hooks/useViewLayout"
 import { useKeyboardState } from "react-native-keyboard-controller"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import Menu, { type MenuButton } from "@/components/ui/menu"
@@ -17,38 +15,8 @@ import prompts from "@/lib/prompts"
 import * as Linking from "expo-linking"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { memo, useCallback, useMemo } from "@/lib/memo"
-import { cn } from "@filen/utils"
 
 const ICON_SIZE = 18
-
-export const ToolbarContainerView = memo(({ children, className }: { children: React.ReactNode; className?: string }) => {
-	const { theme } = useUniwind()
-
-	if (Platform.OS === "ios") {
-		if (isLiquidGlassAvailable()) {
-			return (
-				<LiquidGlassView
-					className={cn(className, "rounded-full")}
-					isInteractive={true}
-				>
-					{children}
-				</LiquidGlassView>
-			)
-		}
-
-		return (
-			<BlurView
-				className={cn(className, "bg-background-secondary border border-border rounded-full overflow-hidden")}
-				intensity={100}
-				tint={theme === "dark" ? "dark" : "light"}
-			>
-				{children}
-			</BlurView>
-		)
-	}
-
-	return <View className={cn(className, "bg-background-secondary border border-border rounded-full overflow-hidden")}>{children}</View>
-})
 
 export const Button = memo(
 	({ type, postMessage }: { type: keyof QuillFormats | "keyboard"; postMessage: (message: TextEditorEvents) => void }) => {
@@ -407,14 +375,8 @@ export const Button = memo(
 
 export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEditorEvents) => void }) => {
 	const insets = useSafeAreaInsets()
-	const viewRef = useRef<RNView>(null)
-	const { layout, onLayout } = useViewLayout(viewRef)
 	const keyboardState = useKeyboardState()
 	const textEditorReady = useTextEditorStore(useShallow(state => state.ready))
-
-	useEffect(() => {
-		useRichtextStore.getState().setToolbarHeight(layout.height)
-	}, [layout.height])
 
 	if (!textEditorReady) {
 		return null
@@ -429,12 +391,8 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 			}}
 		>
 			{keyboardState.isVisible && (
-				<View
-					ref={viewRef}
-					onLayout={onLayout}
-					className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4"
-				>
-					<ToolbarContainerView className="shrink-0 flex-row items-center p-2 h-9">
+				<View className="px-4 py-2 bg-transparent flex-row items-center justify-between gap-4">
+					<CrossGlassContainerView className="shrink-0 flex-row items-center p-2 h-9">
 						<Button
 							type="header"
 							postMessage={postMessage}
@@ -467,13 +425,13 @@ export const Toolbar = memo(({ postMessage }: { postMessage: (message: TextEdito
 							type="list"
 							postMessage={postMessage}
 						/>
-					</ToolbarContainerView>
-					<ToolbarContainerView className="shrink-0 size-9 flex-row items-center justify-center">
+					</CrossGlassContainerView>
+					<CrossGlassContainerView className="shrink-0 size-9 flex-row items-center justify-center">
 						<Button
 							type="keyboard"
 							postMessage={postMessage}
 						/>
-					</ToolbarContainerView>
+					</CrossGlassContainerView>
 				</View>
 			)}
 		</KeyboardStickyView>

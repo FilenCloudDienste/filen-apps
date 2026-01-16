@@ -43,8 +43,6 @@ const RichTextEditorDom = memo(
 		readOnly,
 		colors,
 		font,
-		toolbarHeight,
-		keyboardVisible,
 		autoFocus
 	}: {
 		dom?: DOMProps
@@ -57,8 +55,6 @@ const RichTextEditorDom = memo(
 		readOnly?: boolean
 		colors: Colors
 		font?: Font
-		toolbarHeight?: number
-		keyboardVisible?: boolean
 		autoFocus?: boolean
 	}) => {
 		const quillRef = useRef<Quill | null>(null)
@@ -339,7 +335,6 @@ const RichTextEditorDom = memo(
 				<div
 					ref={editorRef}
 					style={{
-						paddingBottom: keyboardVisible ? (toolbarHeight ?? 0) + 128 : 128,
 						display: "flex",
 						flex: 1
 					}}

@@ -1,32 +1,33 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater, queryClient } from "@/queries/client"
-import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
-import { sortParams } from "@filen/utils"
-import cache from "@/lib/cache"
+import { DEFAULT_QUERY_OPTIONS, queryClient, useDefaultQueryParams, queryUpdater } from "@/queries/client"
 import auth from "@/lib/auth"
+import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
+import cache from "@/lib/cache"
+import { sortParams } from "@filen/utils"
 
-export const BASE_QUERY_KEY = "useNoteHistoryQuery"
+export const BASE_QUERY_KEY = "useChatMessagesQuery"
 
-export type UseNoteHistoryQueryParams = {
+export type UseChatMessagesQueryParams = {
 	uuid: string
 }
 
 export async function fetchData(
-	params: UseNoteHistoryQueryParams & {
+	params: UseChatMessagesQueryParams & {
 		signal?: AbortSignal
 	}
 ) {
 	const sdkClient = await auth.getSdkClient()
 
-	const note = cache.noteUuidToNote.get(params.uuid)
+	const chat = cache.chatUuidToChat.get(params.uuid)
 
-	if (!note) {
-		throw new Error("Note not found")
+	if (!chat) {
+		throw new Error("Chat not found")
 	}
 
-	return await sdkClient.getNoteHistory(
-		note,
-		params.signal
+	return await sdkClient.listMessagesBefore(
+		chat,
+		BigInt(Date.now() + 3600000),
+		params?.signal
 			? {
 					signal: params.signal
 				}
@@ -34,8 +35,8 @@ export async function fetchData(
 	)
 }
 
-export function useNoteHistoryQuery(
-	params: UseNoteHistoryQueryParams,
+export function useChatMessagesQuery(
+	params: UseChatMessagesQueryParams,
 	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
 ): UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error> {
 	const defaultParams = useDefaultQueryParams(options)
@@ -61,32 +62,23 @@ export function useNoteHistoryQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error>
 }
 
-export function noteHistoryQueryUpdate({
-	updater,
+export function chatMessagesQueryUpdate({
 	params,
-	dataUpdatedAt
+	updater
 }: {
-	params: Parameters<typeof fetchData>[0]
-} & {
+	params: UseChatMessagesQueryParams
 	updater:
 		| Awaited<ReturnType<typeof fetchData>>
 		| ((prev: Awaited<ReturnType<typeof fetchData>>) => Awaited<ReturnType<typeof fetchData>>)
-	dataUpdatedAt?: number
-}): void {
+}) {
 	const sortedParams = sortParams(params)
 
-	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>(
-		[BASE_QUERY_KEY, sortedParams],
-		prev => {
-			const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchData>>)
-
-			return typeof updater === "function" ? updater(currentData) : updater
-		},
-		dataUpdatedAt
-	)
+	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY, sortedParams], prev => {
+		return typeof updater === "function" ? updater(prev ?? []) : updater
+	})
 }
 
-export async function noteHistoryQueryRefetch(params: Parameters<typeof fetchData>[0]): Promise<void> {
+export async function chatMessagesQueryRefetch(params: UseChatMessagesQueryParams): Promise<void> {
 	const sortedParams = sortParams(params)
 
 	return await queryClient.refetchQueries({
@@ -94,4 +86,10 @@ export async function noteHistoryQueryRefetch(params: Parameters<typeof fetchDat
 	})
 }
 
-export default useNoteHistoryQuery
+export function chatMessagesQueryGet(params: UseChatMessagesQueryParams) {
+	const sortedParams = sortParams(params)
+
+	return queryUpdater.get<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY, sortedParams])
+}
+
+export default useChatMessagesQuery

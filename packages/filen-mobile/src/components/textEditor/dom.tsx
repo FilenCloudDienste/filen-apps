@@ -222,7 +222,6 @@ const TextEditorDOM = memo(
 							fontFamily: font?.family ?? "inherit",
 							lineHeight: font?.lineHeight ? font.lineHeight : 1.5,
 							paddingTop: 16,
-							paddingBottom: 128,
 							paddingLeft: 16,
 							paddingRight: 16,
 							border: "none",
@@ -250,8 +249,7 @@ const TextEditorDOM = memo(
 				spellCheck={false}
 				autoFocus={autoFocus}
 				style={{
-					width: "100dvw",
-					paddingBottom: 128
+					width: "100dvw"
 				}}
 			/>
 		)

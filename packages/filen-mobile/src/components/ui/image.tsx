@@ -13,3 +13,5 @@ export const Image = memo((props: React.ComponentProps<typeof ExpoImage> & React
 		/>
 	)
 })
+
+export default Image

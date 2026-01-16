@@ -1,6 +1,6 @@
 import { NativeView } from "react-native-boost/runtime"
-import { withUniwind } from "uniwind"
-import type { ViewProps, View as RNView } from "react-native"
+import { withUniwind, useUniwind } from "uniwind"
+import { type ViewProps, type View as RNView, Platform, type StyleProp, type ViewStyle, StyleSheet } from "react-native"
 import { memo } from "@/lib/memo"
 import { cn } from "@filen/utils"
 import {
@@ -14,17 +14,18 @@ import {
 	isLiquidGlassAvailable as expoIsLiquidGlassAvailable,
 	GlassContainer as ExpoGlassContainer
 } from "expo-glass-effect"
+import { ScrollView as RNGestureHandlerScrollView } from "react-native-gesture-handler"
 
 export const UniwindView = memo(withUniwind(NativeView) as React.FC<ViewProps>)
 
-export const View = memo((props: ViewProps & React.RefAttributes<RNView>) => {
+export const View = memo((props: React.ComponentPropsWithRef<typeof RNView>) => {
 	return (
 		<UniwindView
 			{...props}
 			className={cn("bg-background", props.className)}
 		/>
 	)
-})
+}) as unknown as React.FC<React.ComponentPropsWithRef<typeof RNView>>
 
 export const UniwindKeyboardAvoidingView = memo(
 	withUniwind(RNKeyboardControllerKeyboardAvoidingView) as React.FC<React.ComponentProps<typeof RNKeyboardControllerKeyboardAvoidingView>>
@@ -87,10 +88,86 @@ export const LiquidGlassView = memo((props: React.ComponentProps<typeof ExpoGlas
 
 export const isLiquidGlassAvailable = expoIsLiquidGlassAvailable
 
-export const UniqindGlassContainerView = memo(withUniwind(ExpoGlassContainer) as React.FC<React.ComponentProps<typeof ExpoGlassContainer>>)
+export const UniwindGlassContainerView = memo(withUniwind(ExpoGlassContainer) as React.FC<React.ComponentProps<typeof ExpoGlassContainer>>)
 
 export const LiquidGlassContainerView = memo((props: React.ComponentProps<typeof ExpoGlassContainer> & React.RefAttributes<RNView>) => {
-	return <UniqindGlassContainerView {...props} />
+	return <UniwindGlassContainerView {...props} />
 })
+
+export const CrossGlassContainerView = memo(
+	({
+		children,
+		className,
+		style,
+		disableLiquidGlass,
+		disableBlur
+	}: {
+		children: React.ReactNode
+		className?: string
+		style?: StyleProp<ViewStyle>
+		disableLiquidGlass?: boolean
+		disableBlur?: boolean
+	}) => {
+		const { theme } = useUniwind()
+
+		if (Platform.OS === "ios" && isLiquidGlassAvailable() && !disableLiquidGlass) {
+			return (
+				<LiquidGlassView
+					className={cn("rounded-full", className)}
+					isInteractive={true}
+					style={style}
+				>
+					{children}
+				</LiquidGlassView>
+			)
+		}
+
+		if (disableBlur) {
+			return (
+				<View
+					className={cn("border border-border rounded-full overflow-hidden bg-background-secondary", className)}
+					style={[
+						style,
+						{
+							borderWidth: StyleSheet.hairlineWidth
+						}
+					]}
+				>
+					{children}
+				</View>
+			)
+		}
+
+		return (
+			<BlurView
+				className={cn("border border-border rounded-full overflow-hidden", className)}
+				intensity={100}
+				tint={Platform.select({
+					ios: "systemChromeMaterial",
+					default: theme === "dark" ? "dark" : "light"
+				})}
+				experimentalBlurMethod="dimezisBlurView"
+				style={[
+					style,
+					{
+						borderWidth: StyleSheet.hairlineWidth
+					}
+				]}
+			>
+				{children}
+			</BlurView>
+		)
+	}
+)
+
+export const UniwindGestureHandlerScrollView = memo(
+	withUniwind(RNGestureHandlerScrollView) as React.FC<React.ComponentProps<typeof RNGestureHandlerScrollView>>
+)
+
+export const GestureHandlerScrollView = memo(
+	(props: React.ComponentProps<typeof RNGestureHandlerScrollView> & React.RefAttributes<RNView>) => {
+		return <UniwindGestureHandlerScrollView {...props} />
+	}
+)
 
 export default View

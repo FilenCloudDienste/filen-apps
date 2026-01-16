@@ -170,7 +170,7 @@ export const Header = memo(
 		leftItems,
 		rightItems
 	}: {
-		title: string
+		title: string | ((props: { children: string; tintColor?: string | undefined }) => React.ReactNode)
 		shown?: boolean
 		largeTitle?: boolean
 		backVisible?: boolean
@@ -209,9 +209,9 @@ export const Header = memo(
 		return (
 			<Stack.Screen
 				options={{
-					headerTitle: title,
+					headerTitle: typeof title === "function" ? props => title(props) : title,
 					headerShown: shown ?? true,
-					headerShadowVisible: transparent ? true : shadowVisible,
+					headerShadowVisible: shadowVisible,
 					headerBlurEffect: !liquidGlassAvailable && Platform.OS === "ios" ? (blurEffect ?? "systemChromeMaterial") : undefined,
 					headerBackVisible: backVisible,
 					headerTransparent: transparent,

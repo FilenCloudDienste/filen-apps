@@ -5,9 +5,7 @@ import View from "@/components/ui/view"
 import { useNativeDomEvents, type DOMRef } from "@/hooks/useDomEvents/useNativeDomEvents"
 import { Platform } from "react-native"
 import { useResolveClassNames, useUniwind } from "uniwind"
-import { useKeyboardState } from "react-native-keyboard-controller"
 import useRichtextStore from "@/stores/useRichtext.store"
-import { useShallow } from "zustand/shallow"
 import RichTextEditorToolbar from "@/components/textEditor/richText/toolbar"
 import MarkdownPreviewButton from "@/components/textEditor/markdownPreviewButton"
 import { useSecureStore } from "@/lib/secureStore"
@@ -15,6 +13,9 @@ import * as ExpoLinking from "expo-linking"
 import alerts from "@/lib/alerts"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { memo, useMemo } from "@/lib/memo"
+import { AnimatedView } from "@/components/ui/animated"
+import { interpolate, useAnimatedStyle } from "react-native-reanimated"
+import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller"
 
 export type TextEditorType = "richtext" | "text" | "markdown" | "code"
 
@@ -121,7 +122,8 @@ export const TextEditor = memo(
 		onReady,
 		disableMarkdownPreview,
 		id,
-		autoFocus
+		autoFocus,
+		paddingBottom
 	}: {
 		initialValue?: string
 		onValueChange?: (value: string) => void
@@ -133,6 +135,7 @@ export const TextEditor = memo(
 		disableMarkdownPreview?: boolean
 		id?: string
 		autoFocus?: boolean
+		paddingBottom?: number
 	}) => {
 		const ref = useRef<DOMRef>(null)
 		const textForeground = useResolveClassNames("text-foreground")
@@ -141,10 +144,9 @@ export const TextEditor = memo(
 		const bgBackground = useResolveClassNames("bg-background")
 		const bgSecondary = useResolveClassNames("bg-secondary")
 		const text = useResolveClassNames("font-normal text-sm")
-		const keyboardState = useKeyboardState()
 		const { theme } = useUniwind()
-		const toolbarHeight = useRichtextStore(useShallow(state => state.toolbarHeight))
 		const [textEditorMarkdownPreviewActive] = useSecureStore<Record<string, boolean>>("textEditorMarkdownPreviewActive", {})
+		const keyboardAnimation = useReanimatedKeyboardAnimation()
 
 		const markdownPreviewActive = useMemo(() => {
 			if (!id) {
@@ -198,13 +200,26 @@ export const TextEditor = memo(
 			}
 		})
 
+		const containerStyle = useAnimatedStyle(() => {
+			return {
+				paddingBottom: interpolate(
+					keyboardAnimation.progress.value,
+					[0, 1],
+					[paddingBottom ?? 0, -keyboardAnimation.height.value + (paddingBottom ?? 0)]
+				)
+			}
+		}, [keyboardAnimation])
+
 		useEffect(() => {
 			useTextEditorStore.getState().setReady(false)
 		}, [])
 
 		return (
 			<Fragment>
-				<View className="flex-1">
+				<AnimatedView
+					className="flex-1"
+					style={containerStyle}
+				>
 					{type === "richtext" ? (
 						<RichTextEditorDOM
 							ref={ref}
@@ -216,8 +231,6 @@ export const TextEditor = memo(
 							platform={Platform.OS}
 							initialValue={initialValue}
 							placeholder={placeholder}
-							toolbarHeight={toolbarHeight}
-							keyboardVisible={keyboardState.isVisible}
 							readOnly={readOnly}
 							autoFocus={autoFocus}
 							font={{
@@ -282,7 +295,7 @@ export const TextEditor = memo(
 							/>
 						</View>
 					)}
-				</View>
+				</AnimatedView>
 				{!disableRichtextToolbar && type === "richtext" && !readOnly && <RichTextEditorToolbar postMessage={postMessage} />}
 				{!disableMarkdownPreview && type === "markdown" && <MarkdownPreviewButton id={id ?? "textEditor"} />}
 			</Fragment>

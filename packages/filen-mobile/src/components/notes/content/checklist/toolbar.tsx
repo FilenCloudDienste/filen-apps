@@ -1,17 +1,16 @@
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
-import { BlurView, KeyboardStickyView } from "@/components/ui/view"
+import { KeyboardStickyView, CrossGlassContainerView } from "@/components/ui/view"
 import { useKeyboardState, KeyboardController } from "react-native-keyboard-controller"
-import { useUniwind, useResolveClassNames } from "uniwind"
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
+import { useResolveClassNames } from "uniwind"
+import Ionicons from "@expo/vector-icons/Ionicons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { PressableOpacity } from "@/components/ui/pressables"
+import { PressableScale } from "@/components/ui/pressables"
 import alerts from "@/lib/alerts"
 import { memo, useCallback } from "@/lib/memo"
 
 export const Toolbar = memo(() => {
 	const keyboardState = useKeyboardState()
-	const { theme } = useUniwind()
 	const textPrimary = useResolveClassNames("text-primary")
 
 	const onPress = useCallback(() => {
@@ -36,30 +35,25 @@ export const Toolbar = memo(() => {
 			<AnimatedView
 				entering={FadeIn}
 				exiting={FadeOut}
-				className="absolute z-50"
+				className="absolute z-50 bg-transparent"
 				style={{
 					bottom: 16,
 					right: 16 + insets.right
 				}}
 			>
-				<BlurView
-					intensity={100}
-					experimentalBlurMethod="dimezisBlurView"
-					tint={theme === "dark" ? "dark" : "light"}
-					className="flex-row items-center justify-center rounded-full overflow-hidden border border-border size-9"
-				>
-					<PressableOpacity
+				<CrossGlassContainerView className="items-center justify-center rounded-full size-11">
+					<PressableScale
 						rippleColor="transparent"
 						onPress={onPress}
-						hitSlop={15}
+						hitSlop={32}
 					>
-						<FontAwesome6
-							name="check"
-							size={18}
+						<Ionicons
+							name="checkmark"
+							size={24}
 							color={textPrimary.color}
 						/>
-					</PressableOpacity>
-				</BlurView>
+					</PressableScale>
+				</CrossGlassContainerView>
 			</AnimatedView>
 		</KeyboardStickyView>
 	)

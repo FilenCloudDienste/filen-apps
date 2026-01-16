@@ -1,5 +1,6 @@
 import { type JsClientInterface, fromStringified, type StringifiedClient, login } from "@filen/sdk-rs"
 import secureStore, { useSecureStore } from "@/lib/secureStore"
+import { useEffect, useState } from "react"
 
 export class Auth {
 	private sdkClient: JsClientInterface | null = null
@@ -90,6 +91,30 @@ export function useStringifiedClient(): StringifiedClient | null {
 	const [stringifiedClient] = useSecureStore<StringifiedClient | null>(auth.stringifiedClientStorageKey, null)
 
 	return stringifiedClient
+}
+
+export function useSdkClient(): JsClientInterface | null {
+	const [sdkClient, setSdkClient] = useState<JsClientInterface | null>(null)
+
+	useEffect(() => {
+		let isMounted = true
+
+		async function fetchSdkClient() {
+			const client = await auth.getSdkClient()
+
+			if (isMounted) {
+				setSdkClient(client)
+			}
+		}
+
+		fetchSdkClient()
+
+		return () => {
+			isMounted = false
+		}
+	}, [])
+
+	return sdkClient
 }
 
 export default auth

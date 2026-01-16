@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback } from "@/lib/memo"
-import { type Note, NoteType, type NoteHistory } from "@filen/sdk-rs"
+import { type Note, NoteType, type NoteHistory, type NoteContentEdited } from "@filen/sdk-rs"
 import View from "@/components/ui/view"
 import useNoteContentQuery from "@/queries/useNoteContent.query"
 import Checklist from "@/components/notes/content/checklist"
@@ -13,6 +13,12 @@ import useNotesStore from "@/stores/useNotes.store"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { useShallow } from "zustand/shallow"
 import isEqual from "react-fast-compare"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useEffect } from "react"
+import { runEffect, run } from "@filen/utils"
+import events from "@/lib/events"
+import alerts from "@/lib/alerts"
+import prompts from "@/lib/prompts"
 
 export const Loading = memo(({ children, loading, noteType }: { children: React.ReactNode; loading?: boolean; noteType: NoteType }) => {
 	const textForeground = useResolveClassNames("text-foreground")
@@ -47,9 +53,11 @@ export const Loading = memo(({ children, loading, noteType }: { children: React.
 export const Content = memo(
 	({ note, history }: { note: Note; history?: NoteHistory | null }) => {
 		const stringifiedClient = useStringifiedClient()
+		const insets = useSafeAreaInsets()
+
 		const noteContentQuery = useNoteContentQuery(
 			{
-				note
+				uuid: note.uuid
 			},
 			{
 				enabled: !history
@@ -129,6 +137,60 @@ export const Content = memo(
 			[note, history]
 		)
 
+		const onContentEditedRemotely = useCallback(
+			async (info: { contentEdited: NoteContentEdited; noteUuid: string }) => {
+				if (note.uuid !== info.noteUuid || info.contentEdited.editorId === stringifiedClient?.userId) {
+					return
+				}
+
+				const promptResponse = await run(async () => {
+					return await prompts.alert({
+						title: "tbd_note_edited",
+						message: "tbd_note_edited_message",
+						cancelText: "tbd_cancel",
+						okText: "tbd_reload"
+					})
+				})
+
+				if (!promptResponse.success) {
+					console.error(promptResponse.error)
+					alerts.error(promptResponse.error)
+
+					return
+				}
+
+				if (promptResponse.data.cancelled) {
+					return
+				}
+
+				const result = await run(async () => {
+					return await noteContentQuery.refetch()
+				})
+
+				if (!result.success) {
+					console.error(result.error)
+					alerts.error(result.error)
+
+					return
+				}
+			},
+			[note.uuid, stringifiedClient, noteContentQuery]
+		)
+
+		useEffect(() => {
+			const { cleanup } = runEffect(defer => {
+				const noteContentEditedSubscription = events.subscribe("noteContentEdited", onContentEditedRemotely)
+
+				defer(() => {
+					noteContentEditedSubscription.remove()
+				})
+			})
+
+			return () => {
+				cleanup()
+			}
+		}, [note.uuid, onContentEditedRemotely])
+
 		return (
 			<Loading
 				loading={loading}
@@ -160,6 +222,7 @@ export const Content = memo(
 											: "text"
 						}
 						id={`note:${note.uuid}`}
+						paddingBottom={insets.bottom}
 					/>
 				)}
 			</Loading>

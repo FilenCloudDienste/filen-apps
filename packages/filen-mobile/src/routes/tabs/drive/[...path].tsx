@@ -13,6 +13,7 @@ import Item from "@/components/drive/item"
 import { run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import { memo, useCallback, useMemo } from "@/lib/memo"
+import { Platform } from "react-native"
 
 export const Drive = memo(() => {
 	const drivePath = useDrivePath()
@@ -68,7 +69,10 @@ export const Drive = memo(() => {
 
 	return (
 		<Fragment>
-			<Header title={headerTitle} />
+			<Header
+				title={headerTitle}
+				transparent={Platform.OS === "ios"}
+			/>
 			<SafeAreaView edges={["left", "right"]}>
 				<VirtualList
 					className="flex-1"

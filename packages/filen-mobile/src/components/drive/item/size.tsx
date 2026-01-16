@@ -7,7 +7,7 @@ import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
 export const Size = memo(({ info }: { info: ListRenderItemInfo<DriveItem> }) => {
 	const directorySizeQuery = useDirectorySizeQuery(
 		{
-			directoryUuid: info.item.data.uuid
+			uuid: info.item.data.uuid
 		},
 		{
 			enabled: info.item.type === "directory"

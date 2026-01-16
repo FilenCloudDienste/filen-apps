@@ -6,7 +6,7 @@ import StyleProvider from "@/providers/style.provider"
 import { useState, useEffect, Fragment } from "react"
 import { memo, useCallback } from "@/lib/memo"
 import { Stack } from "expo-router"
-import { useResolveClassNames, useUniwind } from "uniwind"
+import { useResolveClassNames } from "uniwind"
 import View from "@/components/ui/view"
 import setup from "@/lib/setup"
 import { run } from "@filen/utils"
@@ -15,7 +15,6 @@ import { queryClient } from "@/queries/client"
 import { QueryClientProvider } from "@tanstack/react-query"
 import * as SplashScreen from "expo-splash-screen"
 import { NotifierWrapper } from "react-native-notifier"
-import { StatusBar } from "expo-status-bar"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { KeyboardProvider } from "react-native-keyboard-controller"
 import { PressablesConfig } from "pressto"
@@ -39,7 +38,6 @@ export const RootLayout = memo(() => {
 	const bgBackground = useResolveClassNames("bg-background")
 	const [isSetupDone, setIsSetupDone] = useState<boolean>(false)
 	const isAuthed = useIsAuthed()
-	const { theme } = useUniwind()
 
 	const runSetup = useCallback(async () => {
 		const result = await run(async () => {
@@ -71,14 +69,13 @@ export const RootLayout = memo(() => {
 
 	return (
 		<StyleProvider>
-			<StatusBar style={theme === "dark" ? "light" : "dark"} />
-			<GestureHandlerRootView
-				style={{
-					flex: 1,
-					backgroundColor: bgBackground.backgroundColor
-				}}
-			>
-				<KeyboardProvider>
+			<KeyboardProvider>
+				<GestureHandlerRootView
+					style={{
+						flex: 1,
+						backgroundColor: bgBackground.backgroundColor
+					}}
+				>
 					<PressablesConfig
 						globalHandlers={{
 							onPress: () => {
@@ -115,8 +112,8 @@ export const RootLayout = memo(() => {
 							</QueryClientProvider>
 						</NotifierWrapper>
 					</PressablesConfig>
-				</KeyboardProvider>
-			</GestureHandlerRootView>
+				</GestureHandlerRootView>
+			</KeyboardProvider>
 		</StyleProvider>
 	)
 })

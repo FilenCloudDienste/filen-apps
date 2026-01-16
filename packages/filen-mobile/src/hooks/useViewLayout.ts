@@ -1,4 +1,4 @@
-import type { View } from "react-native"
+import type { View, LayoutChangeEvent } from "react-native"
 import { useState, useLayoutEffect } from "react"
 import { useCallback } from "@/lib/memo"
 
@@ -15,16 +15,32 @@ export default function useViewLayout(ref: React.RefObject<View | null>) {
 		y: 0
 	})
 
-	const onLayout = useCallback(() => {
-		ref?.current?.measureInWindow?.((x, y, width, height) => {
-			setLayout({
-				width,
-				height,
-				x,
-				y
+	const onLayout = useCallback(
+		(e?: LayoutChangeEvent) => {
+			if (e) {
+				const { layout } = e.nativeEvent
+
+				setLayout({
+					width: layout.width,
+					height: layout.height,
+					x: layout.x,
+					y: layout.y
+				})
+
+				return
+			}
+
+			ref?.current?.measureInWindow?.((x, y, width, height) => {
+				setLayout({
+					width,
+					height,
+					x,
+					y
+				})
 			})
-		})
-	}, [ref])
+		},
+		[ref]
+	)
 
 	useLayoutEffect(() => {
 		onLayout()

@@ -44,7 +44,7 @@ export const Menu = memo(
 
 		const noteHistoryQuery = useNoteHistoryQuery(
 			{
-				note
+				uuid: note.uuid
 			},
 			{
 				enabled: isActive

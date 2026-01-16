@@ -77,7 +77,7 @@ export class Notes {
 		if (updateQuery) {
 			noteContentQueryUpdate({
 				params: {
-					note
+					uuid: note.uuid
 				},
 				updater: content
 			})

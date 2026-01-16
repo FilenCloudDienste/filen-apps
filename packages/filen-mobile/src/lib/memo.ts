@@ -11,11 +11,13 @@ import {
 import isEqual from "react-fast-compare"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function memo<T extends ComponentType<any>>(...params: Parameters<typeof reactMemo<T>>): ReturnType<typeof reactMemo<T>> {
+export function memoInner<T extends ComponentType<any>>(...params: Parameters<typeof reactMemo<T>>): ReturnType<typeof reactMemo<T>> {
 	return reactMemo<T>(params[0], params[1] ? params[1] : isEqual)
 }
 
-export function useMemo<T>(...params: Parameters<typeof reactUseMemo<T>>): ReturnType<typeof reactUseMemo<T>> {
+export const memo = __DEV__ ? reactMemo : memoInner
+
+export function useMemoInner<T>(...params: Parameters<typeof reactUseMemo<T>>): ReturnType<typeof reactUseMemo<T>> {
 	const depsRef = useRef<DependencyList>(params[1])
 	const valueRef = useRef<T | undefined>(undefined)
 	const isInitialMount = useRef<boolean>(true)
@@ -29,8 +31,10 @@ export function useMemo<T>(...params: Parameters<typeof reactUseMemo<T>>): Retur
 	return valueRef.current as T
 }
 
+export const useMemo = __DEV__ ? reactUseMemo : useMemoInner
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useCallback<T extends (...args: any) => any>(
+export function useCallbackInner<T extends (...args: any) => any>(
 	...params: Parameters<typeof reactUseCallback<T>>
 ): ReturnType<typeof reactUseCallback<T>> {
 	const depsRef = useRef<DependencyList>(params[1])
@@ -45,3 +49,5 @@ export function useCallback<T extends (...args: any) => any>(
 
 	return callbackRef.current
 }
+
+export const useCallback = __DEV__ ? reactUseCallback : useCallbackInner

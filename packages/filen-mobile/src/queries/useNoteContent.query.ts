@@ -2,13 +2,13 @@ import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/r
 import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater, queryClient } from "@/queries/client"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import { sortParams } from "@filen/utils"
-import type { Note } from "@filen/sdk-rs"
 import auth from "@/lib/auth"
+import cache from "@/lib/cache"
 
 export const BASE_QUERY_KEY = "useNoteContentQuery"
 
 export type UseNoteContentQueryParams = {
-	note: Note
+	uuid: string
 }
 
 export async function fetchData(
@@ -18,8 +18,14 @@ export async function fetchData(
 ) {
 	const sdkClient = await auth.getSdkClient()
 
+	const note = cache.noteUuidToNote.get(params.uuid)
+
+	if (!note) {
+		throw new Error("Note not found")
+	}
+
 	return await sdkClient.getNoteContent(
-		params.note,
+		note,
 		params.signal
 			? {
 					signal: params.signal

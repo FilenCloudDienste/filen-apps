@@ -8,7 +8,7 @@ import cache from "@/lib/cache"
 export const BASE_QUERY_KEY = "useDirectorySizeQuery"
 
 export type UseDirectorySizeQueryParams = {
-	directoryUuid: string
+	uuid: string
 }
 
 export async function fetchData(
@@ -17,7 +17,7 @@ export async function fetchData(
 	}
 ) {
 	const sdkClient = await auth.getSdkClient()
-	const dir = cache.directoryUuidToDirForSize.get(params.directoryUuid)
+	const dir = cache.directoryUuidToDirForSize.get(params.uuid)
 
 	if (!dir) {
 		throw new Error("Directory not found in cache")

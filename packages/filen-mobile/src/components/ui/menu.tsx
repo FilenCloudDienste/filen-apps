@@ -17,8 +17,8 @@ import {
 	type MenuAttributes,
 	type MenuElementConfig,
 	type OnPressMenuItemEventObject,
-	type MenuElementSize
-	// eslint-disable-next-line import/no-unresolved
+	type MenuElementSize,
+	type MenuPreviewConfig
 } from "react-native-ios-context-menu"
 
 export type MenuButton = {
@@ -472,7 +472,8 @@ export const MenuInner = memo(
 		testID,
 		renderPreview,
 		hitSlop,
-		iosLib
+		iosLib,
+		previewConfig
 	}: {
 		children: React.ReactNode
 		type?: "dropdown" | "context"
@@ -495,6 +496,7 @@ export const MenuInner = memo(
 					right?: number
 			  }
 		iosLib?: "expo-ui" | "react-native-ios-context-menu"
+		previewConfig?: MenuPreviewConfig
 	}) => {
 		const uniqueButtons = useMemo(() => {
 			if (!buttons) {
@@ -550,24 +552,20 @@ export const MenuInner = memo(
 						testID={testID}
 						onMenuWillShow={onOpenMenu}
 						onMenuWillHide={onCloseMenu}
-						shouldEnableAggressiveCleanup={true}
 						renderPreview={renderPreview}
 						lazyPreview={!!renderPreview}
 						previewConfig={
-							renderPreview
+							renderPreview && !previewConfig
 								? {
 										previewSize: "INHERIT",
 										preferredCommitStyle: "dismiss",
 										isResizeAnimated: true,
 										previewType: "CUSTOM"
 									}
-								: undefined
+								: previewConfig
 						}
-						shouldCleanupOnComponentWillUnmountForAuxPreview={true}
-						shouldCleanupOnComponentWillUnmountForMenuPreview={true}
-						shouldWaitForMenuToHideBeforeFiringOnPressMenuItem={false}
-						shouldPreventLongPressGestureFromPropagating={true}
 						onPressMenuItem={onPressMenuItem}
+						shouldWaitForMenuToHideBeforeFiringOnPressMenuItem={false}
 						menuConfig={toIosMenuConfig({
 							buttons: uniqueButtons,
 							title
