@@ -14,7 +14,7 @@ import { PressableScale } from "@/components/ui/pressables"
 import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
 import { useSecureStore } from "@/lib/secureStore"
-import { cn, fastLocaleCompare, run, Semaphore } from "@filen/utils"
+import { cn, fastLocaleCompare, run, Semaphore, runEffect } from "@filen/utils"
 import { useStringifiedClient } from "@/lib/auth"
 import { contactDisplayName, findClosestIndexString } from "@/lib/utils"
 import Avatar from "@/components/ui/avatar"
@@ -26,6 +26,8 @@ import { randomUUID } from "expo-crypto"
 import chats from "@/lib/chats"
 import { sync } from "@/components/chats/sync"
 import alerts from "@/lib/alerts"
+import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
+import events from "@/lib/events"
 
 export const PopupContainerView = memo(
 	({
@@ -474,12 +476,17 @@ export const Input = memo(
 		const isTypingRef = useRef<boolean>(false)
 		const sendTypingEventSemaphoreRef = useRef<Semaphore>(new Semaphore(1))
 		const [chatReplyTo, setChatReplyTo] = useSecureStore<ChatMessageWithInflightId | null>(`chatReplyTo:${chat.uuid}`, null)
+		const [chatEditMessage, setChatEditMessage] = useSecureStore<ChatMessageWithInflightId | null>(`chatEditMessage:${chat.uuid}`, null)
 
 		const onChangeText = useCallback(
 			(text: string) => {
 				setChatInputValue(text)
+
+				if (text.length === 0 && chatEditMessage) {
+					setChatEditMessage(null)
+				}
 			},
-			[setChatInputValue]
+			[setChatInputValue, chatEditMessage, setChatEditMessage]
 		)
 
 		const me = useMemo(() => {
@@ -542,6 +549,34 @@ export const Input = memo(
 				start: 0,
 				end: 0
 			})
+
+			if (chatEditMessage) {
+				const result = await runWithLoading(async () => {
+					return await chats.editMessage({
+						chat,
+						message: chatEditMessage,
+						newMessage: normalizedMessage
+					})
+				})
+
+				if (!result.success) {
+					console.error(result.error)
+					alerts.error(result.error)
+
+					setChatInputValue(normalizedMessage)
+
+					useChatsStore.getState().setInputSelection({
+						start: normalizedMessage.length,
+						end: normalizedMessage.length
+					})
+
+					return
+				}
+
+				setChatEditMessage(null)
+
+				return
+			}
 
 			const sentTimestamp = Date.now()
 			let flushedToDisk = false
@@ -614,7 +649,18 @@ export const Input = memo(
 
 				return
 			}
-		}, [chatInputValue, chat, stringifiedClient, me, setChatInputValue, sendTypingEvent, chatReplyTo, setChatReplyTo])
+		}, [
+			chatInputValue,
+			chat,
+			stringifiedClient,
+			me,
+			setChatInputValue,
+			sendTypingEvent,
+			chatReplyTo,
+			setChatReplyTo,
+			chatEditMessage,
+			setChatEditMessage
+		])
 
 		const onKeyPress = useCallback(() => {
 			if (!isTypingRef.current) {
@@ -662,6 +708,28 @@ export const Input = memo(
 				end: chatInputValue.length
 			})
 		})
+
+		useEffect(() => {
+			const { cleanup } = runEffect(defer => {
+				const focusChatInputSubscription = events.subscribe("focusChatInput", data => {
+					if (data.chatUuid !== chat.uuid) {
+						return
+					}
+
+					setTimeout(() => {
+						inputRef.current?.focus()
+					}, 100)
+				})
+
+				defer(() => {
+					focusChatInputSubscription.remove()
+				})
+			})
+
+			return () => {
+				cleanup()
+			}
+		}, [chat.uuid])
 
 		useEffect(() => {
 			useChatsStore.getState().setInputViewLayout(inputViewLayout)

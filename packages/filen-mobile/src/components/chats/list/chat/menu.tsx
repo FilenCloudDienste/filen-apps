@@ -1,0 +1,323 @@
+import type { Chat as TChat, ChatParticipant } from "@filen/sdk-rs"
+import { memo, useMemo } from "@/lib/memo"
+import type { ListRenderItemInfo } from "@/components/ui/virtualList"
+import MenuComponent, { type MenuButton } from "@/components/ui/menu"
+import isEqual from "react-fast-compare"
+import { useStringifiedClient } from "@/lib/auth"
+import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
+import prompts from "@/lib/prompts"
+import { run, fastLocaleCompare } from "@filen/utils"
+import alerts from "@/lib/alerts"
+import chats from "@/lib/chats"
+import { Platform } from "react-native"
+import { actionSheet } from "@/providers/actionSheet.provider"
+import { randomUUID } from "expo-crypto"
+import { contactDisplayName } from "@/lib/utils"
+import { router } from "expo-router"
+import useAppStore from "@/stores/app.store"
+
+export function createMenuButtons({ chat, userId }: { chat: TChat; userId: bigint }): MenuButton[] {
+	return [
+		{
+			id: "participants",
+			title: "tbd_participants",
+			icon: "users",
+			subButtons: (
+				[
+					{
+						type: "add" as const
+					},
+					...chat.participants
+						.filter(participant => participant.userId !== userId)
+						.map(participant => ({
+							type: "participant" as const,
+							participant
+						}))
+						.sort((a, b) => fastLocaleCompare(a.participant.email, b.participant.email))
+				] satisfies (
+					| {
+							type: "add"
+					  }
+					| {
+							type: "participant"
+							participant: ChatParticipant
+					  }
+				)[]
+			).map(subButton => {
+				if (subButton.type === "add") {
+					return {
+						id: "addParticipant",
+						title: "tbd_addParticipant",
+						keepMenuOpenOnPress: Platform.OS === "android",
+						icon: "plus",
+						onPress: async () => {
+							// TODO: Add participant
+						}
+					} satisfies MenuButton
+				}
+
+				return {
+					id: `participant_${subButton.participant.userId}`,
+					title: Platform.select({
+						ios: contactDisplayName(subButton.participant),
+						default: subButton.participant.email
+					}),
+					subTitle: subButton.participant.email,
+					keepMenuOpenOnPress: Platform.OS === "android",
+					icon: "user",
+					destructive: chat.ownerId === subButton.participant.userId,
+					onPress: () => {
+						if (userId === subButton.participant.userId || chat.ownerId !== userId) {
+							return
+						}
+
+						actionSheet.show({
+							buttons: [
+								{
+									title: "tbd_remove_participant",
+									destructive: true,
+									onPress: async () => {
+										const result = await run(async () => {
+											return await prompts.alert({
+												title: "tbd_remove_participant",
+												message: "tbd_are_you_sure_remove_participant",
+												cancelText: "tbd_cancel",
+												okText: "tbd_remove"
+											})
+										})
+
+										if (!result.success) {
+											console.error(result.error)
+											alerts.error(result.error)
+
+											return
+										}
+
+										if (result.data.cancelled) {
+											return
+										}
+
+										runWithLoading(async () => {
+											await chats.removeParticipant({
+												chat,
+												contact: {
+													uuid: randomUUID(),
+													userId: subButton.participant.userId,
+													email: subButton.participant.email,
+													avatar: subButton.participant.avatar,
+													nickName: subButton.participant.nickName,
+													lastActive: subButton.participant.lastActive,
+													timestamp: subButton.participant.lastActive,
+													publicKey: randomUUID()
+												}
+											})
+										})
+									}
+								},
+								{
+									title: "tbd_cancel",
+									cancel: true
+								}
+							]
+						})
+					}
+				} satisfies MenuButton
+			})
+		},
+		{
+			id: "muted",
+			title: "tbd_muted",
+			checked: chat.muted,
+			onPress: async () => {
+				runWithLoading(async () => {
+					await chats.mute({
+						chat,
+						mute: !chat.muted
+					})
+				})
+			}
+		},
+		...(chat.ownerId === userId
+			? ([
+					{
+						id: "editName",
+						title: "tbd_edit_name",
+						icon: "edit",
+						onPress: async () => {
+							const result = await run(async () => {
+								return await prompts.input({
+									title: "tbd_edit_chat_name",
+									message: "tbd_enter_chat_name",
+									cancelText: "tbd_cancel",
+									okText: "tbd_save"
+								})
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+
+							if (result.data.cancelled || result.data.type !== "string") {
+								return
+							}
+
+							const newName = result.data.value.trim()
+
+							if (newName.length === 0) {
+								return
+							}
+
+							runWithLoading(async () => {
+								await chats.rename({
+									chat,
+									newName: newName
+								})
+							})
+						}
+					},
+					{
+						id: "delete",
+						title: "tbd_delete",
+						destructive: true,
+						icon: "delete",
+						onPress: async () => {
+							const promptResponse = await run(async () => {
+								return await prompts.alert({
+									title: "tbd_delete_chat",
+									message: "tbd_delete_chat_confirmation",
+									cancelText: "tbd_cancel",
+									okText: "tbd_delete"
+								})
+							})
+
+							if (!promptResponse.success) {
+								console.error(promptResponse.error)
+								alerts.error(promptResponse.error)
+
+								return
+							}
+
+							if (promptResponse.data.cancelled) {
+								return
+							}
+
+							const result = await runWithLoading(async () => {
+								await chats.delete({
+									chat
+								})
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+
+							if (useAppStore.getState().pathname.startsWith(`/chat/${chat.uuid}`) && router.canGoBack()) {
+								router.back()
+							}
+						}
+					}
+				] satisfies MenuButton[])
+			: ([
+					{
+						id: "leave",
+						title: "tbd_leave",
+						destructive: true,
+						icon: "delete",
+						onPress: async () => {
+							const promptResponse = await run(async () => {
+								return await prompts.alert({
+									title: "tbd_leave_chat",
+									message: "tbd_leave_chat_confirmation",
+									cancelText: "tbd_cancel",
+									okText: "tbd_leave"
+								})
+							})
+
+							if (!promptResponse.success) {
+								console.error(promptResponse.error)
+								alerts.error(promptResponse.error)
+
+								return
+							}
+
+							if (promptResponse.data.cancelled) {
+								return
+							}
+
+							const result = await runWithLoading(async () => {
+								await chats.leave({
+									chat
+								})
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+
+							console.log(useAppStore.getState().pathname)
+
+							if (useAppStore.getState().pathname.startsWith(`/chat/${chat.uuid}`) && router.canGoBack()) {
+								router.back()
+							}
+						}
+					}
+				] satisfies MenuButton[]))
+	] satisfies MenuButton[]
+}
+
+export const Menu = memo(
+	({
+		info,
+		children,
+		className,
+		isAnchoredToRight
+	}: {
+		info: ListRenderItemInfo<TChat>
+		children: React.ReactNode
+		className?: string
+		isAnchoredToRight?: boolean
+	}) => {
+		const stringifiedClient = useStringifiedClient()
+
+		const buttons = useMemo(() => {
+			if (!stringifiedClient) {
+				return []
+			}
+
+			return createMenuButtons({
+				chat: info.item,
+				userId: stringifiedClient.userId
+			})
+		}, [info.item, stringifiedClient])
+
+		return (
+			<MenuComponent
+				type="context"
+				buttons={buttons}
+				className={className}
+				isAnchoredToRight={isAnchoredToRight}
+			>
+				{children}
+			</MenuComponent>
+		)
+	},
+	(prevProps, nextProps) => {
+		return (
+			isEqual(prevProps.info.item, nextProps.info.item) &&
+			isEqual(prevProps.children, nextProps.children) &&
+			prevProps.className === nextProps.className &&
+			prevProps.isAnchoredToRight === nextProps.isAnchoredToRight
+		)
+	}
+)
+
+export default Menu

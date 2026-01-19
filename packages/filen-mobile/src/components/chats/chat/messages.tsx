@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import type { Chat as TChat } from "@filen/sdk-rs"
 import { memo, useMemo, useCallback } from "@/lib/memo"
 import View from "@/components/ui/view"
@@ -13,6 +13,11 @@ import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats
 import { useShallow } from "zustand/shallow"
 import Message from "@/components/chats/chat/message"
 import isEqual from "react-fast-compare"
+import { ActivityIndicator } from "react-native"
+import { useResolveClassNames } from "uniwind"
+import { run } from "@filen/utils"
+import chats from "@/lib/chats"
+import alerts from "@/lib/alerts"
 
 export const Messages = memo(
 	({ chat }: { chat: TChat }) => {
@@ -21,6 +26,11 @@ export const Messages = memo(
 		const inputViewLayout = useChatsStore(useShallow(state => state.inputViewLayout))
 		const listRef = useRef<ListRef<ChatMessageWithInflightId>>(null)
 		const inflightChatMessages = useChatsStore(useShallow(state => state.inflightMessages[chat.uuid]?.messages ?? []))
+		const [fetchedMessages, setFetchedMessages] = useState<ChatMessageWithInflightId[]>([])
+		const textMutedForeground = useResolveClassNames("text-muted-foreground")
+		const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false)
+		const isFetchingMoreRef = useRef<boolean>(false)
+		const hasMoreRef = useRef<boolean>(true)
 
 		const chatMessagesQuery = useChatMessagesQuery(
 			{
@@ -36,8 +46,10 @@ export const Messages = memo(
 				return []
 			}
 
-			return [...chatMessagesQuery.data, ...inflightChatMessages].sort((a, b) => Number(b.sentTimestamp) - Number(a.sentTimestamp))
-		}, [chatMessagesQuery.data, chatMessagesQuery.status, inflightChatMessages])
+			return [...chatMessagesQuery.data, ...inflightChatMessages, ...fetchedMessages].sort(
+				(a, b) => Number(b.sentTimestamp) - Number(a.sentTimestamp)
+			)
+		}, [chatMessagesQuery.data, chatMessagesQuery.status, inflightChatMessages, fetchedMessages])
 
 		const headerStyle = useAnimatedStyle(() => {
 			const standardHeight = insets.bottom + inputViewLayout.height + 16
@@ -71,6 +83,53 @@ export const Messages = memo(
 			return item.inner.uuid
 		}, [])
 
+		const fetchMore = useCallback(async () => {
+			if (isFetchingMoreRef.current || chatMessagesQuery.status !== "success" || messages.length === 0 || !hasMoreRef.current) {
+				return
+			}
+
+			const result = await run(async defer => {
+				isFetchingMoreRef.current = true
+
+				setIsFetchingMore(true)
+
+				defer(() => {
+					isFetchingMoreRef.current = false
+
+					setIsFetchingMore(false)
+				})
+
+				const lastMessage = messages[messages.length - 1]
+
+				if (!lastMessage) {
+					return []
+				}
+
+				const moreMessages = await chats.listBefore({
+					chat,
+					before: lastMessage.sentTimestamp
+				})
+
+				return moreMessages.map(message => ({
+					...message,
+					inflightId: ""
+				})) satisfies ChatMessageWithInflightId[]
+			})
+
+			if (!result.success) {
+				console.error(result.error)
+				alerts.error(result.error)
+
+				return
+			}
+
+			if (result.data.length === 0) {
+				hasMoreRef.current = false
+			}
+
+			setFetchedMessages(prev => [...prev, ...result.data])
+		}, [chatMessagesQuery.status, chat, messages])
+
 		return (
 			<View
 				className="bg-transparent flex-1"
@@ -90,6 +149,22 @@ export const Messages = memo(
 					keyExtractor={keyExtractor}
 					data={messages}
 					renderItem={renderItem}
+					onEndReachedThreshold={0.5}
+					footerComponent={
+						isFetchingMore
+							? () => {
+									return (
+										<View className="w-full h-auto items-center justify-center pt-4">
+											<ActivityIndicator
+												size="small"
+												color={textMutedForeground.color}
+											/>
+										</View>
+									)
+								}
+							: undefined
+					}
+					onEndReached={() => fetchMore()}
 					maintainVisibleContentPosition={{
 						disabled: true
 					}}

@@ -25,6 +25,7 @@ import ChatsSync from "@/components/chats/sync"
 import ActionSheetProvider from "@/providers/actionSheet.provider"
 import { enableFreeze } from "react-native-screens"
 import Socket from "@/components/socket"
+import Pathname from "@/components/pathname"
 
 enableFreeze(true)
 
@@ -108,6 +109,7 @@ export const RootLayout = memo(() => {
 												)}
 											</Fragment>
 										)}
+										<Pathname />
 										<FullScreenLoadingModal />
 									</View>
 								</ActionSheetProvider>

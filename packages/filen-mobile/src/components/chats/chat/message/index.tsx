@@ -5,8 +5,6 @@ import type { ListRenderItemInfo } from "@/components/ui/virtualList"
 import Text from "@/components/ui/text"
 import { cn, isTimestampSameMinute } from "@filen/utils"
 import { useStringifiedClient } from "@/lib/auth"
-import Menu from "@/components/ui/menu"
-import { useSecureStore } from "@/lib/secureStore"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn } from "react-native-reanimated"
 import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats.store"
@@ -16,6 +14,7 @@ import { Fragment } from "react"
 import { simpleDate } from "@/lib/time"
 import isEqual from "react-fast-compare"
 import Regexed from "@/components/chats/chat/message/regexed"
+import Menu from "@/components/chats/chat/message/menu"
 
 export const Typing = memo(
 	({ chat }: { chat: TChat }) => {
@@ -62,7 +61,6 @@ export const Message = memo(
 		prevMessage?: ChatMessageWithInflightId
 	}) => {
 		const stringifiedClient = useStringifiedClient()
-		const [, setChatReplyTo] = useSecureStore<ChatMessageWithInflightId | null>(`chatReplyTo:${chat.uuid}`, null)
 		const isInflightError = useChatsStore(useShallow(state => state.inflightErrors[info.item.inflightId]))
 
 		return (
@@ -99,16 +97,8 @@ export const Message = memo(
 					)}
 				<View className="h-auto max-w-3/4">
 					<Menu
-						type="context"
-						buttons={[
-							{
-								id: "reply",
-								title: "tbd_reply",
-								onPress: () => {
-									setChatReplyTo(info.item)
-								}
-							}
-						]}
+						chat={chat}
+						info={info}
 						className="w-full h-auto pb-2 px-4"
 						isAnchoredToRight={info.item.inner.senderId !== stringifiedClient?.userId}
 					>

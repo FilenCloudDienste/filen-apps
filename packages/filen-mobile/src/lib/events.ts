@@ -27,6 +27,9 @@ export type Events = {
 		noteUuid: string
 		contentEdited: NoteContentEdited
 	}
+	focusChatInput: {
+		chatUuid: string
+	}
 }
 
 export class TypedEventEmitter<T> {

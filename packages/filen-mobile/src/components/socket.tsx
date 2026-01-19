@@ -1,4 +1,4 @@
-import { memo } from "@/lib/memo"
+import { memo, useCallback } from "@/lib/memo"
 import { useSdkClient } from "@/lib/auth"
 import {
 	type JsClientInterface,
@@ -17,6 +17,8 @@ import events from "@/lib/events"
 import { notesQueryUpdate, notesQueryRefetch, notesQueryGet } from "@/queries/useNotes.query"
 import useSocketStore from "@/stores/useSocket.store"
 import alerts from "@/lib/alerts"
+import { AppState, type AppStateStatus } from "react-native"
+import useEffectOnce from "@/hooks/useEffectOnce"
 
 const chatTypingTimeoutsRef: Record<number, NodeJS.Timeout> = {}
 
@@ -493,36 +495,63 @@ const onEvent: SocketEventListener = {
 
 export const InnerSocket = memo(({ sdkClient }: { sdkClient: JsClientInterface }) => {
 	const checkConnectionIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined)
+	const socketListenerHandleRef = useRef<ListenerHandle | null>(null)
+
+	const onAppStateChange = useCallback(
+		async (nextAppState: AppStateStatus) => {
+			switch (nextAppState) {
+				case "active": {
+					if (sdkClient.isSocketConnected()) {
+						useSocketStore.getState().setState("connected")
+
+						return
+					}
+
+					clearInterval(checkConnectionIntervalRef.current)
+
+					checkConnectionIntervalRef.current = setInterval(() => {
+						useSocketStore.getState().setState(prev => (sdkClient.isSocketConnected() ? "connected" : prev))
+					}, 5000)
+
+					socketListenerHandleRef.current = (await sdkClient.addEventListener(onEvent, undefined)) as ListenerHandle
+
+					break
+				}
+
+				case "background": {
+					clearInterval(checkConnectionIntervalRef.current)
+
+					if (socketListenerHandleRef.current) {
+						socketListenerHandleRef.current.uniffiDestroy()
+
+						socketListenerHandleRef.current = null
+					}
+
+					useSocketStore.getState().setState("disconnected")
+
+					break
+				}
+			}
+		},
+		[sdkClient]
+	)
 
 	useEffect(() => {
-		const abortController = new AbortController()
-
 		const { cleanup } = runEffect(async defer => {
-			if (sdkClient.isSocketConnected()) {
-				useSocketStore.getState().setState("connected")
-			}
-
-			clearInterval(checkConnectionIntervalRef.current)
-
-			checkConnectionIntervalRef.current = setInterval(() => {
-				useSocketStore.getState().setState(prev => (sdkClient.isSocketConnected() ? "connected" : prev))
-			}, 5000)
-
-			const handle = (await sdkClient.addEventListener(onEvent, undefined, {
-				signal: abortController.signal
-			})) as ListenerHandle
+			const appStateSubscription = AppState.addEventListener("change", onAppStateChange)
 
 			defer(() => {
-				clearInterval(checkConnectionIntervalRef.current)
-
-				abortController.abort()
-				handle.uniffiDestroy()
+				appStateSubscription.remove()
 			})
 		})
 
 		return () => {
 			cleanup()
 		}
+	}, [onAppStateChange])
+
+	useEffectOnce(() => {
+		onAppStateChange(AppState.currentState).catch(console.error)
 	})
 
 	return null

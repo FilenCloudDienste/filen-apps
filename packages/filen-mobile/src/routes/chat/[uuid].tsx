@@ -21,119 +21,114 @@ import Input from "@/components/chats/chat/input"
 import events from "@/lib/events"
 import useSocketStore from "@/stores/useSocket.store"
 import Messages from "@/components/chats/chat/messages"
-import isEqual from "react-fast-compare"
+import { createMenuButtons } from "@/components/chats/list/chat/menu"
 
-export const Header = memo(
-	({ chat }: { chat: TChat }) => {
-		const stringigiedClient = useStringifiedClient()
-		const textForeground = useResolveClassNames("text-foreground")
+export const Header = memo(({ chat }: { chat: TChat }) => {
+	const stringigiedClient = useStringifiedClient()
+	const textForeground = useResolveClassNames("text-foreground")
 
-		const title = useMemo(() => {
-			if (chat.name && chat.name.length > 0) {
-				return chat.name
+	const title = useMemo(() => {
+		if (chat.name && chat.name.length > 0) {
+			return chat.name
+		}
+
+		if (chat.participants.length === 2) {
+			const otherParticipant = chat.participants.find(p => p.userId !== stringigiedClient?.userId)
+
+			if (otherParticipant) {
+				return contactDisplayName(otherParticipant)
 			}
+		}
 
-			if (chat.participants.length === 2) {
-				const otherParticipant = chat.participants.find(p => p.userId !== stringigiedClient?.userId)
+		return chat.participants
+			.filter(p => p.userId !== stringigiedClient?.userId)
+			.sort((a, b) => fastLocaleCompare(contactDisplayName(a), contactDisplayName(b)))
+			.map(p => contactDisplayName(p))
+			.join(", ")
+	}, [chat.name, chat.participants, stringigiedClient?.userId])
 
-				if (otherParticipant) {
-					return contactDisplayName(otherParticipant)
-				}
+	const avatar = useMemo(() => {
+		if (chat.participants.length === 2) {
+			const otherParticipant = chat.participants.find(p => p.userId !== stringigiedClient?.userId)
+
+			if (otherParticipant && otherParticipant.avatar && otherParticipant.avatar.startsWith("http")) {
+				return otherParticipant.avatar
 			}
+		}
 
-			return chat.participants
-				.filter(p => p.userId !== stringigiedClient?.userId)
-				.sort((a, b) => fastLocaleCompare(contactDisplayName(a), contactDisplayName(b)))
-				.map(p => contactDisplayName(p))
-				.join(", ")
-		}, [chat.name, chat.participants, stringigiedClient?.userId])
+		return undefined
+	}, [chat.participants, stringigiedClient?.userId])
 
-		const avatar = useMemo(() => {
-			if (chat.participants.length === 2) {
-				const otherParticipant = chat.participants.find(p => p.userId !== stringigiedClient?.userId)
-
-				if (otherParticipant && otherParticipant.avatar && otherParticipant.avatar.startsWith("http")) {
-					return otherParticipant.avatar
-				}
-			}
-
-			return undefined
-		}, [chat.participants, stringigiedClient?.userId])
-
-		return (
-			<StackHeader
-				title={
-					avatar
-						? () => {
-								return (
-									<View
-										className={cn(
-											"items-center flex-col justify-center bg-transparent gap-0.5",
-											Platform.OS === "android" && "py-2"
-										)}
+	return (
+		<StackHeader
+			title={
+				avatar
+					? () => {
+							return (
+								<View
+									className={cn(
+										"items-center flex-col justify-center bg-transparent gap-0.5",
+										Platform.OS === "android" && "py-2"
+									)}
+								>
+									<Avatar
+										className="shrink-0 z-100 size-9"
+										size={36}
+										source={{
+											uri: avatar
+										}}
+									/>
+									<CrossGlassContainerView
+										className="bg-background-secondary border border-border py-0.5 px-1.5 rounded-full max-w-32 -mt-1.5"
+										disableBlur={Platform.OS === "android"}
 									>
-										<Avatar
-											className="shrink-0 z-100 size-9"
-											size={36}
-											source={{
-												uri: avatar
-											}}
-										/>
-										<CrossGlassContainerView
-											className="bg-background-secondary border border-border py-0.5 px-1.5 rounded-full max-w-32 -mt-1.5"
-											disableBlur={Platform.OS === "android"}
+										<Text
+											className="text-foreground"
+											numberOfLines={1}
+											ellipsizeMode="tail"
 										>
-											<Text
-												className="text-foreground"
-												numberOfLines={1}
-												ellipsizeMode="tail"
-											>
-												{title}
-											</Text>
-										</CrossGlassContainerView>
-									</View>
-								)
-							}
-						: title
-				}
-				backVisible={true}
-				transparent={false}
-				shadowVisible={true}
-				backTitle="tbd_back"
-				rightItems={() => {
-					return [
-						{
-							type: "menu",
-							props: {
-								type: "dropdown",
-								hitSlop: 20,
-								buttons: [
-									{
-										id: "createTag",
-										title: "tbd_create_tag",
-										icon: "plus" as const,
-										onPress: async () => {}
-									}
-								]
-							},
-							triggerProps: {
-								hitSlop: 20
-							},
-							icon: {
-								name: "ellipsis-horizontal",
-								size: 24,
-								color: textForeground.color
-							}
+											{title}
+										</Text>
+									</CrossGlassContainerView>
+								</View>
+							)
 						}
-					]
-				}}
-			/>
-		)
-	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.name === nextProps.chat.name && isEqual(prevProps.chat.participants, nextProps.chat.participants)
-	}
-)
+					: title
+			}
+			backVisible={true}
+			transparent={false}
+			shadowVisible={true}
+			backTitle="tbd_back"
+			rightItems={() => {
+				if (!stringigiedClient) {
+					return []
+				}
+
+				return [
+					{
+						type: "menu",
+						props: {
+							type: "dropdown",
+							hitSlop: 20,
+							buttons: createMenuButtons({
+								chat,
+								userId: stringigiedClient.userId
+							})
+						},
+						triggerProps: {
+							hitSlop: 20
+						},
+						icon: {
+							name: "ellipsis-horizontal",
+							size: 24,
+							color: textForeground.color
+						}
+					}
+				]
+			}}
+		/>
+	)
+})
 
 export const Chat = memo(() => {
 	const { uuid } = useLocalSearchParams<{

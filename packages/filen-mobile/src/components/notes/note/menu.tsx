@@ -8,7 +8,7 @@ import { useShallow } from "zustand/shallow"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import notes from "@/lib/notes"
 import prompts from "@/lib/prompts"
-import { run } from "@filen/utils"
+import { run, fastLocaleCompare } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import useNotesTagsQuery from "@/queries/useNotesTags.query"
 import useNoteHistoryQuery from "@/queries/useNoteHistory.query"
@@ -19,6 +19,7 @@ import { Paths } from "expo-file-system"
 import { pack } from "msgpackr"
 import { Buffer } from "@craftzdog/react-native-buffer"
 import { Platform } from "react-native"
+import { contactDisplayName } from "@/lib/utils"
 
 export type NoteMenuOrigin = "notes" | "search" | "content"
 
@@ -151,6 +152,7 @@ export const Menu = memo(
 									type: "participant" as const,
 									participant
 								}))
+								.sort((a, b) => fastLocaleCompare(a.participant.email, b.participant.email))
 						] satisfies (
 							| {
 									type: "add"
@@ -175,9 +177,14 @@ export const Menu = memo(
 
 						return {
 							id: `participant_${subButton.participant.userId}`,
-							title: subButton.participant.email,
+							title: Platform.select({
+								ios: contactDisplayName(subButton.participant),
+								default: subButton.participant.email
+							}),
+							subTitle: subButton.participant.email,
 							keepMenuOpenOnPress: Platform.OS === "android",
 							icon: subButton.participant.permissionsWrite ? "edit" : "eye",
+							destructive: note.ownerId === subButton.participant.userId,
 							onPress: () => {
 								actionSheet.show({
 									buttons: [

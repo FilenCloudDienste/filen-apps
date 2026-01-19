@@ -4,6 +4,20 @@ import { chatsQueryUpdate } from "@/queries/useChats.query"
 import { chatMessagesQueryUpdate } from "@/queries/useChatMessages.query"
 
 export class Chats {
+	public async listBefore({ chat, before, signal }: { chat: Chat; before: bigint; signal?: AbortSignal }) {
+		const sdkClient = await auth.getSdkClient()
+
+		return await sdkClient.listMessagesBefore(
+			chat,
+			before,
+			signal
+				? {
+						signal
+					}
+				: undefined
+		)
+	}
+
 	public async sendMessage({
 		chat,
 		message,
@@ -211,7 +225,7 @@ export class Chats {
 	public async leave({ chat, signal }: { chat: Chat; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
 
-		return await sdkClient.leaveChat(
+		await sdkClient.leaveChat(
 			chat,
 			signal
 				? {
@@ -219,12 +233,37 @@ export class Chats {
 					}
 				: undefined
 		)
+
+		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
+		setTimeout(() => {
+			chatsQueryUpdate({
+				updater: prev => prev.filter(c => c.uuid !== chat.uuid)
+			})
+
+			chatMessagesQueryUpdate({
+				params: {
+					uuid: chat.uuid
+				},
+				updater: () => []
+			})
+		}, 3000)
 	}
 
 	public async delete({ chat, signal }: { chat: Chat; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
 
-		return await sdkClient.deleteChat(
+		chatsQueryUpdate({
+			updater: prev => prev.filter(c => c.uuid !== chat.uuid)
+		})
+
+		chatMessagesQueryUpdate({
+			params: {
+				uuid: chat.uuid
+			},
+			updater: () => []
+		})
+
+		await sdkClient.deleteChat(
 			chat,
 			signal
 				? {
@@ -232,6 +271,20 @@ export class Chats {
 					}
 				: undefined
 		)
+
+		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
+		setTimeout(() => {
+			chatsQueryUpdate({
+				updater: prev => prev.filter(c => c.uuid !== chat.uuid)
+			})
+
+			chatMessagesQueryUpdate({
+				params: {
+					uuid: chat.uuid
+				},
+				updater: () => []
+			})
+		}, 3000)
 	}
 
 	public async mute({ chat, signal, mute }: { chat: Chat; signal?: AbortSignal; mute: boolean }) {

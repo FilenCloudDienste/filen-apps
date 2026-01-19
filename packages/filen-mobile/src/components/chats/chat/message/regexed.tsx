@@ -83,7 +83,7 @@ export const CodeBlock = memo(({ match, fromSelf }: { match: string; fromSelf: b
 	}, [match])
 
 	return (
-		<View className={cn("flex-1 rounded-lg basis-full p-2 shrink-0", fromSelf ? "bg-blue-700" : "bg-background-tertiary")}>
+		<View className={cn("flex-1 rounded-lg basis-full p-2 shrink-0", fromSelf ? "bg-blue-400" : "bg-background-tertiary")}>
 			<Text
 				className={cn("text-xs", fromSelf ? "text-white" : "text-muted-foreground")}
 				style={{
