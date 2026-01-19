@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import type { Note, NoteTag } from "@filen/sdk-rs"
 
-export type TemporaryContent = Record<
+export type InflightContent = Record<
 	string,
 	{
 		timestamp: number
@@ -11,7 +11,7 @@ export type TemporaryContent = Record<
 >
 
 export type NotesStore = {
-	temporaryContent: TemporaryContent
+	inflightContent: InflightContent
 	selectedNotes: Note[]
 	activeNote: Note | null
 	activeTag: NoteTag | null
@@ -20,11 +20,11 @@ export type NotesStore = {
 	setActiveTag: (fn: NoteTag | null | ((prev: NoteTag | null) => NoteTag | null)) => void
 	setSelectedNotes: (fn: Note[] | ((prev: Note[]) => Note[])) => void
 	setSelectedTags: (fn: NoteTag[] | ((prev: NoteTag[]) => NoteTag[])) => void
-	setTemporaryContent: (fn: TemporaryContent | ((prev: TemporaryContent) => TemporaryContent)) => void
+	setInflightContent: (fn: InflightContent | ((prev: InflightContent) => InflightContent)) => void
 }
 
 export const useNotesStore = create<NotesStore>(set => ({
-	temporaryContent: {},
+	inflightContent: {},
 	selectedNotes: [],
 	activeNote: null,
 	activeTag: null,
@@ -49,9 +49,9 @@ export const useNotesStore = create<NotesStore>(set => ({
 			selectedNotes: typeof fn === "function" ? fn(state.selectedNotes) : fn
 		}))
 	},
-	setTemporaryContent(fn) {
+	setInflightContent(fn) {
 		set(state => ({
-			temporaryContent: typeof fn === "function" ? fn(state.temporaryContent) : fn
+			inflightContent: typeof fn === "function" ? fn(state.inflightContent) : fn
 		}))
 	}
 }))

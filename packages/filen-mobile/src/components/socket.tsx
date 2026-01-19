@@ -1,4 +1,4 @@
-import { memo, useMemo } from "@/lib/memo"
+import { memo } from "@/lib/memo"
 import { useSdkClient } from "@/lib/auth"
 import {
 	type JsClientInterface,
@@ -16,483 +16,505 @@ import { chatsQueryGet, chatsQueryUpdate } from "@/queries/useChats.query"
 import events from "@/lib/events"
 import { notesQueryUpdate, notesQueryRefetch, notesQueryGet } from "@/queries/useNotes.query"
 import useSocketStore from "@/stores/useSocket.store"
+import alerts from "@/lib/alerts"
 
-export const InnerSocket = memo(({ sdkClient }: { sdkClient: JsClientInterface }) => {
-	const chatTypingTimeoutsRef = useRef<Record<number, NodeJS.Timeout>>({})
+const chatTypingTimeoutsRef: Record<number, NodeJS.Timeout> = {}
 
-	const listener = useMemo(() => {
-		return {
-			onEvent: event => {
-				switch (event.tag) {
-					case SocketEvent_Tags.Reconnecting:
-					case SocketEvent_Tags.AuthSuccess:
-					case SocketEvent_Tags.AuthFailed:
-					case SocketEvent_Tags.Unsubscribed: {
-						for (const timeout of Object.values(chatTypingTimeoutsRef.current)) {
-							clearTimeout(timeout)
-						}
-
-						useChatsStore.getState().setTyping({})
-
-						useSocketStore
-							.getState()
-							.setState(
-								event.tag === SocketEvent_Tags.Reconnecting
-									? "reconnecting"
-									: event.tag === SocketEvent_Tags.AuthSuccess
-										? "connected"
-										: "disconnected"
-							)
-
-						break
+const onEvent: SocketEventListener = {
+	onEvent: async event => {
+		try {
+			switch (event.tag) {
+				case SocketEvent_Tags.Reconnecting:
+				case SocketEvent_Tags.AuthSuccess:
+				case SocketEvent_Tags.AuthFailed:
+				case SocketEvent_Tags.Unsubscribed: {
+					for (const timeout of Object.values(chatTypingTimeoutsRef)) {
+						clearTimeout(timeout)
 					}
 
-					case SocketEvent_Tags.ChatTyping: {
-						const [inner] = event.inner
+					useChatsStore.getState().setTyping({})
 
-						clearTimeout(chatTypingTimeoutsRef.current[Number(inner.senderId)])
+					useSocketStore
+						.getState()
+						.setState(
+							event.tag === SocketEvent_Tags.Reconnecting
+								? "reconnecting"
+								: event.tag === SocketEvent_Tags.AuthSuccess
+									? "connected"
+									: "disconnected"
+						)
 
-						useChatsStore.getState().setTyping(prev => {
-							switch (inner.typingType) {
-								case ChatTypingType.Down: {
-									chatTypingTimeoutsRef.current[Number(inner.senderId)] = setTimeout(() => {
-										useChatsStore.getState().setTyping(prev => ({
-											...prev,
-											[inner.chat]: (prev[inner.chat] ?? []).filter(t => t.senderId !== inner.senderId)
-										}))
-									}, 15000)
+					break
+				}
 
-									return {
-										...prev,
-										[inner.chat]: [...(prev[inner.chat] ?? []).filter(t => t.senderId !== inner.senderId), inner]
-									}
-								}
+				case SocketEvent_Tags.ChatTyping: {
+					const [inner] = event.inner
 
-								case ChatTypingType.Up: {
-									return {
+					clearTimeout(chatTypingTimeoutsRef[Number(inner.senderId)])
+
+					useChatsStore.getState().setTyping(prev => {
+						switch (inner.typingType) {
+							case ChatTypingType.Down: {
+								chatTypingTimeoutsRef[Number(inner.senderId)] = setTimeout(() => {
+									useChatsStore.getState().setTyping(prev => ({
 										...prev,
 										[inner.chat]: (prev[inner.chat] ?? []).filter(t => t.senderId !== inner.senderId)
-									}
+									}))
+								}, 10000)
+
+								return {
+									...prev,
+									[inner.chat]: [...(prev[inner.chat] ?? []).filter(t => t.senderId !== inner.senderId), inner]
 								}
 							}
-						})
 
-						break
-					}
-
-					case SocketEvent_Tags.ChatMessageNew: {
-						const [inner] = event.inner
-
-						clearTimeout(chatTypingTimeoutsRef.current[Number(inner.msg.inner.senderId)])
-
-						useChatsStore.getState().setTyping(prev => ({
-							...prev,
-							[inner.msg.chat]: (prev[inner.msg.chat] ?? []).filter(t => t.senderId !== inner.msg.inner.senderId)
-						}))
-
-						console.log("adding msg", inner.msg.inner.message)
-
-						chatMessagesQueryUpdate({
-							params: {
-								uuid: inner.msg.chat
-							},
-							updater: prev => [...prev.filter(m => m.inner.uuid !== inner.msg.inner.uuid), inner.msg]
-						})
-
-						chatsQueryUpdate({
-							updater: prev =>
-								prev.map(c =>
-									c.uuid === inner.msg.chat
-										? {
-												...c,
-												lastMessage: inner.msg
-											}
-										: c
-								)
-						})
-
-						events.emit("chatMessageNew", {
-							chatUuid: inner.msg.chat,
-							message: inner.msg
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.ChatConversationNameEdited: {
-						const [inner] = event.inner
-
-						switch (inner.newName.tag) {
-							case MaybeEncryptedUniffi_Tags.Decrypted: {
-								const [name] = inner.newName.inner
-
-								chatsQueryUpdate({
-									updater: prev =>
-										prev.map(c =>
-											c.uuid === inner.chat
-												? {
-														...c,
-														name
-													}
-												: c
-										)
-								})
+							case ChatTypingType.Up: {
+								return {
+									...prev,
+									[inner.chat]: (prev[inner.chat] ?? []).filter(t => t.senderId !== inner.senderId)
+								}
 							}
 						}
+					})
 
-						break
-					}
+					break
+				}
 
-					case SocketEvent_Tags.ChatMessageEdited: {
-						const [inner] = event.inner
+				case SocketEvent_Tags.ChatMessageNew: {
+					const [inner] = event.inner
 
-						switch (inner.newContent.tag) {
-							case MaybeEncryptedUniffi_Tags.Decrypted: {
-								const [newContent] = inner.newContent.inner
+					clearTimeout(chatTypingTimeoutsRef[Number(inner.msg.inner.senderId)])
 
-								chatMessagesQueryUpdate({
-									params: {
-										uuid: inner.chat
-									},
-									updater: prev =>
-										prev.map(m =>
-											m.inner.uuid === inner.uuid
-												? {
-														...m,
-														inner: {
-															...m.inner,
-															message: newContent
-														}
-													}
-												: m
-										)
-								})
+					useChatsStore.getState().setTyping(prev => ({
+						...prev,
+						[inner.msg.chat]: (prev[inner.msg.chat] ?? []).filter(t => t.senderId !== inner.msg.inner.senderId)
+					}))
+
+					chatsQueryUpdate({
+						updater: prev =>
+							prev.map(c =>
+								c.uuid === inner.msg.chat
+									? {
+											...c,
+											lastMessage: inner.msg
+										}
+									: c
+							)
+					})
+
+					chatMessagesQueryUpdate({
+						params: {
+							uuid: inner.msg.chat
+						},
+						updater: prev => [
+							...prev.filter(m => m.inner.uuid !== inner.msg.inner.uuid),
+							{
+								...inner.msg,
+								inflightId: "" // Placeholder, actual inflightId is only needed for send sync
 							}
-						}
+						]
+					})
 
-						break
-					}
+					events.emit("chatMessageNew", {
+						chatUuid: inner.msg.chat,
+						message: inner.msg
+					})
 
-					case SocketEvent_Tags.ChatMessageDelete: {
-						const [inner] = event.inner
+					break
+				}
 
-						const chats = chatsQueryGet()
-						const chat = chats?.find(c => {
-							const messages = chatMessagesQueryGet({
-								uuid: c.uuid
-							})
+				case SocketEvent_Tags.ChatConversationNameEdited: {
+					const [inner] = event.inner
 
-							return messages?.some(m => m.inner.uuid === inner.uuid)
-						})
+					switch (inner.newName.tag) {
+						case MaybeEncryptedUniffi_Tags.Decrypted: {
+							const [name] = inner.newName.inner
 
-						if (!chat) {
-							break
-						}
-
-						chatMessagesQueryUpdate({
-							params: {
-								uuid: chat.uuid
-							},
-							updater: prev => prev.filter(m => m.inner.uuid !== inner.uuid)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.ChatMessageEmbedDisabled: {
-						const [inner] = event.inner
-
-						const chats = chatsQueryGet()
-						const chat = chats?.find(c => {
-							const messages = chatMessagesQueryGet({
-								uuid: c.uuid
-							})
-
-							return messages?.some(m => m.inner.uuid === inner.uuid)
-						})
-
-						if (!chat) {
-							break
-						}
-
-						chatMessagesQueryUpdate({
-							params: {
-								uuid: chat.uuid
-							},
-							updater: prev =>
-								prev.map(m =>
-									m.inner.uuid === inner.uuid
-										? {
-												...m,
-												inner: {
-													...m.inner,
-													embedsDisabled: true
+							chatsQueryUpdate({
+								updater: prev =>
+									prev.map(c =>
+										c.uuid === inner.chat
+											? {
+													...c,
+													name
 												}
-											}
-										: m
-								)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.ChatConversationsNew: {
-						const [inner] = event.inner
-
-						chatsQueryUpdate({
-							updater: prev => [...(prev ?? []).filter(c => c.uuid !== inner.chat.uuid), inner.chat]
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.ChatConversationDeleted: {
-						const [inner] = event.inner
-
-						chatsQueryUpdate({
-							updater: prev => (prev ?? []).filter(c => c.uuid !== inner.uuid)
-						})
-
-						const chats = chatsQueryGet()
-						const chat = chats?.find(c => c.uuid === inner.uuid)
-
-						if (!chat) {
-							break
+											: c
+									)
+							})
 						}
-
-						events.emit("chatConversationDeleted", {
-							uuid: inner.uuid
-						})
-
-						break
 					}
 
-					case SocketEvent_Tags.ChatConversationParticipantLeft: {
-						const [inner] = event.inner
+					break
+				}
 
-						const chats = chatsQueryGet()
-						const chat = chats?.find(c => c.uuid === inner.uuid)
+				case SocketEvent_Tags.ChatMessageEdited: {
+					const [inner] = event.inner
 
-						if (!chat) {
-							break
-						}
+					switch (inner.newContent.tag) {
+						case MaybeEncryptedUniffi_Tags.Decrypted: {
+							const [newContent] = inner.newContent.inner
 
-						chatsQueryUpdate({
-							updater: prev =>
-								prev.map(c =>
-									c.uuid === inner.uuid
-										? {
-												...c,
-												participants: c.participants.filter(p => p.userId !== inner.userId)
-											}
-										: c
-								)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.ChatConversationParticipantNew: {
-						const [inner] = event.inner
-
-						const chats = chatsQueryGet()
-						const chat = chats?.find(c => c.uuid === inner.chat)
-
-						if (!chat) {
-							break
-						}
-
-						chatsQueryUpdate({
-							updater: prev =>
-								prev.map(c =>
-									c.uuid === inner.chat
-										? {
-												...c,
-												participants: [
-													...c.participants.filter(p => p.userId !== inner.participant.userId),
-													inner.participant
-												]
-											}
-										: c
-								)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.NoteArchived: {
-						const [inner] = event.inner
-
-						notesQueryUpdate({
-							updater: prev =>
-								prev.map(n =>
-									n.uuid === inner.note
-										? {
-												...n,
-												archived: true
-											}
-										: n
-								)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.NoteDeleted: {
-						const [inner] = event.inner
-
-						notesQueryUpdate({
-							updater: prev => prev.filter(n => n.uuid !== inner.note)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.NoteRestored: {
-						const [inner] = event.inner
-
-						notesQueryUpdate({
-							updater: prev =>
-								prev.map(n =>
-									n.uuid === inner.note
-										? {
-												...n,
-												archived: false,
-												trashed: false
-											}
-										: n
-								)
-						})
-
-						break
-					}
-
-					case SocketEvent_Tags.NoteTitleEdited: {
-						const [inner] = event.inner
-
-						switch (inner.newTitle.tag) {
-							case MaybeEncryptedUniffi_Tags.Decrypted: {
-								const [newTitle] = inner.newTitle.inner
-
-								notesQueryUpdate({
-									updater: prev =>
-										prev.map(n =>
-											n.uuid === inner.note
-												? {
-														...n,
-														title: newTitle
+							chatMessagesQueryUpdate({
+								params: {
+									uuid: inner.chat
+								},
+								updater: prev =>
+									prev.map(m =>
+										m.inner.uuid === inner.uuid
+											? {
+													...m,
+													inner: {
+														...m.inner,
+														message: newContent
 													}
-												: n
-										)
-								})
-							}
+												}
+											: m
+									)
+							})
 						}
-
-						break
 					}
 
-					case SocketEvent_Tags.NoteParticipantNew: {
-						const [inner] = event.inner
+					break
+				}
 
-						notesQueryUpdate({
-							updater: prev =>
-								prev.map(n =>
-									n.uuid === inner.note
-										? {
-												...n,
-												participants: [
-													...n.participants.filter(p => p.userId !== inner.participant.userId),
-													inner.participant
-												]
-											}
-										: n
-								)
+				case SocketEvent_Tags.ChatMessageDelete: {
+					const [inner] = event.inner
+
+					const chats = chatsQueryGet()
+					const chat = chats?.find(c => {
+						const messages = chatMessagesQueryGet({
+							uuid: c.uuid
 						})
 
+						return messages?.some(m => m.inner.uuid === inner.uuid)
+					})
+
+					if (!chat) {
 						break
 					}
 
-					case SocketEvent_Tags.NoteParticipantRemoved: {
-						const [inner] = event.inner
+					chatMessagesQueryUpdate({
+						params: {
+							uuid: chat.uuid
+						},
+						updater: prev => prev.filter(m => m.inner.uuid !== inner.uuid)
+					})
 
-						notesQueryUpdate({
-							updater: prev =>
-								prev.map(n =>
-									n.uuid === inner.note
-										? {
-												...n,
-												participants: n.participants.filter(p => p.userId !== inner.userId)
-											}
-										: n
-								)
+					break
+				}
+
+				case SocketEvent_Tags.ChatMessageEmbedDisabled: {
+					const [inner] = event.inner
+
+					const chats = chatsQueryGet()
+					const chat = chats?.find(c => {
+						const messages = chatMessagesQueryGet({
+							uuid: c.uuid
 						})
 
+						return messages?.some(m => m.inner.uuid === inner.uuid)
+					})
+
+					if (!chat) {
 						break
 					}
 
-					case SocketEvent_Tags.NoteParticipantPermissions: {
-						const [inner] = event.inner
-
-						notesQueryUpdate({
-							updater: prev =>
-								prev.map(n =>
-									n.uuid === inner.note
-										? {
-												...n,
-												participants: n.participants.map(p =>
-													p.userId === inner.userId
-														? {
-																...p,
-																permissionsWrite: inner.permissionsWrite
-															}
-														: p
-												)
+					chatMessagesQueryUpdate({
+						params: {
+							uuid: chat.uuid
+						},
+						updater: prev =>
+							prev.map(m =>
+								m.inner.uuid === inner.uuid
+									? {
+											...m,
+											inner: {
+												...m.inner,
+												embedsDisabled: true
 											}
-										: n
-								)
-						})
+										}
+									: m
+							)
+					})
 
+					break
+				}
+
+				case SocketEvent_Tags.ChatConversationsNew: {
+					const [inner] = event.inner
+
+					chatsQueryUpdate({
+						updater: prev => [...(prev ?? []).filter(c => c.uuid !== inner.chat.uuid), inner.chat]
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.ChatConversationDeleted: {
+					const [inner] = event.inner
+
+					chatsQueryUpdate({
+						updater: prev => (prev ?? []).filter(c => c.uuid !== inner.uuid)
+					})
+
+					const chats = chatsQueryGet()
+					const chat = chats?.find(c => c.uuid === inner.uuid)
+
+					if (!chat) {
 						break
 					}
 
-					case SocketEvent_Tags.NoteNew: {
-						// TODO: Don't refetch the query, build from socket event once added
-						notesQueryRefetch().catch(console.error)
+					events.emit("chatConversationDeleted", {
+						uuid: inner.uuid
+					})
 
+					break
+				}
+
+				case SocketEvent_Tags.ChatConversationParticipantLeft: {
+					const [inner] = event.inner
+
+					const chats = chatsQueryGet()
+					const chat = chats?.find(c => c.uuid === inner.uuid)
+
+					if (!chat) {
 						break
 					}
 
-					case SocketEvent_Tags.NoteContentEdited: {
-						const [inner] = event.inner
+					chatsQueryUpdate({
+						updater: prev =>
+							prev.map(c =>
+								c.uuid === inner.uuid
+									? {
+											...c,
+											participants: c.participants.filter(p => p.userId !== inner.userId)
+										}
+									: c
+							)
+					})
 
-						const notes = notesQueryGet()
-						const note = notes?.find(n => n.uuid === inner.note)
+					break
+				}
 
-						if (!note) {
-							break
+				case SocketEvent_Tags.ChatConversationParticipantNew: {
+					const [inner] = event.inner
+
+					const chats = chatsQueryGet()
+					const chat = chats?.find(c => c.uuid === inner.chat)
+
+					if (!chat) {
+						break
+					}
+
+					chatsQueryUpdate({
+						updater: prev =>
+							prev.map(c =>
+								c.uuid === inner.chat
+									? {
+											...c,
+											participants: [
+												...c.participants.filter(p => p.userId !== inner.participant.userId),
+												inner.participant
+											]
+										}
+									: c
+							)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteArchived: {
+					const [inner] = event.inner
+
+					notesQueryUpdate({
+						updater: prev =>
+							prev.map(n =>
+								n.uuid === inner.note
+									? {
+											...n,
+											archived: true
+										}
+									: n
+							)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteDeleted: {
+					const [inner] = event.inner
+
+					notesQueryUpdate({
+						updater: prev => prev.filter(n => n.uuid !== inner.note)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteRestored: {
+					const [inner] = event.inner
+
+					notesQueryUpdate({
+						updater: prev =>
+							prev.map(n =>
+								n.uuid === inner.note
+									? {
+											...n,
+											archived: false,
+											trashed: false
+										}
+									: n
+							)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteTitleEdited: {
+					const [inner] = event.inner
+
+					switch (inner.newTitle.tag) {
+						case MaybeEncryptedUniffi_Tags.Decrypted: {
+							const [newTitle] = inner.newTitle.inner
+
+							notesQueryUpdate({
+								updater: prev =>
+									prev.map(n =>
+										n.uuid === inner.note
+											? {
+													...n,
+													title: newTitle
+												}
+											: n
+									)
+							})
 						}
+					}
 
-						events.emit("noteContentEdited", {
-							noteUuid: inner.note,
-							contentEdited: inner
-						})
+					break
+				}
 
+				case SocketEvent_Tags.NoteParticipantNew: {
+					const [inner] = event.inner
+
+					notesQueryUpdate({
+						updater: prev =>
+							prev.map(n =>
+								n.uuid === inner.note
+									? {
+											...n,
+											participants: [
+												...n.participants.filter(p => p.userId !== inner.participant.userId),
+												inner.participant
+											]
+										}
+									: n
+							)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteParticipantRemoved: {
+					const [inner] = event.inner
+
+					notesQueryUpdate({
+						updater: prev =>
+							prev.map(n =>
+								n.uuid === inner.note
+									? {
+											...n,
+											participants: n.participants.filter(p => p.userId !== inner.userId)
+										}
+									: n
+							)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteParticipantPermissions: {
+					const [inner] = event.inner
+
+					notesQueryUpdate({
+						updater: prev =>
+							prev.map(n =>
+								n.uuid === inner.note
+									? {
+											...n,
+											participants: n.participants.map(p =>
+												p.userId === inner.userId
+													? {
+															...p,
+															permissionsWrite: inner.permissionsWrite
+														}
+													: p
+											)
+										}
+									: n
+							)
+					})
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteNew: {
+					// TODO: Don't refetch the query, build from socket event once added
+					notesQueryRefetch().catch(console.error)
+
+					break
+				}
+
+				case SocketEvent_Tags.NoteContentEdited: {
+					const [inner] = event.inner
+
+					const notes = notesQueryGet()
+					const note = notes?.find(n => n.uuid === inner.note)
+
+					if (!note) {
 						break
 					}
+
+					events.emit("noteContentEdited", {
+						noteUuid: inner.note,
+						contentEdited: inner
+					})
+
+					break
 				}
 			}
-		} satisfies SocketEventListener
-	}, [])
+		} catch (e) {
+			console.error(e)
+			alerts.error(e)
+		}
+	}
+} satisfies SocketEventListener
+
+export const InnerSocket = memo(({ sdkClient }: { sdkClient: JsClientInterface }) => {
+	const checkConnectionIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined)
 
 	useEffect(() => {
 		const abortController = new AbortController()
 
 		const { cleanup } = runEffect(async defer => {
-			const handle = (await sdkClient.addEventListener(listener, undefined, {
+			if (sdkClient.isSocketConnected()) {
+				useSocketStore.getState().setState("connected")
+			}
+
+			clearInterval(checkConnectionIntervalRef.current)
+
+			checkConnectionIntervalRef.current = setInterval(() => {
+				useSocketStore.getState().setState(prev => (sdkClient.isSocketConnected() ? "connected" : prev))
+			}, 5000)
+
+			const handle = (await sdkClient.addEventListener(onEvent, undefined, {
 				signal: abortController.signal
 			})) as ListenerHandle
 
 			defer(() => {
+				clearInterval(checkConnectionIntervalRef.current)
+
 				abortController.abort()
 				handle.uniffiDestroy()
 			})

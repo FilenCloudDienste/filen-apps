@@ -3,8 +3,7 @@ import { run, Semaphore, createExecutableTimeout } from "@filen/utils"
 import notes from "@/lib/notes"
 import alerts from "@/lib/alerts"
 import { AppState } from "react-native"
-import useNotesStore, { type TemporaryContent } from "@/stores/useNotes.store"
-import { useShallow } from "zustand/shallow"
+import useNotesStore, { type InflightContent } from "@/stores/useNotes.store"
 import sqlite from "@/lib/sqlite"
 import { memo } from "@/lib/memo"
 
@@ -12,7 +11,7 @@ export class Sync {
 	private readonly mutex: Semaphore = new Semaphore(1)
 	private readonly storageMutex: Semaphore = new Semaphore(1)
 	private syncTimeout: ReturnType<typeof createExecutableTimeout> | null = null
-	public readonly sqliteKvKey: string = "temporaryNoteContents"
+	public readonly sqliteKvKey: string = "inflightNoteContent"
 	private initDone: boolean = false
 
 	public constructor() {
@@ -34,9 +33,7 @@ export class Sync {
 				this.storageMutex.release()
 			})
 
-			const [fromDisk, fromCloud] = await Promise.all([sqlite.kvAsync.get<TemporaryContent>(this.sqliteKvKey), notes.list()])
-
-			console.log("fromDisk", fromDisk)
+			const [fromDisk, fromCloud] = await Promise.all([sqlite.kvAsync.get<InflightContent>(this.sqliteKvKey), notes.list()])
 
 			if (!fromDisk || Object.keys(fromDisk).length === 0) {
 				return
@@ -52,12 +49,12 @@ export class Sync {
 			)
 
 			for (const noteUuid of Object.keys(fromDisk)) {
-				useNotesStore.getState().setTemporaryContent(prev => {
+				useNotesStore.getState().setInflightContent(prev => {
 					const updated = {
 						...prev
 					}
 
-					// If the note no longer exists in the cloud, remove its temporary contents
+					// If the note no longer exists in the cloud, remove its inflight contents
 					if (!fromCloudEditedTimestamp[noteUuid]) {
 						delete updated[noteUuid]
 					} else {
@@ -78,10 +75,6 @@ export class Sync {
 					return updated
 				})
 			}
-
-			useNotesStore.setState({
-				temporaryContent: fromDisk
-			})
 		})
 
 		if (!result.success) {
@@ -92,7 +85,7 @@ export class Sync {
 		this.initDone = true
 	}
 
-	public async flushToDisk(temporaryContent: TemporaryContent, requireMutex: boolean = true): Promise<void> {
+	public async flushToDisk(inflightContent: InflightContent, requireMutex: boolean = true): Promise<void> {
 		const result = await run(async defer => {
 			await Promise.all([!requireMutex ? Promise.resolve() : this.storageMutex.acquire(), this.waitForInit()])
 
@@ -102,24 +95,18 @@ export class Sync {
 				}
 			})
 
-			if (Object.keys(temporaryContent).length === 0) {
+			if (Object.keys(inflightContent).length === 0) {
 				await sqlite.kvAsync.remove(this.sqliteKvKey)
-
-				console.log("Flushed note sync to disk (deleted)", 0)
 
 				return
 			}
 
-			await sqlite.kvAsync.set(this.sqliteKvKey, temporaryContent)
-
-			console.log("Flushed note sync to disk", Object.keys(temporaryContent).length)
+			await sqlite.kvAsync.set(this.sqliteKvKey, inflightContent)
 		})
 
 		if (!result.success) {
 			console.error("Error flushing note sync to disk:", result.error)
 		}
-
-		console.log("temp", await sqlite.kvAsync.get<TemporaryContent>(this.sqliteKvKey))
 	}
 
 	private async sync(): Promise<void> {
@@ -131,7 +118,7 @@ export class Sync {
 				this.storageMutex.release()
 			})
 
-			const fromDisk = await sqlite.kvAsync.get<TemporaryContent>(this.sqliteKvKey)
+			const fromDisk = await sqlite.kvAsync.get<InflightContent>(this.sqliteKvKey)
 
 			if (!fromDisk || Object.keys(fromDisk).length === 0) {
 				return
@@ -149,14 +136,15 @@ export class Sync {
 						return
 					}
 
+					let didFlushToDisk = false
+					let flushToDiskError: Error | null = null
+
 					const updatedNote = await notes.setContent({
 						note: mostRecentContent.note,
 						content: mostRecentContent.content
 					})
 
-					let didFlushToDisk = false
-
-					useNotesStore.getState().setTemporaryContent(prev => {
+					useNotesStore.getState().setInflightContent(prev => {
 						const updated = {
 							...prev
 						}
@@ -172,18 +160,22 @@ export class Sync {
 							}
 						}
 
-						console.log(updated)
-
 						this.flushToDisk(updated, false)
 							.then(() => {
 								didFlushToDisk = true
 							})
-							.catch(console.error)
+							.catch(err => {
+								flushToDiskError = err
+							})
 
 						return updated
 					})
 
 					while (!didFlushToDisk) {
+						if (flushToDiskError) {
+							throw flushToDiskError
+						}
+
 						await new Promise<void>(resolve => setTimeout(resolve, 100))
 					}
 				})
@@ -194,8 +186,6 @@ export class Sync {
 			console.error(result.error)
 			alerts.error(result.error)
 		}
-
-		console.log("Sync completed")
 	}
 
 	public syncDebounced(): void {
@@ -214,8 +204,6 @@ export class Sync {
 export const sync = new Sync()
 
 export const SyncHost = memo(() => {
-	const temporaryContent = useNotesStore(useShallow(state => state.temporaryContent))
-
 	useEffect(() => {
 		const appStateListener = AppState.addEventListener("change", nextAppState => {
 			if (nextAppState === "background") {
@@ -227,18 +215,6 @@ export const SyncHost = memo(() => {
 			appStateListener.remove()
 		}
 	}, [])
-
-	useEffect(() => {
-		if (Object.keys(temporaryContent).length === 0) {
-			return
-		}
-
-		sync.flushToDisk(temporaryContent)
-			.then(() => {
-				sync.syncDebounced()
-			})
-			.catch(console.error)
-	}, [temporaryContent])
 
 	return null
 })

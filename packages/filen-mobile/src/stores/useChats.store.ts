@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { ChatTyping } from "@filen/sdk-rs"
+import type { ChatTyping, ChatMessage, Chat } from "@filen/sdk-rs"
 
 export type InputViewLayout = {
 	width: number
@@ -9,8 +9,17 @@ export type InputViewLayout = {
 }
 
 export type Suggestions = "mentions" | "reply" | "emojis"
-
 export type Typing = Omit<ChatTyping, "typingType">[]
+export type ChatMessageWithInflightId = ChatMessage & {
+	inflightId: string
+}
+export type InflightChatMessages = Record<
+	string,
+	{
+		chat: Chat
+		messages: ChatMessageWithInflightId[]
+	}
+>
 
 export type ChatsStore = {
 	inputViewLayout: InputViewLayout
@@ -21,6 +30,10 @@ export type ChatsStore = {
 	suggestionsVisible: Suggestions[]
 	inputFocused: boolean
 	typing: Record<string, Typing>
+	inflightMessages: InflightChatMessages
+	inflightErrors: Record<string, Error>
+	setInflightErrors: (fn: Record<string, Error> | ((prev: Record<string, Error>) => Record<string, Error>)) => void
+	setInflightMessages: (fn: InflightChatMessages | ((prev: InflightChatMessages) => InflightChatMessages)) => void
 	setTyping: (fn: Record<string, Typing> | ((prev: Record<string, Typing>) => Record<string, Typing>)) => void
 	setInputFocused: (fn: boolean | ((prev: boolean) => boolean)) => void
 	setSuggestionsVisible: (fn: Suggestions[] | ((prev: Suggestions[]) => Suggestions[])) => void
@@ -52,6 +65,18 @@ export const useChatsStore = create<ChatsStore>(set => ({
 	suggestionsVisible: [],
 	inputFocused: false,
 	typing: {},
+	inflightMessages: {},
+	inflightErrors: {},
+	setInflightErrors(inflightErrors) {
+		set(state => ({
+			inflightErrors: typeof inflightErrors === "function" ? inflightErrors(state.inflightErrors) : inflightErrors
+		}))
+	},
+	setInflightMessages(inflightMessages) {
+		set(state => ({
+			inflightMessages: typeof inflightMessages === "function" ? inflightMessages(state.inflightMessages) : inflightMessages
+		}))
+	},
 	setTyping(typing) {
 		set(state => ({
 			typing: typeof typing === "function" ? typing(state.typing) : typing

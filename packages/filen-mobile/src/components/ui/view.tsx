@@ -100,13 +100,15 @@ export const CrossGlassContainerView = memo(
 		className,
 		style,
 		disableLiquidGlass,
-		disableBlur
+		disableBlur,
+		disableInteraction
 	}: {
 		children: React.ReactNode
 		className?: string
 		style?: StyleProp<ViewStyle>
 		disableLiquidGlass?: boolean
 		disableBlur?: boolean
+		disableInteraction?: boolean
 	}) => {
 		const { theme } = useUniwind()
 
@@ -114,7 +116,7 @@ export const CrossGlassContainerView = memo(
 			return (
 				<LiquidGlassView
 					className={cn("rounded-full", className)}
-					isInteractive={true}
+					isInteractive={!disableInteraction}
 					style={style}
 				>
 					{children}
@@ -147,12 +149,6 @@ export const CrossGlassContainerView = memo(
 					default: theme === "dark" ? "dark" : "light"
 				})}
 				experimentalBlurMethod="dimezisBlurView"
-				style={[
-					style,
-					{
-						borderWidth: StyleSheet.hairlineWidth
-					}
-				]}
 			>
 				{children}
 			</BlurView>

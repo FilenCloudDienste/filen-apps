@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import type { Chat as TChat, ChatMessage } from "@filen/sdk-rs"
+import type { Chat as TChat } from "@filen/sdk-rs"
 import { memo, useMemo, useCallback } from "@/lib/memo"
 import View from "@/components/ui/view"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -9,7 +9,7 @@ import Text from "@/components/ui/text"
 import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller"
 import { AnimatedView } from "@/components/ui/animated"
 import { interpolate, useAnimatedStyle } from "react-native-reanimated"
-import useChatsStore from "@/stores/useChats.store"
+import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
 import Message from "@/components/chats/chat/message"
 import isEqual from "react-fast-compare"
@@ -19,7 +19,8 @@ export const Messages = memo(
 		const insets = useSafeAreaInsets()
 		const keyboardAnimation = useReanimatedKeyboardAnimation()
 		const inputViewLayout = useChatsStore(useShallow(state => state.inputViewLayout))
-		const listRef = useRef<ListRef<ChatMessage>>(null)
+		const listRef = useRef<ListRef<ChatMessageWithInflightId>>(null)
+		const inflightChatMessages = useChatsStore(useShallow(state => state.inflightMessages[chat.uuid]?.messages ?? []))
 
 		const chatMessagesQuery = useChatMessagesQuery(
 			{
@@ -35,8 +36,8 @@ export const Messages = memo(
 				return []
 			}
 
-			return chatMessagesQuery.data.sort((a, b) => Number(b.sentTimestamp) - Number(a.sentTimestamp))
-		}, [chatMessagesQuery.data, chatMessagesQuery.status])
+			return [...chatMessagesQuery.data, ...inflightChatMessages].sort((a, b) => Number(b.sentTimestamp) - Number(a.sentTimestamp))
+		}, [chatMessagesQuery.data, chatMessagesQuery.status, inflightChatMessages])
 
 		const headerStyle = useAnimatedStyle(() => {
 			const standardHeight = insets.bottom + inputViewLayout.height + 16
@@ -49,7 +50,7 @@ export const Messages = memo(
 		}, [insets.bottom, keyboardAnimation, inputViewLayout.height])
 
 		const renderItem = useCallback(
-			(info: ListRenderItemInfo<ChatMessage>) => {
+			(info: ListRenderItemInfo<ChatMessageWithInflightId>) => {
 				if (!chat) {
 					return null
 				}
@@ -66,7 +67,7 @@ export const Messages = memo(
 			[chat, messages]
 		)
 
-		const keyExtractor = useCallback((item: ChatMessage) => {
+		const keyExtractor = useCallback((item: ChatMessageWithInflightId) => {
 			return item.inner.uuid
 		}, [])
 

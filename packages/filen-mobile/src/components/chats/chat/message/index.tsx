@@ -1,4 +1,4 @@
-import type { Chat as TChat, ChatMessage } from "@filen/sdk-rs"
+import type { Chat as TChat } from "@filen/sdk-rs"
 import { memo, useMemo } from "@/lib/memo"
 import View from "@/components/ui/view"
 import type { ListRenderItemInfo } from "@/components/ui/virtualList"
@@ -9,12 +9,13 @@ import Menu from "@/components/ui/menu"
 import { useSecureStore } from "@/lib/secureStore"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn } from "react-native-reanimated"
-import useChatsStore from "@/stores/useChats.store"
+import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
 import { contactDisplayName } from "@/lib/utils"
 import { Fragment } from "react"
 import { simpleDate } from "@/lib/time"
 import isEqual from "react-fast-compare"
+import Regexed from "@/components/chats/chat/message/regexed"
 
 export const Typing = memo(
 	({ chat }: { chat: TChat }) => {
@@ -56,16 +57,17 @@ export const Message = memo(
 		prevMessage
 	}: {
 		chat: TChat
-		info: ListRenderItemInfo<ChatMessage>
-		nextMessage?: ChatMessage
-		prevMessage?: ChatMessage
+		info: ListRenderItemInfo<ChatMessageWithInflightId>
+		nextMessage?: ChatMessageWithInflightId
+		prevMessage?: ChatMessageWithInflightId
 	}) => {
 		const stringifiedClient = useStringifiedClient()
-		const [, setChatReplyTo] = useSecureStore<ChatMessage | null>(`chatReplyTo:${chat.uuid}`, null)
+		const [, setChatReplyTo] = useSecureStore<ChatMessageWithInflightId | null>(`chatReplyTo:${chat.uuid}`, null)
+		const isInflightError = useChatsStore(useShallow(state => state.inflightErrors[info.item.inflightId]))
 
 		return (
 			<View
-				className="w-full h-auto"
+				className={cn("w-full h-auto", info.item.inner.senderId === stringifiedClient?.userId ? "items-end" : "items-start")}
 				style={{
 					transform: [
 						{
@@ -95,53 +97,64 @@ export const Message = memo(
 							</Text>
 						</View>
 					)}
-				<Menu
-					type="context"
-					buttons={[
-						{
-							id: "reply",
-							title: "tbd_reply",
-							onPress: () => {
-								setChatReplyTo(info.item)
+				<View className="h-auto max-w-3/4">
+					<Menu
+						type="context"
+						buttons={[
+							{
+								id: "reply",
+								title: "tbd_reply",
+								onPress: () => {
+									setChatReplyTo(info.item)
+								}
 							}
-						}
-					]}
-					className={cn(
-						"w-full h-auto pb-2 px-4",
-						info.item.inner.senderId === stringifiedClient?.userId ? "items-end" : "items-start"
-					)}
-				>
-					<View
-						className={cn(
-							"p-3 rounded-3xl max-w-3/4",
-							info.item.inner.senderId === stringifiedClient?.userId ? "bg-blue-500" : "bg-background-secondary"
-						)}
+						]}
+						className="w-full h-auto pb-2 px-4"
+						isAnchoredToRight={info.item.inner.senderId !== stringifiedClient?.userId}
 					>
-						{nextMessage?.inner.senderId !== info.item.inner.senderId && (
-							<Fragment>
-								{info.item.inner.senderId === stringifiedClient?.userId ? (
-									<View className="absolute right-2 -bottom-1.75 overflow-hidden bg-transparent w-5 h-3.75">
-										<View className="bg-blue-500 absolute size-6.5 bottom-0 -right-3.25 rounded-[13px]" />
-									</View>
-								) : (
-									<View
-										className="absolute left-2 -bottom-1.75 overflow-hidden bg-transparent w-5 h-3.75"
-										style={{
-											transform: [
-												{
-													scaleX: -1
-												}
-											]
-										}}
-									>
-										<View className="bg-background-secondary absolute size-6.5 bottom-0 -right-3.25 rounded-[13px]" />
-									</View>
-								)}
-							</Fragment>
-						)}
-						<Text>{info.item.inner.message}</Text>
-					</View>
-				</Menu>
+						<View
+							className={cn(
+								"p-3 rounded-3xl w-auto h-auto flex-row",
+								info.item.inner.senderId === stringifiedClient?.userId
+									? cn(isInflightError ? "bg-red-500" : "bg-blue-500")
+									: "bg-background-secondary"
+							)}
+						>
+							{nextMessage?.inner.senderId !== info.item.inner.senderId && (
+								<Fragment>
+									{info.item.inner.senderId === stringifiedClient?.userId ? (
+										<View className="absolute right-2 -bottom-1.75 overflow-hidden bg-transparent w-5 h-3.75">
+											<View
+												className={cn(
+													isInflightError ? "bg-red-500" : "bg-blue-500",
+													"absolute size-6.5 bottom-0 -right-3.25 rounded-[13px]"
+												)}
+											/>
+										</View>
+									) : (
+										<View
+											className="absolute left-2 -bottom-1.75 overflow-hidden bg-transparent w-5 h-3.75"
+											style={{
+												transform: [
+													{
+														scaleX: -1
+													}
+												]
+											}}
+										>
+											<View className="bg-background-secondary absolute size-6.5 bottom-0 -right-3.25 rounded-[13px]" />
+										</View>
+									)}
+								</Fragment>
+							)}
+							<Regexed
+								chat={chat}
+								message={info.item}
+								fromSelf={info.item.inner.senderId === stringifiedClient?.userId}
+							/>
+						</View>
+					</Menu>
+				</View>
 				{!nextMessage && <Typing chat={chat} />}
 			</View>
 		)

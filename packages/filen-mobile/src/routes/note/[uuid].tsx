@@ -21,7 +21,7 @@ import { unpack } from "msgpackr"
 
 export const Header = memo(
 	({ note, history }: { note: TNote; history?: NoteHistory | null }) => {
-		const isSyncing = useNotesStore(useShallow(state => (state.temporaryContent[note.uuid] ?? []).length > 0))
+		const isInflight = useNotesStore(useShallow(state => (state.inflightContent[note.uuid] ?? []).length > 0))
 		const textForeground = useResolveClassNames("text-foreground")
 		const router = useRouter()
 
@@ -93,7 +93,7 @@ export const Header = memo(
 						]
 					}
 
-					if (!isSyncing) {
+					if (!isInflight) {
 						return null
 					}
 

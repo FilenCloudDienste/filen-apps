@@ -1,6 +1,6 @@
-import type { Chat, ChatMessage, ChatParticipant } from "@filen/sdk-rs"
+import { type Chat, type ChatParticipant, ChatTypingType } from "@filen/sdk-rs"
 import { useRef, useEffect, Fragment } from "react"
-import { TextInput, type View as TView, useWindowDimensions } from "react-native"
+import { TextInput, type View as TView, useWindowDimensions, type TextInputSelectionChangeEvent } from "react-native"
 import { memo, useCallback, useMemo } from "@/lib/memo"
 import View, { KeyboardStickyView, CrossGlassContainerView, GestureHandlerScrollView } from "@/components/ui/view"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -11,11 +11,10 @@ import { FadeIn, FadeOut, SlideInDown, SlideOutDown } from "react-native-reanima
 import useViewLayout from "@/hooks/useViewLayout"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { PressableScale } from "@/components/ui/pressables"
-import Menu from "@/components/ui/menu"
-import useChatsStore from "@/stores/useChats.store"
+import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
 import { useSecureStore } from "@/lib/secureStore"
-import { cn, fastLocaleCompare } from "@filen/utils"
+import { cn, fastLocaleCompare, run, Semaphore } from "@filen/utils"
 import { useStringifiedClient } from "@/lib/auth"
 import { contactDisplayName, findClosestIndexString } from "@/lib/utils"
 import Avatar from "@/components/ui/avatar"
@@ -23,6 +22,10 @@ import useEffectOnce from "@/hooks/useEffectOnce"
 import Image from "@/components/ui/image"
 import { customEmojis } from "@/assets/customEmojis"
 import isEqual from "react-fast-compare"
+import { randomUUID } from "expo-crypto"
+import chats from "@/lib/chats"
+import { sync } from "@/components/chats/sync"
+import alerts from "@/lib/alerts"
 
 export const PopupContainerView = memo(
 	({
@@ -47,31 +50,21 @@ export const PopupContainerView = memo(
 				exiting={SlideOutDown}
 				className={cn("absolute left-0 right-0 px-4 z-20", className)}
 				style={{
-					transform: [
-						{
-							scaleY: -1
-						}
-					],
 					bottom: inputViewLayout.height + 8
 				}}
 			>
 				<CrossGlassContainerView
 					className={cn("rounded-3xl w-full overflow-hidden", containerClassName)}
 					disableLiquidGlass={true}
-					style={{
-						transform: [
-							{
-								scaleY: -1
-							}
-						],
-						maxHeight: Math.max(128, windowDimensions.height / 4)
-					}}
 				>
 					<GestureHandlerScrollView
 						showsHorizontalScrollIndicator={false}
 						showsVerticalScrollIndicator={true}
 						className={cn("px-3 py-2", scrollViewClassName)}
 						automaticallyAdjustContentInsets={true}
+						style={{
+							maxHeight: Math.max(128, windowDimensions.height / 4)
+						}}
 						{...scrollViewProps}
 					>
 						{children}
@@ -363,7 +356,7 @@ export const EmojiSuggestions = memo(
 
 export const ReplyTo = memo(
 	({ chat }: { chat: Chat }) => {
-		const [chatReplyTo, setChatReplyTo] = useSecureStore<ChatMessage | null>(`chatReplyTo:${chat.uuid}`, null)
+		const [chatReplyTo, setChatReplyTo] = useSecureStore<ChatMessageWithInflightId | null>(`chatReplyTo:${chat.uuid}`, null)
 		const suggestionsVisible = useChatsStore(useShallow(state => state.suggestionsVisible))
 		const textMutedForeground = useResolveClassNames("text-muted-foreground")
 
@@ -476,6 +469,11 @@ export const Input = memo(
 		const [chatInputValue, setChatInputValue] = useSecureStore<string>(`chatInputValue:${chat.uuid}`, "")
 		const inputRef = useRef<TextInput>(null)
 		const suggestionsVisible = useChatsStore(useShallow(state => state.suggestionsVisible))
+		const stringifiedClient = useStringifiedClient()
+		const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+		const isTypingRef = useRef<boolean>(false)
+		const sendTypingEventSemaphoreRef = useRef<Semaphore>(new Semaphore(1))
+		const [chatReplyTo, setChatReplyTo] = useSecureStore<ChatMessageWithInflightId | null>(`chatReplyTo:${chat.uuid}`, null)
 
 		const onChangeText = useCallback(
 			(text: string) => {
@@ -483,6 +481,176 @@ export const Input = memo(
 			},
 			[setChatInputValue]
 		)
+
+		const me = useMemo(() => {
+			if (!stringifiedClient) {
+				return null
+			}
+
+			return chat.participants.find(p => p.userId === stringifiedClient.userId)
+		}, [chat.participants, stringifiedClient])
+
+		const sendTypingEvent = useCallback(
+			async (type: ChatTypingType) => {
+				const result = await run(async defer => {
+					await sendTypingEventSemaphoreRef.current.acquire()
+
+					defer(() => {
+						sendTypingEventSemaphoreRef.current.release()
+					})
+
+					await chats.sendTyping({
+						chat,
+						type
+					})
+				})
+
+				if (!result.success) {
+					console.error(result.error)
+
+					return
+				}
+			},
+			[chat]
+		)
+
+		const send = useCallback(async () => {
+			if (!stringifiedClient || !me) {
+				return
+			}
+
+			const normalizedMessage = chatInputValue.trim()
+
+			if (normalizedMessage.length === 0) {
+				return
+			}
+
+			clearTimeout(typingTimeoutRef.current)
+
+			if (isTypingRef.current) {
+				isTypingRef.current = false
+
+				sendTypingEvent(ChatTypingType.Up).catch(console.error)
+			}
+
+			inputRef.current?.clear()
+
+			setChatInputValue("")
+			setChatReplyTo(null)
+
+			useChatsStore.getState().setInputSelection({
+				start: 0,
+				end: 0
+			})
+
+			const sentTimestamp = Date.now()
+			let flushedToDisk = false
+			let flushToDiskError: Error | null = null
+			const inflightId = randomUUID()
+
+			useChatsStore.getState().setInflightMessages(prev => {
+				const updated = {
+					...prev,
+					[chat.uuid]: {
+						chat,
+						messages: [
+							...(prev[chat.uuid]?.messages ?? []),
+							{
+								inflightId,
+								chat: chat.uuid,
+								inner: {
+									uuid: inflightId,
+									senderId: stringifiedClient.userId,
+									senderEmail: stringifiedClient.email,
+									senderAvatar: me.avatar,
+									senderNickName: me.nickName,
+									message: normalizedMessage
+								},
+								replyTo: chatReplyTo
+									? {
+											uuid: chatReplyTo.inner.uuid,
+											senderId: chatReplyTo.inner.senderId,
+											senderEmail: chatReplyTo.inner.senderEmail,
+											senderAvatar: chatReplyTo.inner.senderAvatar,
+											senderNickName: chatReplyTo.inner.senderNickName,
+											message: chatReplyTo.inner.message
+										}
+									: undefined,
+								embedDisabled: false,
+								edited: false,
+								editedTimestamp: BigInt(0),
+								sentTimestamp: BigInt(sentTimestamp)
+							}
+						]
+					}
+				}
+
+				sync.flushToDisk(updated)
+					.then(() => {
+						flushedToDisk = true
+
+						sync.sync()
+					})
+					.catch(err => {
+						flushToDiskError = err
+					})
+
+				return updated
+			})
+
+			const result = await run(async () => {
+				while (!flushedToDisk) {
+					if (flushToDiskError) {
+						throw flushToDiskError
+					}
+
+					await new Promise<void>(resolve => setTimeout(resolve, 100))
+				}
+			})
+
+			if (!result.success) {
+				console.error(result.error)
+				alerts.error(result.error)
+
+				return
+			}
+		}, [chatInputValue, chat, stringifiedClient, me, setChatInputValue, sendTypingEvent, chatReplyTo, setChatReplyTo])
+
+		const onKeyPress = useCallback(() => {
+			if (!isTypingRef.current) {
+				isTypingRef.current = true
+
+				sendTypingEvent(ChatTypingType.Down).catch(console.error)
+			}
+
+			clearTimeout(typingTimeoutRef.current)
+
+			typingTimeoutRef.current = setTimeout(() => {
+				isTypingRef.current = false
+
+				sendTypingEvent(ChatTypingType.Up).catch(console.error)
+			}, 3000)
+		}, [sendTypingEvent])
+
+		const onBlur = useCallback(() => {
+			useChatsStore.getState().setInputFocused(false)
+
+			clearTimeout(typingTimeoutRef.current)
+
+			if (isTypingRef.current) {
+				isTypingRef.current = false
+
+				sendTypingEvent(ChatTypingType.Up).catch(console.error)
+			}
+		}, [sendTypingEvent])
+
+		const onFocus = useCallback(() => {
+			useChatsStore.getState().setInputFocused(true)
+		}, [])
+
+		const onSelectionChange = useCallback((e: TextInputSelectionChangeEvent) => {
+			useChatsStore.getState().setInputSelection(e.nativeEvent.selection)
+		}, [])
 
 		useEffectOnce(() => {
 			if (chatInputValue.length === 0) {
@@ -498,6 +666,18 @@ export const Input = memo(
 		useEffect(() => {
 			useChatsStore.getState().setInputViewLayout(inputViewLayout)
 		}, [inputViewLayout])
+
+		useEffect(() => {
+			return () => {
+				clearTimeout(typingTimeoutRef.current)
+
+				if (isTypingRef.current) {
+					isTypingRef.current = false
+
+					sendTypingEvent(ChatTypingType.Up).catch(console.error)
+				}
+			}
+		}, [sendTypingEvent])
 
 		return (
 			<KeyboardStickyView
@@ -519,26 +699,15 @@ export const Input = memo(
 					ref={inputViewRef}
 					onLayout={inputViewOnLayout}
 				>
-					<Menu
-						type="dropdown"
-						className="overflow-hidden"
-						buttons={[
-							{
-								id: "test",
-								title: "do stuff"
-							}
-						]}
-					>
-						<PressableScale rippleColor="transparent">
-							<CrossGlassContainerView className="items-center justify-center rounded-full size-11">
-								<Ionicons
-									name="add-outline"
-									size={24}
-									color={textForeground.color}
-								/>
-							</CrossGlassContainerView>
-						</PressableScale>
-					</Menu>
+					<PressableScale rippleColor="transparent">
+						<CrossGlassContainerView className="items-center justify-center rounded-full size-11">
+							<Ionicons
+								name="add-outline"
+								size={24}
+								color={textForeground.color}
+							/>
+						</CrossGlassContainerView>
+					</PressableScale>
 					<CrossGlassContainerView className="flex-1 rounded-3xl min-h-11">
 						<TextInput
 							ref={inputRef}
@@ -557,15 +726,10 @@ export const Input = memo(
 							keyboardType="default"
 							returnKeyType="default"
 							enterKeyHint="enter"
-							onFocus={() => {
-								useChatsStore.getState().setInputFocused(true)
-							}}
-							onBlur={() => {
-								useChatsStore.getState().setInputFocused(false)
-							}}
-							onSelectionChange={e => {
-								useChatsStore.getState().setInputSelection(e.nativeEvent.selection)
-							}}
+							onKeyPress={onKeyPress}
+							onFocus={onFocus}
+							onBlur={onBlur}
+							onSelectionChange={onSelectionChange}
 							style={{
 								maxHeight: Math.max(128, windowDimensions.height / 4)
 							}}
@@ -577,9 +741,7 @@ export const Input = memo(
 						>
 							<PressableScale
 								className="ios:rounded-full rounded-full size-7 bg-blue-500 items-center justify-center"
-								onPress={() => {
-									console.log("send")
-								}}
+								onPress={send}
 								hitSlop={15}
 							>
 								<Ionicons

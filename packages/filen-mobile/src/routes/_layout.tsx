@@ -21,6 +21,7 @@ import { PressablesConfig } from "pressto"
 import * as Haptics from "expo-haptics"
 import FullScreenLoadingModal from "@/components/ui/fullScreenLoadingModal"
 import NotesSync from "@/components/notes/sync"
+import ChatsSync from "@/components/chats/sync"
 import ActionSheetProvider from "@/providers/actionSheet.provider"
 import { enableFreeze } from "react-native-screens"
 import Socket from "@/components/socket"
@@ -102,6 +103,7 @@ export const RootLayout = memo(() => {
 													<Fragment>
 														<Socket />
 														<NotesSync />
+														<ChatsSync />
 													</Fragment>
 												)}
 											</Fragment>

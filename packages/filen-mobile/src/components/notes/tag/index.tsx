@@ -23,9 +23,9 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 	const isActive = useNotesStore(useShallow(state => state.activeTag?.uuid === info.item.uuid))
 	const selected = useNotesStore(useShallow(state => state.selectedTags.some(t => t.uuid === info.item.uuid)))
 
-	const syncing = useNotesStore(
+	const inflight = useNotesStore(
 		useShallow(state => {
-			return notesForTag.some(n => (state.temporaryContent[n.uuid] ?? []).length > 0)
+			return notesForTag.some(n => (state.inflightContent[n.uuid] ?? []).length > 0)
 		})
 	)
 
@@ -87,7 +87,7 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 											color={textPrimary.color}
 										/>
 									) : (
-										<View className="size-[18px] bg-transparent" />
+										<View className="size-4.5 bg-transparent" />
 									)}
 								</View>
 								<View
@@ -105,7 +105,7 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 											/>
 										</View>
 									)}
-									{syncing ? (
+									{inflight ? (
 										<ActivityIndicator
 											size="small"
 											color={textForeground.color}

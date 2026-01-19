@@ -19,6 +19,7 @@ import { runEffect, run } from "@filen/utils"
 import events from "@/lib/events"
 import alerts from "@/lib/alerts"
 import prompts from "@/lib/prompts"
+import { sync } from "@/components/notes/sync"
 
 export const Loading = memo(({ children, loading, noteType }: { children: React.ReactNode; loading?: boolean; noteType: NoteType }) => {
 	const textForeground = useResolveClassNames("text-foreground")
@@ -115,24 +116,57 @@ export const Content = memo(
 		}, [stringifiedClient, note, history])
 
 		const onValueChange = useCallback(
-			(value: string) => {
+			async (value: string) => {
 				if (history) {
 					return
 				}
 
 				const now = Date.now()
+				let didFlushToDisk = false
+				let flushToDiskError: Error | null = null
 
-				useNotesStore.getState().setTemporaryContent(prev => ({
-					...prev,
-					[note.uuid]: [
-						{
-							timestamp: now,
-							note,
-							content: value
-						},
-						...(prev[note.uuid] ?? []).filter(c => c.timestamp > now)
-					]
-				}))
+				useNotesStore.getState().setInflightContent(prev => {
+					const updated = {
+						...prev,
+						[note.uuid]: [
+							{
+								timestamp: now,
+								note,
+								content: value
+							},
+							...(prev[note.uuid] ?? []).filter(c => c.timestamp > now)
+						]
+					}
+
+					sync.flushToDisk(updated)
+						.then(() => {
+							didFlushToDisk = true
+
+							sync.syncDebounced()
+						})
+						.catch(err => {
+							flushToDiskError = err
+						})
+
+					return updated
+				})
+
+				const result = await run(async () => {
+					while (!didFlushToDisk) {
+						if (flushToDiskError) {
+							throw flushToDiskError
+						}
+
+						await new Promise<void>(resolve => setTimeout(resolve, 100))
+					}
+				})
+
+				if (!result.success) {
+					console.error(result.error)
+					alerts.error(result.error)
+
+					return
+				}
 			},
 			[note, history]
 		)

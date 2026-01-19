@@ -4,6 +4,7 @@ import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import cache from "@/lib/cache"
 import { sortParams } from "@filen/utils"
+import type { ChatMessageWithInflightId } from "@/stores/useChats.store"
 
 export const BASE_QUERY_KEY = "useChatMessagesQuery"
 
@@ -24,7 +25,7 @@ export async function fetchData(
 		throw new Error("Chat not found")
 	}
 
-	return await sdkClient.listMessagesBefore(
+	const messages = await sdkClient.listMessagesBefore(
 		chat,
 		BigInt(Date.now() + 3600000),
 		params?.signal
@@ -33,6 +34,11 @@ export async function fetchData(
 				}
 			: undefined
 	)
+
+	return messages.map(message => ({
+		...message,
+		inflightId: "" // Placeholder, actual inflightId is only needed for send sync
+	})) satisfies ChatMessageWithInflightId[]
 }
 
 export function useChatMessagesQuery(

@@ -53,7 +53,7 @@ export const Note = memo(
 		const textForeground = useResolveClassNames("text-foreground")
 		const textRed500 = useResolveClassNames("text-red-500")
 		const itemUuid = useMemo(() => (info.item.type === "header" ? info.item.id : info.item.uuid), [info.item])
-		const isSyncing = useNotesStore(useShallow(state => (state.temporaryContent[itemUuid] ?? []).length > 0))
+		const isInflight = useNotesStore(useShallow(state => (state.inflightContent[itemUuid] ?? []).length > 0))
 		const isActive = useNotesStore(useShallow(state => state.activeNote?.uuid === itemUuid))
 		const stringifiedClient = useStringifiedClient()
 		const isSelected = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.uuid === itemUuid)))
@@ -182,7 +182,7 @@ export const Note = memo(
 								)}
 								<View className="shrink-0 h-auto w-auto bg-transparent flex-col gap-2 items-center justify-start">
 									<View className="flex-row items-center justify-center p-1 rounded-full border border-border size-8 bg-background-tertiary">
-										{isSyncing ? (
+										{isInflight ? (
 											<ActivityIndicator
 												size="small"
 												color={textForeground.color}
