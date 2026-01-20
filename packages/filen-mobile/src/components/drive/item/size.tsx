@@ -2,7 +2,7 @@ import { memo } from "@/lib/memo"
 import type { ListRenderItemInfo } from "@/components/ui/virtualList"
 import type { DriveItem } from "@/types"
 import useDirectorySizeQuery from "@/queries/useDirectorySize.query"
-import { formatBytes } from "@/lib/utils"
+import { formatBytes } from "@filen/utils"
 
 export const Size = memo(
 	({ info }: { info: ListRenderItemInfo<DriveItem> }) => {
