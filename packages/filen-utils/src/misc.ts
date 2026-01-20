@@ -425,3 +425,71 @@ export function fastLocaleCompare(a: string, b: string): number {
 	// Strings are equal except for case - use case as tiebreaker
 	return caseDiff
 }
+
+export const BPS_TO_READABLE_UNITS = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
+
+export function bpsToReadable(bps: number): string {
+	if (!(bps > 0 && bps < 1099511627776)) {
+		return "0.1 B/s"
+	}
+
+	let i = 0
+	let value = bps
+
+	if (value >= 1024) {
+		value /= 1024
+		i = 1
+
+		if (value >= 1024) {
+			value /= 1024
+			i = 2
+
+			if (value >= 1024) {
+				value /= 1024
+				i = 3
+
+				if (value >= 1024) {
+					value /= 1024
+					i = 4
+				}
+			}
+		}
+	}
+
+	if (value < 0.1) {
+		value = 0.1
+	}
+
+	return value.toFixed(1) + " " + BPS_TO_READABLE_UNITS[i]
+}
+
+export const FORMAT_BYTES_SIZES = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]
+
+export const POWERS_1024 = [1, 1024, 1048576, 1073741824, 1099511627776, 1125899906842624] as const
+
+export function formatBytes(bytes: number, decimals: number = 2): string {
+	if (bytes === 0) {
+		return "0 B"
+	}
+
+	const dm = decimals < 0 ? 0 : decimals
+	let i = 0
+
+	if (bytes >= POWERS_1024[5]) {
+		i = 5
+	} else if (bytes >= POWERS_1024[4]) {
+		i = 4
+	} else if (bytes >= POWERS_1024[3]) {
+		i = 3
+	} else if (bytes >= POWERS_1024[2]) {
+		i = 2
+	} else if (bytes >= POWERS_1024[1]) {
+		i = 1
+	}
+
+	const value = bytes / POWERS_1024[i]!
+	const multiplier = Math.pow(10, dm)
+	const rounded = Math.round(value * multiplier) / multiplier
+
+	return rounded + " " + FORMAT_BYTES_SIZES[i]
+}
