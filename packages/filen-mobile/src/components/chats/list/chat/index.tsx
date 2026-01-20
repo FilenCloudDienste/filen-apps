@@ -26,16 +26,16 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 						router.push(Paths.join("/", "chat", info.item.uuid))
 					}}
 				>
-					<View className="flex-row w-full h-auto items-center px-4 gap-3 bg-transparent">
+					<View className="flex-row w-full h-auto items-center pl-4 gap-3 bg-transparent">
 						<View className="bg-blue-500 size-3 rounded-full shrink-0" />
 						<Avatar
 							className="shrink-0"
-							size={32}
+							size={38}
 							source={{
 								uri: info.item.participants.at(0)?.avatar
 							}}
 						/>
-						<View className="flex-col border-b border-border w-full py-2 items-start gap-0.5 bg-transparent flex-1">
+						<View className="flex-col border-b border-border w-full py-3 items-start gap-0.5 bg-transparent flex-1 pr-4">
 							<Text>{info.item.name ?? contactDisplayName(info.item.participants.at(0)!)}</Text>
 							{info.item.lastMessage && (
 								<Text
