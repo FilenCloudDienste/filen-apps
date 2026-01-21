@@ -29,11 +29,13 @@ import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import alerts from "@/lib/alerts"
 import { simpleDateNoTime } from "@/lib/time"
 import useChatUnreadCount from "@/hooks/useChatUnreadCount"
+import useChatsStore from "@/stores/useChats.store"
 
 const Header = memo(({ chat }: { chat: TChat }) => {
 	const stringigiedClient = useStringifiedClient()
 	const textForeground = useResolveClassNames("text-foreground")
 	const windowDimensions = useWindowDimensions()
+	const isSelected = useChatsStore(useShallow(state => state.selectedChats.some(n => n.uuid === chat.uuid)))
 
 	const title = useMemo(() => {
 		if (chat.name && chat.name.length > 0) {
@@ -144,7 +146,9 @@ const Header = memo(({ chat }: { chat: TChat }) => {
 							hitSlop: 20,
 							buttons: createMenuButtons({
 								chat,
-								userId: stringigiedClient.userId
+								userId: stringigiedClient.userId,
+								origin: "chat",
+								isSelected
 							})
 						},
 						triggerProps: {

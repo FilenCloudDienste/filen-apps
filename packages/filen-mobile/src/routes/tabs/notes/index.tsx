@@ -289,6 +289,9 @@ export const Notes = memo(() => {
 							props: {
 								hitSlop: 20,
 								onPress: () => {
+									useNotesStore.getState().setSelectedNotes([])
+									useNotesStore.getState().setSelectedTags([])
+
 									router.push(Paths.join("/", "search", "notes"))
 								}
 							},

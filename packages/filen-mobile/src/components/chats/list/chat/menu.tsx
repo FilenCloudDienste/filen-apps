@@ -15,9 +15,42 @@ import { randomUUID } from "expo-crypto"
 import { contactDisplayName } from "@/lib/utils"
 import { router } from "expo-router"
 import useAppStore from "@/stores/app.store"
+import useChatsStore from "@/stores/useChats.store"
+import { useShallow } from "zustand/shallow"
 
-export function createMenuButtons({ chat, userId }: { chat: TChat; userId: bigint }): MenuButton[] {
+export type ChatMenuOrigin = "chats" | "search" | "chat"
+
+export function createMenuButtons({
+	chat,
+	userId,
+	origin,
+	isSelected
+}: {
+	chat: TChat
+	userId: bigint
+	origin: ChatMenuOrigin
+	isSelected: boolean
+}): MenuButton[] {
 	return [
+		...(origin !== "chat"
+			? [
+					{
+						id: isSelected ? "deselect" : "select",
+						title: isSelected ? "tbd_deselect" : "tbd_select",
+						icon: "select",
+						checked: isSelected,
+						onPress: () => {
+							useChatsStore.getState().setSelectedChats(prev => {
+								if (isSelected) {
+									return prev.filter(n => n.uuid !== chat.uuid)
+								} else {
+									return [...prev.filter(n => n.uuid !== chat.uuid), chat]
+								}
+							})
+						}
+					} satisfies MenuButton
+				]
+			: []),
 		{
 			id: "participants",
 			title: "tbd_participants",
@@ -279,14 +312,17 @@ export const Menu = memo(
 		info,
 		children,
 		className,
-		isAnchoredToRight
+		isAnchoredToRight,
+		origin
 	}: {
 		info: ListRenderItemInfo<TChat>
 		children: React.ReactNode
 		className?: string
 		isAnchoredToRight?: boolean
+		origin: ChatMenuOrigin
 	}) => {
 		const stringifiedClient = useStringifiedClient()
+		const isSelected = useChatsStore(useShallow(state => state.selectedChats.some(n => n.uuid === info.item.uuid)))
 
 		const buttons = useMemo(() => {
 			if (!stringifiedClient) {
@@ -295,9 +331,11 @@ export const Menu = memo(
 
 			return createMenuButtons({
 				chat: info.item,
-				userId: stringifiedClient.userId
+				userId: stringifiedClient.userId,
+				origin,
+				isSelected
 			})
-		}, [info.item, stringifiedClient])
+		}, [info.item, stringifiedClient, origin, isSelected])
 
 		return (
 			<MenuComponent

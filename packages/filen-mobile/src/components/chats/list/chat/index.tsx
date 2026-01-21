@@ -16,6 +16,9 @@ import useChatsStore from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import { useResolveClassNames } from "uniwind"
+import { AnimatedView } from "@/components/ui/animated"
+import { FadeIn, FadeOut } from "react-native-reanimated"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 	const router = useRouter()
@@ -23,6 +26,8 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 	const unreadCount = useChatUnreadCount(info.item)
 	const typing = useChatsStore(useShallow(state => state.typing[info.item.uuid] ?? []))
 	const textMutedForeground = useResolveClassNames("text-muted-foreground")
+	const isSelected = useChatsStore(useShallow(state => state.selectedChats.some(n => n.uuid === info.item.uuid)))
+	const areChatsSelected = useChatsStore(useShallow(state => state.selectedChats.length > 0))
 
 	const typingUsers = useMemo(() => {
 		return typing
@@ -65,8 +70,22 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 	}, [info.item.participants, stringifiedClient?.userId])
 
 	const onPress = useCallback(() => {
+		if (useChatsStore.getState().selectedChats.length > 0) {
+			useChatsStore.getState().setSelectedChats(prev => {
+				const prevSelected = prev.some(n => n.uuid === info.item.uuid)
+
+				if (prevSelected) {
+					return prev.filter(n => n.uuid !== info.item.uuid)
+				}
+
+				return [...prev.filter(n => n.uuid !== info.item.uuid), info.item]
+			})
+
+			return
+		}
+
 		router.push(Paths.join("/", "chat", info.item.uuid))
-	}, [router, info.item.uuid])
+	}, [router, info.item])
 
 	return (
 		<View className="flex-row w-full h-auto">
@@ -74,6 +93,7 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 				className="flex-row w-full h-auto"
 				isAnchoredToRight={true}
 				info={info}
+				origin="chats"
 			>
 				<PressableScale
 					className="flex-row w-full h-auto"
@@ -81,6 +101,15 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 				>
 					<View className="flex-row w-full h-auto items-center px-4 pl-2 gap-2 bg-transparent">
 						<View className={cn("size-2.5 rounded-full shrink-0", unreadCount > 0 ? "bg-blue-500" : "bg-transparent")} />
+						{areChatsSelected && (
+							<AnimatedView
+								className="flex-row h-full items-center justify-center bg-transparent px-2"
+								entering={FadeIn}
+								exiting={FadeOut}
+							>
+								<Checkbox value={isSelected} />
+							</AnimatedView>
+						)}
 						{participantsWithAvatars.length === 0 ? (
 							<Avatar
 								className="shrink-0"

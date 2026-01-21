@@ -34,6 +34,8 @@ export type ChatsStore = {
 	typing: Record<string, Typing>
 	inflightMessages: InflightChatMessages
 	inflightErrors: Record<string, Error>
+	selectedChats: Chat[]
+	setSelectedChats: (fn: Chat[] | ((prev: Chat[]) => Chat[])) => void
 	setInflightErrors: (fn: Record<string, Error> | ((prev: Record<string, Error>) => Record<string, Error>)) => void
 	setInflightMessages: (fn: InflightChatMessages | ((prev: InflightChatMessages) => InflightChatMessages)) => void
 	setTyping: (fn: Record<string, Typing> | ((prev: Record<string, Typing>) => Record<string, Typing>)) => void
@@ -69,6 +71,12 @@ export const useChatsStore = create<ChatsStore>(set => ({
 	typing: {},
 	inflightMessages: {},
 	inflightErrors: {},
+	selectedChats: [],
+	setSelectedChats(selectedChats) {
+		set(state => ({
+			selectedChats: typeof selectedChats === "function" ? selectedChats(state.selectedChats) : selectedChats
+		}))
+	},
 	setInflightErrors(inflightErrors) {
 		set(state => ({
 			inflightErrors: typeof inflightErrors === "function" ? inflightErrors(state.inflightErrors) : inflightErrors
