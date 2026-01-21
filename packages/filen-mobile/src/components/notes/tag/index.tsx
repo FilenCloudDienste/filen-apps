@@ -14,6 +14,9 @@ import Menu from "@/components/notes/tag/menu"
 import { cn } from "@filen/utils"
 import { PressableScale } from "@/components/ui/pressables"
 import Ionicons from "@expo/vector-icons/Ionicons"
+import { AnimatedView } from "@/components/ui/animated"
+import { FadeIn, FadeOut } from "react-native-reanimated"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteTag>; notesForTag: Note[] }) => {
 	const router = useRouter()
@@ -21,9 +24,9 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 	const textRed500 = useResolveClassNames("text-red-500")
 	const textPrimary = useResolveClassNames("text-primary")
 	const isActive = useNotesStore(useShallow(state => state.activeTag?.uuid === info.item.uuid))
-	const selected = useNotesStore(useShallow(state => state.selectedTags.some(t => t.uuid === info.item.uuid)))
-
-	const inflight = useNotesStore(
+	const isSelected = useNotesStore(useShallow(state => state.selectedTags.some(t => t.uuid === info.item.uuid)))
+	const areTagsSelected = useNotesStore(useShallow(state => state.selectedTags.length > 0))
+	const isInflight = useNotesStore(
 		useShallow(state => {
 			return notesForTag.some(n => (state.inflightContent[n.uuid] ?? []).length > 0)
 		})
@@ -45,7 +48,7 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 		}
 
 		router.push({
-			pathname: Paths.join("/", "tabs", "notes"),
+			pathname: Paths.join("/", "notesTags"),
 			params: {
 				tagUuid: info.item.uuid
 			}
@@ -74,22 +77,33 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 										ios: "",
 										default: "bg-transparent"
 									}),
-							selected ? "bg-background-secondary" : ""
+							isSelected ? "bg-background-secondary" : ""
 						)}
 					>
 						<View className="flex-1 flex-row gap-4 px-4 w-full h-auto bg-transparent items-center">
 							<View className="gap-2 shrink-0 h-auto w-auto bg-transparent flex-row items-center">
-								<View className="bg-transparent">
-									{notesForTag.length > 0 ? (
-										<Ionicons
-											name="chevron-forward-outline"
-											size={18}
-											color={textPrimary.color}
-										/>
-									) : (
-										<View className="size-4.5 bg-transparent" />
-									)}
-								</View>
+								{areTagsSelected ? (
+									<AnimatedView
+										className="flex-row h-full items-center justify-center bg-transparent"
+										entering={FadeIn}
+										exiting={FadeOut}
+									>
+										<Checkbox value={isSelected} />
+									</AnimatedView>
+								) : (
+									<View className="bg-transparent">
+										{notesForTag.length > 0 ? (
+											<Ionicons
+												name="chevron-forward-outline"
+												size={18}
+												color={textPrimary.color}
+											/>
+										) : (
+											<View className="size-4.5 bg-transparent" />
+										)}
+									</View>
+								)}
+
 								<View
 									className={cn(
 										"rounded-lg p-2 shadow-md",
@@ -105,7 +119,7 @@ export const Tag = memo(({ info, notesForTag }: { info: ListRenderItemInfo<NoteT
 											/>
 										</View>
 									)}
-									{inflight ? (
+									{isInflight ? (
 										<ActivityIndicator
 											size="small"
 											color={textForeground.color}

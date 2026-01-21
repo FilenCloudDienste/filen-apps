@@ -20,7 +20,6 @@ import View, { KeyboardAvoidingView } from "@/components/ui/view"
 
 const Header = memo(
 	({ withSearch, setSearchQuery }: { withSearch?: boolean; setSearchQuery?: React.Dispatch<React.SetStateAction<string>> }) => {
-		const chatsQuery = useChatsQuery()
 		const stringigiedClient = useStringifiedClient()
 		const selectedChats = useChatsStore(useShallow(state => state.selectedChats))
 		const router = useRouter()
@@ -32,6 +31,10 @@ const Header = memo(
 		const everySelectedChatNotOwnedBySelf = useChatsStore(
 			useShallow(state => state.selectedChats.every(chat => chat.ownerId !== stringigiedClient?.userId))
 		)
+
+		const chatsQuery = useChatsQuery({
+			enabled: false
+		})
 
 		const chats = useMemo(() => {
 			if (chatsQuery.status !== "success") {
@@ -48,7 +51,7 @@ const Header = memo(
 		return (
 			<StackHeader
 				title={withSearch ? "tbd_search_chats" : "tbd_chats"}
-				transparent={Platform.OS === "ios"}
+				transparent={Platform.OS === "ios" && !withSearch}
 				leftItems={() => {
 					if (selectedChats.length === 0) {
 						return null
