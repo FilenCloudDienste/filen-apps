@@ -20,9 +20,21 @@ export function useChatUnreadCount(chat: Chat): number {
 		}
 
 		return chatMessagesQuery.data.filter(
-			message => chat.lastFocus && message.sentTimestamp > chat.lastFocus && message.inner.senderId !== stringifiedClient?.userId
+			message =>
+				chat.lastFocus &&
+				chat.lastMessage &&
+				chat.participants.length >= 2 &&
+				message.sentTimestamp > chat.lastFocus &&
+				message.inner.senderId !== stringifiedClient?.userId
 		).length
-	}, [chatMessagesQuery.status, chatMessagesQuery.data, chat.lastFocus, stringifiedClient?.userId])
+	}, [
+		chatMessagesQuery.status,
+		chatMessagesQuery.data,
+		chat.lastFocus,
+		chat.lastMessage,
+		chat.participants.length,
+		stringifiedClient?.userId
+	])
 
 	return unreadCount
 }

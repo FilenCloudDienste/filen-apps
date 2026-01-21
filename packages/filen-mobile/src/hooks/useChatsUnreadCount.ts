@@ -38,7 +38,12 @@ export function useChatsUnreadCount() {
 			}
 
 			unreadCount += messages.filter(
-				message => chat.lastFocus && message.sentTimestamp > chat.lastFocus && message.inner.senderId !== stringifiedClient?.userId
+				message =>
+					chat.lastFocus &&
+					chat.lastMessage &&
+					chat.participants.length >= 2 &&
+					message.sentTimestamp > chat.lastFocus &&
+					message.inner.senderId !== stringifiedClient?.userId
 			).length
 		}
 
