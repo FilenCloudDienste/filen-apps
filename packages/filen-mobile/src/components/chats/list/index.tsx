@@ -8,8 +8,9 @@ import { parseNumbersFromString, run } from "@filen/utils"
 import alerts from "@/lib/alerts"
 import Chat from "@/components/chats/list/chat"
 import { useStringifiedClient } from "@/lib/auth"
+import { contactDisplayName } from "@/lib/utils"
 
-export const List = memo(() => {
+export const List = memo(({ searchQuery }: { searchQuery?: string }) => {
 	const chatsQuery = useChatsQuery()
 	const stringigiedClient = useStringifiedClient()
 
@@ -18,7 +19,7 @@ export const List = memo(() => {
 			return []
 		}
 
-		return chatsQuery.data
+		let chats = chatsQuery.data
 			.filter(chat => chat.ownerId === stringigiedClient?.userId || chat.lastMessage)
 			.sort((a, b) => {
 				const aLastMessageTimestamp = a.lastMessage ? Number(a.lastMessage.sentTimestamp) : 0
@@ -30,7 +31,39 @@ export const List = memo(() => {
 
 				return bLastMessageTimestamp - aLastMessageTimestamp
 			})
-	}, [chatsQuery.status, chatsQuery.data, stringigiedClient?.userId])
+
+		if (searchQuery && searchQuery.length > 0) {
+			const searchQueryNormalized = searchQuery.toLowerCase().trim()
+
+			chats = chats.filter(chat => {
+				if (chat.name && chat.name.toLowerCase().includes(searchQueryNormalized)) {
+					return true
+				}
+
+				if (
+					chat.lastMessage &&
+					chat.lastMessage.inner.message &&
+					chat.lastMessage.inner.message.toLowerCase().includes(searchQueryNormalized)
+				) {
+					return true
+				}
+
+				for (const participant of chat.participants) {
+					if (participant.email.toLowerCase().trim().includes(searchQueryNormalized)) {
+						return true
+					}
+
+					if (contactDisplayName(participant).toLowerCase().trim().includes(searchQueryNormalized)) {
+						return true
+					}
+				}
+
+				return false
+			})
+		}
+
+		return chats
+	}, [chatsQuery.status, chatsQuery.data, stringigiedClient?.userId, searchQuery])
 
 	const onRefresh = useCallback(async () => {
 		const result = await run(async () => {
@@ -63,7 +96,7 @@ export const List = memo(() => {
 			emptyComponent={() => {
 				return (
 					<View className="flex-1 items-center justify-center">
-						<Text>tbd_no_chats</Text>
+						<Text>{searchQuery && searchQuery.length > 0 ? "tbd_no_chats_search" : "tbd_no_chats"}</Text>
 					</View>
 				)
 			}}
