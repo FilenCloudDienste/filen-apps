@@ -142,25 +142,11 @@ export function createMenuButtons({
 								{
 									title: subButton.participant.permissionsWrite ? "tbd_set_read_only" : "tbd_set_read_write",
 									onPress: async () => {
-										runWithLoading(async () => {
+										const result = await runWithLoading(async () => {
 											await notes.setParticipantPermission({
 												note,
 												participant: subButton.participant,
 												permissionsWrite: !subButton.participant.permissionsWrite
-											})
-										})
-									}
-								},
-								{
-									title: "tbd_remove_participant",
-									destructive: true,
-									onPress: async () => {
-										const result = await run(async () => {
-											return await prompts.alert({
-												title: "tbd_remove_participant",
-												message: "tbd_are_you_sure_remove_participant",
-												cancelText: "tbd_cancel",
-												okText: "tbd_remove"
 											})
 										})
 
@@ -170,17 +156,45 @@ export function createMenuButtons({
 
 											return
 										}
+									}
+								},
+								{
+									title: "tbd_remove_participant",
+									destructive: true,
+									onPress: async () => {
+										const promptResult = await run(async () => {
+											return await prompts.alert({
+												title: "tbd_remove_participant",
+												message: "tbd_are_you_sure_remove_participant",
+												cancelText: "tbd_cancel",
+												okText: "tbd_remove"
+											})
+										})
 
-										if (result.data.cancelled) {
+										if (!promptResult.success) {
+											console.error(promptResult.error)
+											alerts.error(promptResult.error)
+
 											return
 										}
 
-										runWithLoading(async () => {
+										if (promptResult.data.cancelled) {
+											return
+										}
+
+										const result = await runWithLoading(async () => {
 											await notes.removeParticipant({
 												note,
 												participantUserId: subButton.participant.userId
 											})
 										})
+
+										if (!result.success) {
+											console.error(result.error)
+											alerts.error(result.error)
+
+											return
+										}
 									}
 								},
 								{
@@ -252,8 +266,8 @@ export function createMenuButtons({
 												? "markdown"
 												: undefined,
 						keepMenuOpenOnPress: Platform.OS === "android",
-						onPress: () => {
-							runWithLoading(async () => {
+						onPress: async () => {
+							const result = await runWithLoading(async () => {
 								const content = await notes.getContent({
 									note
 								})
@@ -264,83 +278,6 @@ export function createMenuButtons({
 									knownContent: content
 								})
 							})
-						}
-					}) satisfies MenuButton
-			)
-		})
-	}
-
-	if (writeAccess) {
-		buttons.push({
-			id: note.pinned ? "unpin" : "pin",
-			title: note.pinned ? "tbd_unpin" : "tbd_pin",
-			icon: "pin",
-			onPress: () => {
-				runWithLoading(async () => {
-					await notes.setPinned({
-						note,
-						pinned: !note.pinned
-					})
-				})
-			}
-		})
-	}
-
-	if (writeAccess) {
-		buttons.push({
-			id: note.favorite ? "unfavorite" : "favorite",
-			title: note.favorite ? "tbd_unfavorite" : "tbd_favorite",
-			icon: "heart",
-			onPress: () => {
-				runWithLoading(async () => {
-					await notes.setFavorited({
-						note,
-						favorite: !note.favorite
-					})
-				})
-			}
-		})
-	}
-
-	if (writeAccess) {
-		buttons.push({
-			id: "tags",
-			title: "tbd_tags",
-			icon: "tag",
-			subButtons: (
-				[
-					{
-						type: "create" as const
-					},
-					...notesTags.map(tag => ({
-						type: "tag" as const,
-						tag
-					}))
-				] satisfies (
-					| {
-							type: "create"
-					  }
-					| {
-							type: "tag"
-							tag: NoteTag
-					  }
-				)[]
-			).map(subButton => {
-				if (subButton.type === "create") {
-					return {
-						id: "createTag",
-						title: "tbd_createTag",
-						icon: "plus",
-						keepMenuOpenOnPress: Platform.OS === "android",
-						onPress: async () => {
-							const result = await run(async () => {
-								return await prompts.input({
-									title: "tbd_create_tag",
-									message: "tbd_enter_tag_name",
-									cancelText: "tbd_cancel",
-									okText: "tbd_create"
-								})
-							})
 
 							if (!result.success) {
 								console.error(result.error)
@@ -348,55 +285,161 @@ export function createMenuButtons({
 
 								return
 							}
-
-							if (result.data.cancelled || result.data.type !== "string") {
-								return
-							}
-
-							const newName = result.data.value.trim()
-
-							if (newName.length === 0) {
-								return
-							}
-
-							runWithLoading(async () => {
-								await notes.createTag({
-									name: newName
-								})
-							})
 						}
-					} satisfies MenuButton
-				}
+					}) satisfies MenuButton
+			)
+		})
+	}
 
-				const tagged = note.tags.some(t => t.uuid === subButton.tag.uuid)
+	buttons.push({
+		id: note.pinned ? "unpin" : "pin",
+		title: note.pinned ? "tbd_unpin" : "tbd_pin",
+		icon: "pin",
+		onPress: async () => {
+			const result = await runWithLoading(async () => {
+				await notes.setPinned({
+					note,
+					pinned: !note.pinned
+				})
+			})
 
+			if (!result.success) {
+				console.error(result.error)
+				alerts.error(result.error)
+
+				return
+			}
+		}
+	})
+
+	buttons.push({
+		id: note.favorite ? "unfavorite" : "favorite",
+		title: note.favorite ? "tbd_unfavorite" : "tbd_favorite",
+		icon: "heart",
+		onPress: async () => {
+			const result = await runWithLoading(async () => {
+				await notes.setFavorited({
+					note,
+					favorite: !note.favorite
+				})
+			})
+
+			if (!result.success) {
+				console.error(result.error)
+				alerts.error(result.error)
+
+				return
+			}
+		}
+	})
+
+	buttons.push({
+		id: "tags",
+		title: "tbd_tags",
+		icon: "tag",
+		subButtons: (
+			[
+				{
+					type: "create" as const
+				},
+				...notesTags.map(tag => ({
+					type: "tag" as const,
+					tag
+				}))
+			] satisfies (
+				| {
+						type: "create"
+				  }
+				| {
+						type: "tag"
+						tag: NoteTag
+				  }
+			)[]
+		).map(subButton => {
+			if (subButton.type === "create") {
 				return {
-					id: `tag_${subButton.tag.uuid}`,
-					title: subButton.tag.name ?? subButton.tag.uuid,
-					checked: tagged,
-					icon: "tag",
+					id: "createTag",
+					title: "tbd_createTag",
+					icon: "plus",
 					keepMenuOpenOnPress: Platform.OS === "android",
-					onPress: () => {
-						runWithLoading(async () => {
-							if (tagged) {
-								await notes.removeTag({
-									note,
-									tag: subButton.tag
-								})
+					onPress: async () => {
+						const promptResult = await run(async () => {
+							return await prompts.input({
+								title: "tbd_create_tag",
+								message: "tbd_enter_tag_name",
+								cancelText: "tbd_cancel",
+								okText: "tbd_create"
+							})
+						})
 
-								return
-							}
+						if (!promptResult.success) {
+							console.error(promptResult.error)
+							alerts.error(promptResult.error)
 
-							await notes.addTag({
+							return
+						}
+
+						if (promptResult.data.cancelled || promptResult.data.type !== "string") {
+							return
+						}
+
+						const newName = promptResult.data.value.trim()
+
+						if (newName.length === 0) {
+							return
+						}
+
+						const result = await runWithLoading(async () => {
+							await notes.createTag({
+								name: newName
+							})
+						})
+
+						if (!result.success) {
+							console.error(result.error)
+							alerts.error(result.error)
+
+							return
+						}
+					}
+				} satisfies MenuButton
+			}
+
+			const tagged = note.tags.some(t => t.uuid === subButton.tag.uuid)
+
+			return {
+				id: `tag_${subButton.tag.uuid}`,
+				title: subButton.tag.name ?? subButton.tag.uuid,
+				checked: tagged,
+				icon: "tag",
+				keepMenuOpenOnPress: Platform.OS === "android",
+				onPress: async () => {
+					const result = await runWithLoading(async () => {
+						if (tagged) {
+							await notes.removeTag({
 								note,
 								tag: subButton.tag
 							})
+
+							return
+						}
+
+						await notes.addTag({
+							note,
+							tag: subButton.tag
 						})
+					})
+
+					if (!result.success) {
+						console.error(result.error)
+						alerts.error(result.error)
+
+						return
 					}
-				} satisfies MenuButton
-			})
+				}
+			} satisfies MenuButton
 		})
-	}
+	})
 
 	if (writeAccess) {
 		buttons.push({
@@ -404,7 +447,7 @@ export function createMenuButtons({
 			title: "tbd_rename",
 			icon: "edit",
 			onPress: async () => {
-				const result = await run(async () => {
+				const promptResult = await run(async () => {
 					return await prompts.input({
 						title: "tbd_rename_note",
 						message: "tbd_enter_new_name",
@@ -414,47 +457,59 @@ export function createMenuButtons({
 					})
 				})
 
+				if (!promptResult.success) {
+					console.error(promptResult.error)
+					alerts.error(promptResult.error)
+
+					return
+				}
+
+				if (promptResult.data.cancelled || promptResult.data.type !== "string") {
+					return
+				}
+
+				const newTitle = promptResult.data.value.trim()
+
+				if (newTitle.length === 0) {
+					return
+				}
+
+				const result = await runWithLoading(async () => {
+					await notes.setTitle({
+						note,
+						newTitle
+					})
+				})
+
 				if (!result.success) {
 					console.error(result.error)
 					alerts.error(result.error)
 
 					return
 				}
-
-				if (result.data.cancelled || result.data.type !== "string") {
-					return
-				}
-
-				const newTitle = result.data.value.trim()
-
-				if (newTitle.length === 0) {
-					return
-				}
-
-				runWithLoading(async () => {
-					await notes.setTitle({
-						note,
-						newTitle
-					})
-				})
 			}
 		})
 	}
 
-	if (writeAccess) {
-		buttons.push({
-			id: "duplicate",
-			title: "tbd_duplicate",
-			icon: "copy",
-			onPress: () => {
-				runWithLoading(async () => {
-					await notes.duplicate({
-						note
-					})
+	buttons.push({
+		id: "duplicate",
+		title: "tbd_duplicate",
+		icon: "copy",
+		onPress: async () => {
+			const result = await runWithLoading(async () => {
+				await notes.duplicate({
+					note
 				})
+			})
+
+			if (!result.success) {
+				console.error(result.error)
+				alerts.error(result.error)
+
+				return
 			}
-		})
-	}
+		}
+	})
 
 	buttons.push({
 		id: "export",
@@ -466,17 +521,24 @@ export function createMenuButtons({
 	})
 
 	if (isOwner) {
-		if (!note.archive) {
+		if (!note.archive && !note.trash) {
 			buttons.push({
 				id: "archive",
 				title: "tbd_archive",
 				icon: "archive",
-				onPress: () => {
-					runWithLoading(async () => {
+				onPress: async () => {
+					const result = await runWithLoading(async () => {
 						await notes.archive({
 							note
 						})
 					})
+
+					if (!result.success) {
+						console.error(result.error)
+						alerts.error(result.error)
+
+						return
+					}
 				}
 			})
 		}
@@ -486,12 +548,19 @@ export function createMenuButtons({
 				id: "restore",
 				title: "tbd_restore",
 				icon: "restore",
-				onPress: () => {
-					runWithLoading(async () => {
+				onPress: async () => {
+					const result = await runWithLoading(async () => {
 						await notes.restore({
 							note
 						})
 					})
+
+					if (!result.success) {
+						console.error(result.error)
+						alerts.error(result.error)
+
+						return
+					}
 				}
 			})
 		}

@@ -210,7 +210,7 @@ export class Notes {
 	}
 
 	public async archive({ note, signal }: { note: Note; signal?: AbortSignal }) {
-		if (note.archive) {
+		if (note.archive || note.trash) {
 			return
 		}
 
@@ -276,7 +276,7 @@ export class Notes {
 	}
 
 	public async trash({ note, signal }: { note: Note; signal?: AbortSignal }) {
-		if (note.trash) {
+		if (note.trash || note.archive) {
 			return
 		}
 
@@ -299,6 +299,10 @@ export class Notes {
 	}
 
 	public async delete({ note, signal }: { note: Note; signal?: AbortSignal }) {
+		if (!note.trash || note.archive) {
+			return
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		await sdkClient.deleteNote(
@@ -542,6 +546,10 @@ export class Notes {
 	}
 
 	public async removeParticipant({ note, signal, participantUserId }: { note: Note; signal?: AbortSignal; participantUserId: bigint }) {
+		if (!note.participants.find(p => p.userId === participantUserId)) {
+			return
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		note = await sdkClient.removeNoteParticipant(
@@ -572,6 +580,10 @@ export class Notes {
 		permissionsWrite: boolean
 		contact: Contact
 	}) {
+		if (note.participants.find(p => p.userId === contact.userId)) {
+			return
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		note = await sdkClient.addNoteParticipant(
@@ -603,6 +615,10 @@ export class Notes {
 		participant: NoteParticipant
 		permissionsWrite: boolean
 	}) {
+		if (participant.permissionsWrite === permissionsWrite) {
+			return
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		participant = await sdkClient.setNoteParticipantPermission(

@@ -168,13 +168,20 @@ export const Menu = memo(
 				id: tag.favorite ? "unfavorite" : "favorite",
 				title: tag.favorite ? "tbd_unfavorite" : "tbd_favorite",
 				icon: "heart",
-				onPress: () => {
-					runWithLoading(async () => {
+				onPress: async () => {
+					const result = await runWithLoading(async () => {
 						await notes.favoriteTag({
 							tag,
 							favorite: !tag.favorite
 						})
 					})
+
+					if (!result.success) {
+						console.error(result.error)
+						alerts.error(result.error)
+
+						return
+					}
 				}
 			})
 
@@ -183,7 +190,7 @@ export const Menu = memo(
 				title: "tbd_rename",
 				icon: "edit",
 				onPress: async () => {
-					const result = await run(async () => {
+					const promptResult = await run(async () => {
 						return await prompts.input({
 							title: "tbd_rename_note",
 							message: "tbd_enter_new_name",
@@ -193,29 +200,36 @@ export const Menu = memo(
 						})
 					})
 
+					if (!promptResult.success) {
+						console.error(promptResult.error)
+						alerts.error(promptResult.error)
+
+						return
+					}
+
+					if (promptResult.data.cancelled || promptResult.data.type !== "string") {
+						return
+					}
+
+					const newName = promptResult.data.value.trim()
+
+					if (newName.length === 0) {
+						return
+					}
+
+					const result = await runWithLoading(async () => {
+						await notes.renameTag({
+							tag,
+							newName
+						})
+					})
+
 					if (!result.success) {
 						console.error(result.error)
 						alerts.error(result.error)
 
 						return
 					}
-
-					if (result.data.cancelled || result.data.type !== "string") {
-						return
-					}
-
-					const newName = result.data.value.trim()
-
-					if (newName.length === 0) {
-						return
-					}
-
-					runWithLoading(async () => {
-						await notes.renameTag({
-							tag,
-							newName
-						})
-					})
 				}
 			})
 
@@ -225,12 +239,29 @@ export const Menu = memo(
 				icon: "delete",
 				destructive: true,
 				onPress: async () => {
-					const result = await run(async () => {
+					const promptResult = await run(async () => {
 						return await prompts.alert({
 							title: "tbd_delete_tag",
 							message: "tbd_are_you_sure_delete_tag",
 							cancelText: "tbd_cancel",
 							okText: "tbd_delete"
+						})
+					})
+
+					if (!promptResult.success) {
+						console.error(promptResult.error)
+						alerts.error(promptResult.error)
+
+						return
+					}
+
+					if (promptResult.data.cancelled) {
+						return
+					}
+
+					const result = await runWithLoading(async () => {
+						await notes.deleteTag({
+							tag
 						})
 					})
 
@@ -240,16 +271,6 @@ export const Menu = memo(
 
 						return
 					}
-
-					if (result.data.cancelled) {
-						return
-					}
-
-					runWithLoading(async () => {
-						await notes.deleteTag({
-							tag
-						})
-					})
 				}
 			})
 

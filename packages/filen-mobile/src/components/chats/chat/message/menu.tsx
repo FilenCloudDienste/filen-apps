@@ -117,12 +117,19 @@ export const Menu = memo(
 										return
 									}
 
-									runWithLoading(async () => {
+									const result = await runWithLoading(async () => {
 										await chats.deleteMessage({
 											chat,
 											message: info.item
 										})
 									})
+
+									if (!result.success) {
+										console.error(result.error)
+										alerts.error(result.error)
+
+										return
+									}
 								}
 							}
 						]

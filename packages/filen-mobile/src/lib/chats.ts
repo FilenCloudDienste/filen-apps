@@ -151,6 +151,10 @@ export class Chats {
 		newMessage: string
 		signal?: AbortSignal
 	}) {
+		if (message.inner.message === newMessage) {
+			return message
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		message = await sdkClient.editMessage(
@@ -193,6 +197,10 @@ export class Chats {
 	}
 
 	public async disableMessageEmbed({ message, signal }: { message: ChatMessage; signal?: AbortSignal }) {
+		if (message.embedDisabled) {
+			return message
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		message = await sdkClient.disableMessageEmbed(
@@ -229,6 +237,10 @@ export class Chats {
 	}
 
 	public async rename({ chat, newName, signal }: { chat: Chat; newName: string; signal?: AbortSignal }) {
+		if (chat.name === newName) {
+			return chat
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		chat = await sdkClient.renameChat(
@@ -314,6 +326,10 @@ export class Chats {
 	}
 
 	public async mute({ chat, signal, mute }: { chat: Chat; signal?: AbortSignal; mute: boolean }) {
+		if (chat.muted === mute) {
+			return chat
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		chat = await sdkClient.muteChat(
@@ -353,6 +369,10 @@ export class Chats {
 	}
 
 	public async addParticipant({ chat, contact, signal }: { chat: Chat; contact: Contact; signal?: AbortSignal }) {
+		if (chat.participants.find(p => p.userId === contact.userId)) {
+			return chat
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		chat = await sdkClient.addChatParticipant(
@@ -373,6 +393,10 @@ export class Chats {
 	}
 
 	public async removeParticipant({ chat, contact, signal }: { chat: Chat; contact: Contact; signal?: AbortSignal }) {
+		if (!chat.participants.find(p => p.userId === contact.userId)) {
+			return chat
+		}
+
 		const sdkClient = await auth.getSdkClient()
 
 		chat = await sdkClient.removeChatParticipant(

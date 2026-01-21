@@ -110,7 +110,7 @@ export function createMenuButtons({
 									title: "tbd_remove_participant",
 									destructive: true,
 									onPress: async () => {
-										const result = await run(async () => {
+										const promptResult = await run(async () => {
 											return await prompts.alert({
 												title: "tbd_remove_participant",
 												message: "tbd_are_you_sure_remove_participant",
@@ -119,18 +119,18 @@ export function createMenuButtons({
 											})
 										})
 
-										if (!result.success) {
-											console.error(result.error)
-											alerts.error(result.error)
+										if (!promptResult.success) {
+											console.error(promptResult.error)
+											alerts.error(promptResult.error)
 
 											return
 										}
 
-										if (result.data.cancelled) {
+										if (promptResult.data.cancelled) {
 											return
 										}
 
-										runWithLoading(async () => {
+										const result = await runWithLoading(async () => {
 											await chats.removeParticipant({
 												chat,
 												contact: {
@@ -145,6 +145,13 @@ export function createMenuButtons({
 												}
 											})
 										})
+
+										if (!result.success) {
+											console.error(result.error)
+											alerts.error(result.error)
+
+											return
+										}
 									}
 								},
 								{
@@ -162,12 +169,19 @@ export function createMenuButtons({
 			title: "tbd_muted",
 			checked: chat.muted,
 			onPress: async () => {
-				runWithLoading(async () => {
+				const result = await runWithLoading(async () => {
 					await chats.mute({
 						chat,
 						mute: !chat.muted
 					})
 				})
+
+				if (!result.success) {
+					console.error(result.error)
+					alerts.error(result.error)
+
+					return
+				}
 			}
 		},
 		...(chat.ownerId === userId
@@ -177,12 +191,36 @@ export function createMenuButtons({
 						title: "tbd_edit_name",
 						icon: "edit",
 						onPress: async () => {
-							const result = await run(async () => {
+							const promptResult = await run(async () => {
 								return await prompts.input({
 									title: "tbd_edit_chat_name",
 									message: "tbd_enter_chat_name",
 									cancelText: "tbd_cancel",
 									okText: "tbd_save"
+								})
+							})
+
+							if (!promptResult.success) {
+								console.error(promptResult.error)
+								alerts.error(promptResult.error)
+
+								return
+							}
+
+							if (promptResult.data.cancelled || promptResult.data.type !== "string") {
+								return
+							}
+
+							const newName = promptResult.data.value.trim()
+
+							if (newName.length === 0) {
+								return
+							}
+
+							const result = await runWithLoading(async () => {
+								await chats.rename({
+									chat,
+									newName: newName
 								})
 							})
 
@@ -192,23 +230,6 @@ export function createMenuButtons({
 
 								return
 							}
-
-							if (result.data.cancelled || result.data.type !== "string") {
-								return
-							}
-
-							const newName = result.data.value.trim()
-
-							if (newName.length === 0) {
-								return
-							}
-
-							runWithLoading(async () => {
-								await chats.rename({
-									chat,
-									newName: newName
-								})
-							})
 						}
 					},
 					{

@@ -5,7 +5,6 @@ import { FullWindowOverlay } from "react-native-screens"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import { AnimatedView } from "@/components/ui/animated"
 import events from "@/lib/events"
-import alerts from "@/lib/alerts"
 import { memo, useCallback } from "@/lib/memo"
 
 export const FullScreenLoadingModalParent = memo(({ children, visible }: { children: React.ReactNode; visible: boolean }) => {
@@ -97,28 +96,15 @@ export async function runWithLoading<TResult, E = Error>(
 	fn: (defer: DeferFn) => TResult | Promise<TResult>,
 	options?: Options
 ): Promise<Result<TResult, E>> {
-	const result = await run<TResult, E>(
-		async defer => {
-			events.emit("showFullScreenLoadingModal")
+	return await run<TResult, E>(async defer => {
+		events.emit("showFullScreenLoadingModal")
 
-			defer(() => {
-				events.emit("hideFullScreenLoadingModal")
-			})
+		defer(() => {
+			events.emit("hideFullScreenLoadingModal")
+		})
 
-			return await fn(defer)
-		},
-		{
-			...options,
-			throw: false
-		}
-	)
-
-	if (!result.success) {
-		console.error(result.error)
-		alerts.error(result.error)
-	}
-
-	return result
+		return await fn(defer)
+	}, options)
 }
 
 export default FullScreenLoadingModal

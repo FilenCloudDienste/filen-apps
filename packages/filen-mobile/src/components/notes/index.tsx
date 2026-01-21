@@ -1,6 +1,6 @@
 import { Fragment, useState } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
-import StackHeader from "@/components/ui/header"
+import StackHeader, { type HeaderItem } from "@/components/ui/header"
 import useNotesWithContentQuery from "@/queries/useNotesWithContent.query"
 import { notesSorter } from "@/lib/sort"
 import VirtualList, { type ListRenderItemInfo } from "@/components/ui/virtualList"
@@ -23,10 +23,14 @@ import { useSecureStore } from "@/lib/secureStore"
 import Tag from "@/components/notes/tag"
 import View, { KeyboardAvoidingView } from "@/components/ui/view"
 import Text from "@/components/ui/text"
+import type { MenuButton } from "@/components/ui/menu"
+import type { SearchBarProps } from "react-native-screens"
+import { useStringifiedClient } from "@/lib/auth"
 
 const Header = memo(
 	({ withSearch, setSearchQuery }: { withSearch?: boolean; setSearchQuery?: React.Dispatch<React.SetStateAction<string>> }) => {
 		const router = useRouter()
+		const stringifiedClient = useStringifiedClient()
 		const textForeground = useResolveClassNames("text-foreground")
 		const selectedNotes = useNotesStore(useShallow(state => state.selectedNotes))
 		const selectedTags = useNotesStore(useShallow(state => state.selectedTags))
@@ -34,6 +38,24 @@ const Header = memo(
 		const { tagUuid } = useLocalSearchParams<{
 			tagUuid?: string
 		}>()
+		const selectedNotesIncludesFavorited = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.favorite)))
+		const selectedNotesIncludesPinned = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.pinned)))
+		const selectedTagsIncludesFavorited = useNotesStore(useShallow(state => state.selectedTags.some(t => t.favorite)))
+		const hasWriteAccessToAllSelectedNotes = useNotesStore(
+			useShallow(state =>
+				state.selectedNotes.every(
+					n =>
+						n.ownerId === stringifiedClient?.userId ||
+						n.participants.some(p => p.userId === stringifiedClient?.userId && p.permissionsWrite)
+				)
+			)
+		)
+		const everySelectedNoteTrashed = useNotesStore(useShallow(state => state.selectedNotes.every(n => n.trash)))
+		const everySelectedNoteArchived = useNotesStore(useShallow(state => state.selectedNotes.every(n => n.archive)))
+		const everySelectedNoteOwned = useNotesStore(
+			useShallow(state => state.selectedNotes.every(n => n.ownerId === stringifiedClient?.userId))
+		)
+		const selectedNotesIncludesTrashed = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.trash)))
 
 		const notesTagsQuery = useNotesTagsQuery({
 			enabled: false
@@ -50,6 +72,14 @@ const Header = memo(
 
 			return notesTagsQuery.data.find(t => t.uuid === tagUuid) ?? null
 		}, [tagUuid, notesTagsQuery.status, notesTagsQuery.data])
+
+		const viewMode = useMemo(() => {
+			if (tag) {
+				return "notes"
+			}
+
+			return notesViewMode
+		}, [tag, notesViewMode])
 
 		const notes = useMemo((): NoteListItem[] => {
 			if (notesQuery.status !== "success") {
@@ -135,273 +165,770 @@ const Header = memo(
 			[router, tag]
 		)
 
-		const createTag = useCallback(async () => {
-			const result = await run(async () => {
-				return await prompts.input({
+		const headerRightItems = useMemo(() => {
+			const items: HeaderItem[] = []
+
+			if (!withSearch) {
+				items.push({
+					type: "button",
+					props: {
+						hitSlop: 20,
+						onPress: () => {
+							useNotesStore.getState().setSelectedNotes([])
+							useNotesStore.getState().setSelectedTags([])
+
+							router.push({
+								pathname: Paths.join("/", "search", "notes"),
+								params: {
+									...(tag
+										? {
+												tagUuid: tag.uuid
+											}
+										: {})
+								}
+							})
+						}
+					},
+					icon: {
+						name: "search",
+						size: 24,
+						color: textForeground.color
+					}
+				})
+			}
+
+			const menuButtons: MenuButton[] = []
+
+			if (viewMode === "notes") {
+				if (onlyNotes.length > 0) {
+					menuButtons.push({
+						id: "selectAll",
+						title: selectedNotes.length === onlyNotes.length ? "tbd_deselect_all" : "tbd_select_all",
+						icon: "select",
+						onPress: () => {
+							if (selectedNotes.length === onlyNotes.length) {
+								useNotesStore.getState().setSelectedNotes([])
+
+								return
+							}
+
+							useNotesStore.getState().setSelectedNotes(onlyNotes)
+						}
+					})
+				}
+
+				if (selectedNotes.length === 0 && !withSearch) {
+					menuButtons.push({
+						id: "create",
+						title: "tbd_create_note",
+						icon: "plus",
+						subButtons: [
+							{
+								title: "tbd_text",
+								id: "text",
+								icon: "text",
+								onPress: async () => {
+									await createNote(NoteType.Text)
+								}
+							},
+							{
+								title: "tbd_checklist",
+								id: "checklist",
+								icon: "checklist",
+								onPress: async () => {
+									await createNote(NoteType.Checklist)
+								}
+							},
+							{
+								title: "tbd_markdown",
+								id: "markdown",
+								icon: "markdown",
+								onPress: async () => {
+									await createNote(NoteType.Md)
+								}
+							},
+							{
+								title: "tbd_code",
+								id: "code",
+								icon: "code",
+								onPress: async () => {
+									await createNote(NoteType.Code)
+								}
+							},
+							{
+								title: "tbd_richtext",
+								id: "richtext",
+								icon: "richtext",
+								onPress: async () => {
+									await createNote(NoteType.Rich)
+								}
+							}
+						]
+					})
+				}
+
+				if (selectedNotes.length > 0) {
+					if (hasWriteAccessToAllSelectedNotes) {
+						menuButtons.push({
+							id: "type",
+							title: "tbd_type_change_selected",
+							icon: "text",
+							subButtons: [
+								{
+									type: NoteType.Text,
+									typeString: "text"
+								},
+								{
+									type: NoteType.Checklist,
+									typeString: "checklist"
+								},
+								{
+									type: NoteType.Code,
+									typeString: "code"
+								},
+								{
+									type: NoteType.Rich,
+									typeString: "rich"
+								},
+								{
+									type: NoteType.Md,
+									typeString: "md"
+								}
+							].map(
+								({ type, typeString }) =>
+									({
+										id: `type_${typeString}`,
+										title: `tbd_${typeString}`,
+										icon:
+											type === NoteType.Text
+												? "text"
+												: type === NoteType.Checklist
+													? "checklist"
+													: type === NoteType.Code
+														? "code"
+														: type === NoteType.Rich
+															? "richtext"
+															: type === NoteType.Md
+																? "markdown"
+																: undefined,
+										keepMenuOpenOnPress: Platform.OS === "android",
+										onPress: async () => {
+											const result = await runWithLoading(async defer => {
+												defer(() => {
+													useNotesStore.getState().setSelectedNotes([])
+												})
+
+												return await Promise.all(
+													selectedNotes.map(async n => {
+														const content = await notesLib.getContent({
+															note: n
+														})
+
+														await notesLib.setType({
+															note: n,
+															type,
+															knownContent: content
+														})
+													})
+												)
+											})
+
+											if (!result.success) {
+												console.error(result.error)
+												alerts.error(result.error)
+
+												return
+											}
+										}
+									}) satisfies MenuButton
+							)
+						})
+					}
+
+					menuButtons.push({
+						id: "bulkPin",
+						title: selectedNotesIncludesPinned ? "tbd_unpin_selected" : "tbd_pin_selected",
+						icon: "pin",
+						onPress: async () => {
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useNotesStore.getState().setSelectedNotes([])
+								})
+
+								return await Promise.all(
+									selectedNotes.map(n =>
+										notesLib.setPinned({
+											note: n,
+											pinned: !selectedNotesIncludesPinned
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+
+					menuButtons.push({
+						id: "bulkFavorite",
+						title: selectedNotesIncludesFavorited ? "tbd_unfavorite_selected" : "tbd_favorite_selected",
+						icon: "heart",
+						onPress: async () => {
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useNotesStore.getState().setSelectedNotes([])
+								})
+
+								return await Promise.all(
+									selectedNotes.map(n =>
+										notesLib.setFavorited({
+											note: n,
+											favorite: !selectedNotesIncludesFavorited
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+
+					menuButtons.push({
+						id: "bulkTag",
+						title: "tbd_bulk_tag_selected",
+						icon: "tag",
+						subButtons: notesTags.map(subButton => {
+							return {
+								id: `bulkTag_${subButton.uuid}`,
+								title: subButton.name ?? subButton.uuid,
+								icon: "tag",
+								keepMenuOpenOnPress: Platform.OS === "android",
+								onPress: async () => {
+									const result = await runWithLoading(async defer => {
+										defer(() => {
+											useNotesStore.getState().setSelectedNotes([])
+										})
+
+										return await Promise.all(
+											selectedNotes.map(n =>
+												notesLib.addTag({
+													note: n,
+													tag: subButton
+												})
+											)
+										)
+									})
+
+									if (!result.success) {
+										console.error(result.error)
+										alerts.error(result.error)
+
+										return
+									}
+								}
+							}
+						})
+					})
+
+					menuButtons.push({
+						id: "bulkDuplicate",
+						title: "tbd_duplicate_selected",
+						icon: "duplicate",
+						onPress: async () => {
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useNotesStore.getState().setSelectedNotes([])
+								})
+
+								return await Promise.all(
+									selectedNotes.map(n =>
+										notesLib.duplicate({
+											note: n
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+
+					if (everySelectedNoteOwned) {
+						if (!everySelectedNoteArchived && !selectedNotesIncludesTrashed) {
+							menuButtons.push({
+								id: "bulkArchive",
+								title: "tbd_archive_selected",
+								icon: "archive",
+								onPress: async () => {
+									const result = await runWithLoading(async defer => {
+										defer(() => {
+											useNotesStore.getState().setSelectedNotes([])
+										})
+
+										return await Promise.all(
+											selectedNotes.map(n =>
+												notesLib.archive({
+													note: n
+												})
+											)
+										)
+									})
+
+									if (!result.success) {
+										console.error(result.error)
+										alerts.error(result.error)
+
+										return
+									}
+								}
+							})
+						}
+
+						if (everySelectedNoteArchived || everySelectedNoteTrashed) {
+							menuButtons.push({
+								id: "bulkRestore",
+								title: "tbd_restore_selected",
+								icon: "restore",
+								onPress: async () => {
+									const result = await runWithLoading(async defer => {
+										defer(() => {
+											useNotesStore.getState().setSelectedNotes([])
+										})
+
+										return await Promise.all(
+											selectedNotes.map(n =>
+												notesLib.restore({
+													note: n
+												})
+											)
+										)
+									})
+
+									if (!result.success) {
+										console.error(result.error)
+										alerts.error(result.error)
+
+										return
+									}
+								}
+							})
+						}
+
+						if (!everySelectedNoteTrashed) {
+							menuButtons.push({
+								id: "bulkTrash",
+								title: "tbd_trash_selected",
+								icon: "trash",
+								destructive: true,
+								onPress: async () => {
+									const result = await runWithLoading(async defer => {
+										defer(() => {
+											useNotesStore.getState().setSelectedNotes([])
+										})
+
+										return await Promise.all(
+											selectedNotes.map(n =>
+												notesLib.trash({
+													note: n
+												})
+											)
+										)
+									})
+
+									if (!result.success) {
+										console.error(result.error)
+										alerts.error(result.error)
+
+										return
+									}
+								}
+							})
+						} else {
+							menuButtons.push({
+								id: "bulkDelete",
+								title: "tbd_delete_selected",
+								icon: "delete",
+								destructive: true,
+								onPress: async () => {
+									const result = await runWithLoading(async defer => {
+										defer(() => {
+											useNotesStore.getState().setSelectedNotes([])
+										})
+
+										return await Promise.all(
+											selectedNotes.map(n =>
+												notesLib.delete({
+													note: n
+												})
+											)
+										)
+									})
+
+									if (!result.success) {
+										console.error(result.error)
+										alerts.error(result.error)
+
+										return
+									}
+								}
+							})
+						}
+					} else {
+						menuButtons.push({
+							id: "bulkLeave",
+							title: "tbd_leave_selected",
+							icon: "exit",
+							destructive: true,
+							onPress: async () => {
+								const result = await runWithLoading(async defer => {
+									defer(() => {
+										useNotesStore.getState().setSelectedNotes([])
+									})
+
+									return await Promise.all(
+										selectedNotes.map(n =>
+											notesLib.leave({
+												note: n
+											})
+										)
+									)
+								})
+
+								if (!result.success) {
+									console.error(result.error)
+									alerts.error(result.error)
+
+									return
+								}
+							}
+						})
+					}
+				}
+			} else {
+				if (notesTags.length > 0) {
+					menuButtons.push({
+						id: "selectAll",
+						title: selectedTags.length === notesTags.length ? "tbd_deselect_all" : "tbd_select_all",
+						icon: "select",
+						onPress: () => {
+							if (selectedTags.length === notesTags.length) {
+								useNotesStore.getState().setSelectedTags([])
+
+								return
+							}
+
+							useNotesStore.getState().setSelectedTags(notesTags)
+						}
+					})
+				}
+
+				if (selectedTags.length > 0) {
+					menuButtons.push({
+						id: "bulkFavorite",
+						title: selectedTagsIncludesFavorited ? "tbd_unfavorite_selected" : "tbd_favorite_selected",
+						icon: "heart",
+						onPress: async () => {
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useNotesStore.getState().setSelectedTags([])
+								})
+
+								return await Promise.all(
+									selectedTags.map(t =>
+										notesLib.favoriteTag({
+											tag: t,
+											favorite: !selectedTagsIncludesFavorited
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+
+					menuButtons.push({
+						id: "bulkDelete",
+						title: "tbd_delete_selected",
+						icon: "delete",
+						destructive: true,
+						onPress: async () => {
+							const promptResponse = await run(async () => {
+								return await prompts.alert({
+									title: "tbd_delete_all_tags",
+									message: "tbd_delete_all_tags_confirmation",
+									cancelText: "tbd_cancel",
+									okText: "tbd_delete_all"
+								})
+							})
+
+							if (!promptResponse.success) {
+								console.error(promptResponse.error)
+								alerts.error(promptResponse.error)
+
+								return
+							}
+
+							if (promptResponse.data.cancelled) {
+								return
+							}
+
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useNotesStore.getState().setSelectedTags([])
+								})
+
+								return await Promise.all(
+									selectedTags.map(t =>
+										notesLib.deleteTag({
+											tag: t
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+				}
+			}
+
+			if (selectedNotes.length === 0 && selectedTags.length === 0 && !withSearch) {
+				menuButtons.push({
+					id: "createTag",
 					title: "tbd_create_tag",
-					message: "tbd_enter_tag_name",
-					cancelText: "tbd_cancel",
-					okText: "tbd_create"
+					icon: "tag",
+					onPress: async () => {
+						const result = await run(async () => {
+							return await prompts.input({
+								title: "tbd_create_tag",
+								message: "tbd_enter_tag_name",
+								cancelText: "tbd_cancel",
+								okText: "tbd_create"
+							})
+						})
+
+						if (!result.success) {
+							console.error(result.error)
+							alerts.error(result.error)
+
+							return
+						}
+
+						if (result.data.cancelled || result.data.type !== "string") {
+							return
+						}
+
+						const tagName = result.data.value.trim()
+
+						if (tagName.length === 0) {
+							return
+						}
+
+						const createResult = await runWithLoading(async () => {
+							return await notesLib.createTag({
+								name: tagName
+							})
+						})
+
+						if (!createResult.success) {
+							console.error(createResult.error)
+							alerts.error(createResult.error)
+
+							return
+						}
+					}
 				})
-			})
-
-			if (!result.success) {
-				console.error(result.error)
-				alerts.error(result.error)
-
-				return
 			}
 
-			if (result.data.cancelled || result.data.type !== "string") {
-				return
-			}
+			if (!withSearch && !tag && selectedNotes.length === 0 && selectedTags.length === 0) {
+				menuButtons.push({
+					id: "viewMode",
+					title: "tbd_viewMode",
+					icon: notesViewMode === "notes" ? "list" : "tag",
+					subButtons: [
+						{
+							title: "tbd_notes_view",
+							id: "notesView",
+							icon: "list",
+							checked: notesViewMode === "notes",
+							onPress: () => {
+								useNotesStore.getState().setSelectedNotes([])
+								useNotesStore.getState().setSelectedTags([])
 
-			const tagName = result.data.value.trim()
+								setNotesViewMode("notes")
+							}
+						},
+						{
+							title: "tbd_tags_view",
+							id: "tagsView",
+							icon: "tag",
+							checked: notesViewMode === "tags",
+							onPress: () => {
+								useNotesStore.getState().setSelectedNotes([])
+								useNotesStore.getState().setSelectedTags([])
 
-			if (tagName.length === 0) {
-				return
-			}
-
-			const createResult = await runWithLoading(async () => {
-				return await notesLib.createTag({
-					name: tagName
+								setNotesViewMode("tags")
+							}
+						}
+					]
 				})
-			})
-
-			if (!createResult.success) {
-				console.error(createResult.error)
-				alerts.error(createResult.error)
-
-				return
 			}
-		}, [])
+
+			if (menuButtons.length > 0) {
+				items.push({
+					type: "menu",
+					props: {
+						type: "dropdown",
+						hitSlop: 20,
+						buttons: menuButtons
+					},
+					triggerProps: {
+						hitSlop: 20
+					},
+					icon: {
+						name: "ellipsis-horizontal",
+						size: 24,
+						color: textForeground.color
+					}
+				})
+			}
+
+			return items
+		}, [
+			withSearch,
+			router,
+			tag,
+			textForeground.color,
+			viewMode,
+			onlyNotes,
+			createNote,
+			notesTags,
+			notesViewMode,
+			setNotesViewMode,
+			selectedNotes,
+			selectedNotesIncludesPinned,
+			selectedTags,
+			selectedTagsIncludesFavorited,
+			selectedNotesIncludesFavorited,
+			hasWriteAccessToAllSelectedNotes,
+			everySelectedNoteTrashed,
+			everySelectedNoteArchived,
+			everySelectedNoteOwned,
+			selectedNotesIncludesTrashed
+		])
+
+		const headerLeftItems = useMemo(() => {
+			if (selectedNotes.length === 0 && selectedTags.length === 0) {
+				return []
+			}
+
+			return [
+				{
+					type: "button",
+					props: {
+						hitSlop: 20,
+						onPress: () => {
+							if (viewMode === "notes") {
+								if (selectedNotes.length === onlyNotes.length) {
+									useNotesStore.getState().setSelectedNotes([])
+
+									return
+								}
+
+								useNotesStore.getState().setSelectedNotes(onlyNotes)
+							} else {
+								if (selectedTags.length === notesTags.length) {
+									useNotesStore.getState().setSelectedTags([])
+
+									return
+								}
+
+								useNotesStore.getState().setSelectedTags(notesTags)
+							}
+						}
+					},
+					text: {
+						children:
+							viewMode === "notes"
+								? selectedNotes.length === onlyNotes.length
+									? "tbd_deselectAll"
+									: "tbd_selectAll"
+								: selectedTags.length === notesTags.length
+									? "tbd_deselectAll"
+									: "tbd_selectAll"
+					}
+				}
+			] satisfies HeaderItem[]
+		}, [selectedNotes, selectedTags, viewMode, onlyNotes, notesTags])
+
+		const title = useMemo(() => {
+			if (viewMode === "notes") {
+				if (selectedNotes.length > 0) {
+					return `${selectedNotes.length} tbd_selected`
+				}
+
+				return "tbd_notes"
+			} else {
+				if (selectedTags.length > 0) {
+					return `${selectedTags.length} tbd_selected`
+				}
+
+				return "tbd_tags"
+			}
+		}, [viewMode, selectedNotes.length, selectedTags.length])
+
+		const searchBarOptions = useMemo(() => {
+			if (!withSearch || !setSearchQuery) {
+				return undefined
+			}
+
+			return Platform.select({
+				ios: {
+					placeholder: "tbd_search_notes",
+					onChangeText(e) {
+						setSearchQuery(e.nativeEvent.text)
+					},
+					autoFocus: true,
+					autoCapitalize: "none",
+					placement: "stacked"
+				},
+				default: undefined
+			}) satisfies SearchBarProps | undefined
+		}, [withSearch, setSearchQuery])
 
 		return (
 			<StackHeader
 				transparent={Platform.OS === "ios" && !withSearch}
-				title={
-					notesViewMode === "notes"
-						? selectedNotes.length > 0
-							? `${selectedNotes.length} tbd_selected`
-							: "tbd_notes"
-						: selectedTags.length > 0
-							? `${selectedTags.length} tbd_selected`
-							: "tbd_tags"
-				}
-				leftItems={() => {
-					if (selectedNotes.length === 0 && selectedTags.length === 0) {
-						return null
-					}
-
-					return [
-						{
-							type: "button",
-							props: {
-								hitSlop: 20,
-								onPress: () => {
-									if (notesViewMode === "notes") {
-										if (selectedNotes.length === onlyNotes.length) {
-											useNotesStore.getState().setSelectedNotes([])
-
-											return
-										}
-
-										useNotesStore.getState().setSelectedNotes(onlyNotes)
-									} else {
-										if (selectedTags.length === notesTags.length) {
-											useNotesStore.getState().setSelectedTags([])
-
-											return
-										}
-
-										useNotesStore.getState().setSelectedTags(notesTags)
-									}
-								}
-							},
-							text: {
-								children:
-									notesViewMode === "notes"
-										? selectedNotes.length === onlyNotes.length
-											? "tbd_deselectAll"
-											: "tbd_selectAll"
-										: selectedTags.length === notesTags.length
-											? "tbd_deselectAll"
-											: "tbd_selectAll"
-							}
-						}
-					]
-				}}
-				rightItems={() => {
-					return [
-						...(!withSearch
-							? [
-									{
-										type: "button" as const,
-										props: {
-											hitSlop: 20,
-											onPress: () => {
-												useNotesStore.getState().setSelectedNotes([])
-												useNotesStore.getState().setSelectedTags([])
-
-												router.push({
-													pathname: Paths.join("/", "search", "notes"),
-													params: {
-														...(tag
-															? {
-																	tagUuid: tag.uuid
-																}
-															: {})
-													}
-												})
-											}
-										},
-										icon: {
-											name: "search" as const,
-											size: 24,
-											color: textForeground.color
-										}
-									}
-								]
-							: []),
-						{
-							type: "menu",
-							props: {
-								type: "dropdown",
-								hitSlop: 20,
-								buttons: [
-									...((notesViewMode === "notes" ? onlyNotes.length > 0 : notesTags.length > 0)
-										? [
-												{
-													id: "selectAll",
-													title: "tbd_select_all",
-													icon: "select" as const,
-													onPress: () => {
-														if (notesViewMode === "notes") {
-															useNotesStore.getState().setSelectedNotes(onlyNotes)
-														} else {
-															useNotesStore.getState().setSelectedTags(notesTags)
-														}
-													}
-												}
-											]
-										: []),
-									...(notesViewMode === "notes" || !!tag
-										? [
-												{
-													id: "create",
-													title: "tbd_create_note",
-													icon: "plus" as const,
-													subButtons: [
-														{
-															title: "tbd_text",
-															id: "text",
-															icon: "text" as const,
-															onPress: async () => {
-																await createNote(NoteType.Text)
-															}
-														},
-														{
-															title: "tbd_checklist",
-															id: "checklist",
-															icon: "checklist" as const,
-															onPress: async () => {
-																await createNote(NoteType.Checklist)
-															}
-														},
-														{
-															title: "tbd_markdown",
-															id: "markdown",
-															icon: "markdown" as const,
-															onPress: async () => {
-																await createNote(NoteType.Md)
-															}
-														},
-														{
-															title: "tbd_code",
-															id: "code",
-															icon: "code" as const,
-															onPress: async () => {
-																await createNote(NoteType.Code)
-															}
-														},
-														{
-															title: "tbd_richtext",
-															id: "richtext",
-															icon: "richtext" as const,
-															onPress: async () => {
-																await createNote(NoteType.Rich)
-															}
-														}
-													]
-												}
-											]
-										: []),
-									{
-										id: "createTag",
-										title: "tbd_create_tag",
-										icon: "plus" as const,
-										onPress: async () => {
-											await createTag()
-										}
-									},
-									...(!tag && !withSearch
-										? [
-												{
-													id: "viewMode",
-													title: "tbd_viewMode",
-													icon: notesViewMode === "notes" ? ("list" as const) : ("tag" as const),
-													subButtons: [
-														{
-															title: "tbd_notes_view",
-															id: "notesView",
-															icon: "list" as const,
-															checked: notesViewMode === "notes",
-															onPress: () => {
-																setNotesViewMode("notes")
-															}
-														},
-														{
-															title: "tbd_tags_view",
-															id: "tagsView",
-															icon: "tag" as const,
-															checked: notesViewMode === "tags",
-															onPress: () => {
-																setNotesViewMode("tags")
-															}
-														}
-													]
-												}
-											]
-										: [])
-								]
-							},
-							triggerProps: {
-								hitSlop: 20
-							},
-							icon: {
-								name: "ellipsis-horizontal",
-								size: 24,
-								color: textForeground.color
-							}
-						}
-					]
-				}}
-				searchBarOptions={
-					withSearch && setSearchQuery
-						? Platform.select({
-								ios: {
-									placeholder: "tbd_search_notes",
-									onChangeText(e) {
-										setSearchQuery(e.nativeEvent.text)
-									},
-									autoFocus: true,
-									autoCapitalize: "none",
-									placement: "stacked"
-								},
-								default: undefined
-							})
-						: undefined
-				}
+				title={title}
+				leftItems={headerLeftItems}
+				rightItems={headerRightItems}
+				searchBarOptions={searchBarOptions}
 			/>
 		)
 	}
@@ -586,6 +1113,14 @@ export const Notes = memo(({ withSearch }: { withSearch?: boolean }) => {
 		}
 	}, [notesQuery])
 
+	const viewMode = useMemo(() => {
+		if (tag) {
+			return "notes"
+		}
+
+		return notesViewMode
+	}, [tag, notesViewMode])
+
 	return (
 		<Fragment>
 			<Header
@@ -597,7 +1132,7 @@ export const Notes = memo(({ withSearch }: { withSearch?: boolean }) => {
 					enabled={withSearch}
 					setSearchQuery={setSearchQuery}
 				>
-					{notesViewMode === "notes" || !!tag ? (
+					{viewMode === "notes" ? (
 						<VirtualList
 							className="flex-1"
 							contentInsetAdjustmentBehavior="automatic"

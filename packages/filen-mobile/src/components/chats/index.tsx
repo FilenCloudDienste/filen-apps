@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
-import StackHeader from "@/components/ui/header"
-import { memo, useMemo, useCallback } from "@/lib/memo"
+import StackHeader, { type HeaderItem } from "@/components/ui/header"
+import { memo, useMemo } from "@/lib/memo"
 import { Platform, TextInput } from "react-native"
 import List from "@/components/chats/list"
 import { useShallow } from "zustand/shallow"
@@ -17,6 +17,8 @@ import alerts from "@/lib/alerts"
 import { run } from "@filen/utils"
 import prompts from "@/lib/prompts"
 import View, { KeyboardAvoidingView } from "@/components/ui/view"
+import type { MenuButton } from "@/components/ui/menu"
+import type { SearchBarProps } from "react-native-screens"
 
 const Header = memo(
 	({ withSearch, setSearchQuery }: { withSearch?: boolean; setSearchQuery?: React.Dispatch<React.SetStateAction<string>> }) => {
@@ -28,8 +30,14 @@ const Header = memo(
 		const everySelectedChatOwnedBySelf = useChatsStore(
 			useShallow(state => state.selectedChats.every(chat => chat.ownerId === stringigiedClient?.userId))
 		)
-		const everySelectedChatNotOwnedBySelf = useChatsStore(
-			useShallow(state => state.selectedChats.every(chat => chat.ownerId !== stringigiedClient?.userId))
+		const selfIsParticipantAndNotOwnerOfEverySelectedChat = useChatsStore(
+			useShallow(state =>
+				state.selectedChats.every(
+					chat =>
+						chat.ownerId !== stringigiedClient?.userId &&
+						chat.participants.some(participant => participant.userId === stringigiedClient?.userId)
+				)
+			)
 		)
 
 		const chatsQuery = useChatsQuery({
@@ -44,256 +52,275 @@ const Header = memo(
 			return chatsQuery.data.filter(chat => chat.ownerId === stringigiedClient?.userId || chat.lastMessage)
 		}, [chatsQuery.status, chatsQuery.data, stringigiedClient?.userId])
 
-		const createChat = useCallback(async () => {
-			// TODO
-		}, [])
+		const headerLeftItems = useMemo(() => {
+			if (selectedChats.length === 0) {
+				return []
+			}
+
+			return [
+				{
+					type: "button",
+					props: {
+						hitSlop: 20,
+						onPress: () => {
+							if (selectedChats.length === chats.length) {
+								useChatsStore.getState().setSelectedChats([])
+
+								return
+							}
+
+							useChatsStore.getState().setSelectedChats(chats)
+						}
+					},
+					text: {
+						children: selectedChats.length === chats.length ? "tbd_deselectAll" : "tbd_selectAll"
+					}
+				}
+			] satisfies HeaderItem[]
+		}, [selectedChats, chats])
+
+		const headerRightItems = useMemo(() => {
+			const items: HeaderItem[] = []
+
+			if (!withSearch) {
+				items.push({
+					type: "button",
+					props: {
+						hitSlop: 20,
+						onPress: () => {
+							useChatsStore.getState().setSelectedChats([])
+
+							router.push(Paths.join("/", "search", "chats"))
+						}
+					},
+					icon: {
+						name: "search",
+						size: 24,
+						color: textForeground.color
+					}
+				})
+			}
+
+			const menuButtons: MenuButton[] = []
+
+			menuButtons.push({
+				id: "selectAll",
+				title: selectedChats.length === chats.length ? "tbd_deselect_all" : "tbd_select_all",
+				icon: "select",
+				onPress: () => {
+					if (selectedChats.length === chats.length) {
+						useChatsStore.getState().setSelectedChats([])
+
+						return
+					}
+
+					useChatsStore.getState().setSelectedChats(chats)
+				}
+			})
+
+			if (!withSearch && selectedChats.length === 0) {
+				menuButtons.push({
+					id: "createChat",
+					title: "tbd_create_chat",
+					icon: "plus",
+					onPress: async () => {
+						// TODO
+					}
+				})
+			}
+
+			if (selectedChats.length > 0) {
+				menuButtons.push({
+					id: "bulkMute",
+					title: selectedChatsIncludesMuted ? "tbd_unmute_all" : "tbd_mute_all",
+					icon: "plus",
+					onPress: async () => {
+						const result = await runWithLoading(async defer => {
+							defer(() => {
+								useChatsStore.getState().setSelectedChats([])
+							})
+
+							return await Promise.all(
+								selectedChats.map(chat =>
+									chatsLib.mute({
+										chat,
+										mute: !selectedChatsIncludesMuted
+									})
+								)
+							)
+						})
+
+						if (!result.success) {
+							console.error(result.error)
+							alerts.error(result.error)
+
+							return
+						}
+					}
+				})
+
+				if (everySelectedChatOwnedBySelf) {
+					menuButtons.push({
+						id: "bulkDelete",
+						title: "tbd_delete_chats",
+						icon: "delete",
+						destructive: true,
+						onPress: async () => {
+							const promptResponse = await run(async () => {
+								return await prompts.alert({
+									title: "tbd_delete_all_chats",
+									message: "tbd_delete_all_chats_confirmation",
+									cancelText: "tbd_cancel",
+									okText: "tbd_delete_all"
+								})
+							})
+
+							if (!promptResponse.success) {
+								console.error(promptResponse.error)
+								alerts.error(promptResponse.error)
+
+								return
+							}
+
+							if (promptResponse.data.cancelled) {
+								useChatsStore.getState().setSelectedChats([])
+
+								return
+							}
+
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useChatsStore.getState().setSelectedChats([])
+								})
+
+								return await Promise.all(
+									selectedChats.map(chat =>
+										chatsLib.delete({
+											chat
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+				}
+
+				if (selfIsParticipantAndNotOwnerOfEverySelectedChat) {
+					menuButtons.push({
+						id: "bulkLeave",
+						title: "tbd_leave_chats",
+						icon: "exit",
+						destructive: true,
+						onPress: async () => {
+							const promptResponse = await run(async () => {
+								return await prompts.alert({
+									title: "tbd_leave_all_chats",
+									message: "tbd_leave_all_chats_confirmation",
+									cancelText: "tbd_cancel",
+									okText: "tbd_leave_all"
+								})
+							})
+
+							if (!promptResponse.success) {
+								console.error(promptResponse.error)
+								alerts.error(promptResponse.error)
+
+								return
+							}
+
+							if (promptResponse.data.cancelled) {
+								return
+							}
+
+							const result = await runWithLoading(async defer => {
+								defer(() => {
+									useChatsStore.getState().setSelectedChats([])
+								})
+
+								return await Promise.all(
+									selectedChats.map(chat =>
+										chatsLib.leave({
+											chat
+										})
+									)
+								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+				}
+			}
+
+			if (menuButtons.length > 0) {
+				items.push({
+					type: "menu",
+					props: {
+						type: "dropdown",
+						hitSlop: 20,
+						buttons: menuButtons
+					},
+					triggerProps: {
+						hitSlop: 20
+					},
+					icon: {
+						name: "ellipsis-horizontal",
+						size: 24,
+						color: textForeground.color
+					}
+				})
+			}
+
+			return items
+		}, [
+			withSearch,
+			router,
+			textForeground.color,
+			selectedChats,
+			selectedChatsIncludesMuted,
+			everySelectedChatOwnedBySelf,
+			chats,
+			selfIsParticipantAndNotOwnerOfEverySelectedChat
+		])
+
+		const searchBarOptions = useMemo(() => {
+			if (!withSearch || !setSearchQuery) {
+				return undefined
+			}
+
+			return Platform.select({
+				ios: {
+					placeholder: "tbd_search_chats",
+					onChangeText(e) {
+						setSearchQuery(e.nativeEvent.text)
+					},
+					autoFocus: true,
+					autoCapitalize: "none",
+					placement: "stacked"
+				},
+				default: undefined
+			}) satisfies SearchBarProps | undefined
+		}, [withSearch, setSearchQuery])
 
 		return (
 			<StackHeader
 				title={withSearch ? "tbd_search_chats" : "tbd_chats"}
 				transparent={Platform.OS === "ios" && !withSearch}
-				leftItems={() => {
-					if (selectedChats.length === 0) {
-						return null
-					}
-
-					return [
-						{
-							type: "button",
-							props: {
-								hitSlop: 20,
-								onPress: () => {
-									if (selectedChats.length === chats.length) {
-										useChatsStore.getState().setSelectedChats([])
-
-										return
-									}
-
-									useChatsStore.getState().setSelectedChats(chats)
-								}
-							},
-							text: {
-								children: selectedChats.length === chats.length ? "tbd_deselectAll" : "tbd_selectAll"
-							}
-						}
-					]
-				}}
-				rightItems={() => {
-					return [
-						...(!withSearch
-							? [
-									{
-										type: "button" as const,
-										props: {
-											hitSlop: 20,
-											onPress: () => {
-												useChatsStore.getState().setSelectedChats([])
-
-												router.push(Paths.join("/", "search", "chats"))
-											}
-										},
-										icon: {
-											name: "search" as const,
-											size: 24,
-											color: textForeground.color
-										}
-									}
-								]
-							: []),
-						{
-							type: "menu",
-							props: {
-								type: "dropdown",
-								hitSlop: 20,
-								buttons: [
-									...(selectedChats.length > 0
-										? [
-												{
-													id: "bulkMute",
-													title: selectedChatsIncludesMuted ? "tbd_unmute_all" : "tbd_mute_all",
-													icon: "plus" as const,
-													onPress: async () => {
-														const result = await runWithLoading(async defer => {
-															defer(() => {
-																useChatsStore.getState().setSelectedChats([])
-															})
-
-															return await Promise.all(
-																selectedChats.map(chat =>
-																	chatsLib.mute({
-																		chat,
-																		mute: !selectedChatsIncludesMuted
-																	})
-																)
-															)
-														})
-
-														if (!result.success) {
-															console.error(result.error)
-															alerts.error(result.error)
-
-															return
-														}
-													}
-												},
-												...(everySelectedChatOwnedBySelf
-													? [
-															{
-																id: "bulkDelete",
-																title: "tbd_delete_chats",
-																icon: "delete" as const,
-																onPress: async () => {
-																	const promptResponse = await run(async () => {
-																		return await prompts.alert({
-																			title: "tbd_delete_all_chats",
-																			message: "tbd_delete_all_chats_confirmation",
-																			cancelText: "tbd_cancel",
-																			okText: "tbd_delete_all"
-																		})
-																	})
-
-																	if (!promptResponse.success) {
-																		console.error(promptResponse.error)
-																		alerts.error(promptResponse.error)
-
-																		return
-																	}
-
-																	if (promptResponse.data.cancelled) {
-																		useChatsStore.getState().setSelectedChats([])
-
-																		return
-																	}
-
-																	const result = await runWithLoading(async defer => {
-																		defer(() => {
-																			useChatsStore.getState().setSelectedChats([])
-																		})
-
-																		return await Promise.all(
-																			selectedChats.map(chat =>
-																				chatsLib.delete({
-																					chat
-																				})
-																			)
-																		)
-																	})
-
-																	if (!result.success) {
-																		console.error(result.error)
-																		alerts.error(result.error)
-
-																		return
-																	}
-																}
-															}
-														]
-													: []),
-												...(everySelectedChatNotOwnedBySelf
-													? [
-															{
-																id: "bulkDelete",
-																title: "tbd_delete_chats",
-																icon: "delete" as const,
-																onPress: async () => {
-																	const promptResponse = await run(async () => {
-																		return await prompts.alert({
-																			title: "tbd_leave_all_chats",
-																			message: "tbd_leave_all_chats_confirmation",
-																			cancelText: "tbd_cancel",
-																			okText: "tbd_leave_all"
-																		})
-																	})
-
-																	if (!promptResponse.success) {
-																		console.error(promptResponse.error)
-																		alerts.error(promptResponse.error)
-
-																		return
-																	}
-
-																	if (promptResponse.data.cancelled) {
-																		useChatsStore.getState().setSelectedChats([])
-
-																		return
-																	}
-
-																	const result = await runWithLoading(async defer => {
-																		defer(() => {
-																			useChatsStore.getState().setSelectedChats([])
-																		})
-
-																		return await Promise.all(
-																			selectedChats.map(chat =>
-																				chatsLib.leave({
-																					chat
-																				})
-																			)
-																		)
-																	})
-
-																	if (!result.success) {
-																		console.error(result.error)
-																		alerts.error(result.error)
-
-																		return
-																	}
-																}
-															}
-														]
-													: [])
-											]
-										: [
-												{
-													id: "selectAllChats",
-													title: "tbd_select_all_chats",
-													icon: "plus" as const,
-													onPress: () => {
-														useChatsStore.getState().setSelectedChats(chats)
-													}
-												},
-												...(!withSearch
-													? [
-															{
-																id: "createChat",
-																title: "tbd_create_chat",
-																icon: "plus" as const,
-																onPress: async () => {
-																	await createChat()
-																}
-															}
-														]
-													: [])
-											])
-								]
-							},
-							triggerProps: {
-								hitSlop: 20
-							},
-							icon: {
-								name: "ellipsis-horizontal",
-								size: 24,
-								color: textForeground.color
-							}
-						}
-					]
-				}}
-				searchBarOptions={
-					withSearch && setSearchQuery
-						? Platform.select({
-								ios: {
-									placeholder: "tbd_search_chats",
-									onChangeText(e) {
-										setSearchQuery(e.nativeEvent.text)
-									},
-									autoFocus: true,
-									autoCapitalize: "none",
-									placement: "stacked"
-								},
-								default: undefined
-							})
-						: undefined
-				}
+				leftItems={headerLeftItems}
+				rightItems={headerRightItems}
+				searchBarOptions={searchBarOptions}
 			/>
 		)
 	}
