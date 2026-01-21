@@ -13,7 +13,6 @@ import useNotesStore from "@/stores/useNotes.store"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { useShallow } from "zustand/shallow"
 import isEqual from "react-fast-compare"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useEffect } from "react"
 import { runEffect, run } from "@filen/utils"
 import events from "@/lib/events"
@@ -54,7 +53,6 @@ export const Loading = memo(({ children, loading, noteType }: { children: React.
 export const Content = memo(
 	({ note, history }: { note: Note; history?: NoteHistory | null }) => {
 		const stringifiedClient = useStringifiedClient()
-		const insets = useSafeAreaInsets()
 
 		const noteContentQuery = useNoteContentQuery(
 			{
@@ -256,7 +254,6 @@ export const Content = memo(
 											: "text"
 						}
 						id={`note:${note.uuid}`}
-						paddingBottom={insets.bottom}
 					/>
 				)}
 			</Loading>

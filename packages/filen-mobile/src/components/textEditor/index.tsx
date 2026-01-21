@@ -3,7 +3,7 @@ import TextEditorDOM from "@/components/textEditor/dom"
 import RichTextEditorDOM, { type QuillFormats, type HeaderLevel } from "@/components/textEditor/richText/dom"
 import View from "@/components/ui/view"
 import { useNativeDomEvents, type DOMRef } from "@/hooks/useDomEvents/useNativeDomEvents"
-import { Platform } from "react-native"
+import { Platform, KeyboardAvoidingView } from "react-native"
 import { useResolveClassNames, useUniwind } from "uniwind"
 import useRichtextStore from "@/stores/useRichtext.store"
 import RichTextEditorToolbar from "@/components/textEditor/richText/toolbar"
@@ -13,9 +13,6 @@ import * as ExpoLinking from "expo-linking"
 import alerts from "@/lib/alerts"
 import useTextEditorStore from "@/stores/useTextEditor.store"
 import { memo, useMemo } from "@/lib/memo"
-import { AnimatedView } from "@/components/ui/animated"
-import { interpolate, useAnimatedStyle } from "react-native-reanimated"
-import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller"
 
 export type TextEditorType = "richtext" | "text" | "markdown" | "code"
 
@@ -122,8 +119,7 @@ export const TextEditor = memo(
 		onReady,
 		disableMarkdownPreview,
 		id,
-		autoFocus,
-		paddingBottom
+		autoFocus
 	}: {
 		initialValue?: string
 		onValueChange?: (value: string) => void
@@ -135,7 +131,6 @@ export const TextEditor = memo(
 		disableMarkdownPreview?: boolean
 		id?: string
 		autoFocus?: boolean
-		paddingBottom?: number
 	}) => {
 		const ref = useRef<DOMRef>(null)
 		const textForeground = useResolveClassNames("text-foreground")
@@ -146,7 +141,6 @@ export const TextEditor = memo(
 		const text = useResolveClassNames("font-normal text-sm")
 		const { theme } = useUniwind()
 		const [textEditorMarkdownPreviewActive] = useSecureStore<Record<string, boolean>>("textEditorMarkdownPreviewActive", {})
-		const keyboardAnimation = useReanimatedKeyboardAnimation()
 
 		const markdownPreviewActive = useMemo(() => {
 			if (!id) {
@@ -200,26 +194,13 @@ export const TextEditor = memo(
 			}
 		})
 
-		const containerStyle = useAnimatedStyle(() => {
-			return {
-				paddingBottom: interpolate(
-					keyboardAnimation.progress.value,
-					[0, 1],
-					[paddingBottom ?? 0, -keyboardAnimation.height.value + (paddingBottom ?? 0)]
-				)
-			}
-		}, [keyboardAnimation])
-
 		useEffect(() => {
 			useTextEditorStore.getState().setReady(false)
 		}, [])
 
 		return (
 			<Fragment>
-				<AnimatedView
-					className="flex-1"
-					style={containerStyle}
-				>
+				<KeyboardAvoidingView className="flex-1">
 					{type === "richtext" ? (
 						<RichTextEditorDOM
 							ref={ref}
@@ -295,7 +276,7 @@ export const TextEditor = memo(
 							/>
 						</View>
 					)}
-				</AnimatedView>
+				</KeyboardAvoidingView>
 				{!disableRichtextToolbar && type === "richtext" && !readOnly && <RichTextEditorToolbar postMessage={postMessage} />}
 				{!disableMarkdownPreview && type === "markdown" && <MarkdownPreviewButton id={id ?? "textEditor"} />}
 			</Fragment>
