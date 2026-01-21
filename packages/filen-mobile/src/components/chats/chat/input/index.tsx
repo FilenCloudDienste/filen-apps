@@ -28,6 +28,7 @@ import { sync } from "@/components/chats/sync"
 import alerts from "@/lib/alerts"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import events from "@/lib/events"
+import { chatMessagesQueryUpdate } from "@/queries/useChatMessages.query"
 
 export const PopupContainerView = memo(
 	({
@@ -582,41 +583,46 @@ export const Input = memo(
 			let flushedToDisk = false
 			let flushToDiskError: Error | null = null
 			const inflightId = randomUUID()
+			const inflightMessage: ChatMessageWithInflightId = {
+				inflightId,
+				chat: chat.uuid,
+				inner: {
+					uuid: inflightId,
+					senderId: stringifiedClient.userId,
+					senderEmail: stringifiedClient.email,
+					senderAvatar: me.avatar,
+					senderNickName: me.nickName,
+					message: normalizedMessage
+				},
+				replyTo: chatReplyTo
+					? {
+							uuid: chatReplyTo.inner.uuid,
+							senderId: chatReplyTo.inner.senderId,
+							senderEmail: chatReplyTo.inner.senderEmail,
+							senderAvatar: chatReplyTo.inner.senderAvatar,
+							senderNickName: chatReplyTo.inner.senderNickName,
+							message: chatReplyTo.inner.message
+						}
+					: undefined,
+				embedDisabled: false,
+				edited: false,
+				editedTimestamp: BigInt(0),
+				sentTimestamp: BigInt(sentTimestamp)
+			}
+
+			chatMessagesQueryUpdate({
+				params: {
+					uuid: chat.uuid
+				},
+				updater: messages => [...messages.filter(m => m.inflightId !== inflightMessage.inflightId), inflightMessage]
+			})
 
 			useChatsStore.getState().setInflightMessages(prev => {
 				const updated = {
 					...prev,
 					[chat.uuid]: {
 						chat,
-						messages: [
-							...(prev[chat.uuid]?.messages ?? []),
-							{
-								inflightId,
-								chat: chat.uuid,
-								inner: {
-									uuid: inflightId,
-									senderId: stringifiedClient.userId,
-									senderEmail: stringifiedClient.email,
-									senderAvatar: me.avatar,
-									senderNickName: me.nickName,
-									message: normalizedMessage
-								},
-								replyTo: chatReplyTo
-									? {
-											uuid: chatReplyTo.inner.uuid,
-											senderId: chatReplyTo.inner.senderId,
-											senderEmail: chatReplyTo.inner.senderEmail,
-											senderAvatar: chatReplyTo.inner.senderAvatar,
-											senderNickName: chatReplyTo.inner.senderNickName,
-											message: chatReplyTo.inner.message
-										}
-									: undefined,
-								embedDisabled: false,
-								edited: false,
-								editedTimestamp: BigInt(0),
-								sentTimestamp: BigInt(sentTimestamp)
-							}
-						]
+						messages: [...(prev[chat.uuid]?.messages ?? []), inflightMessage]
 					}
 				}
 

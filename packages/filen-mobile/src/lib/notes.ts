@@ -310,9 +310,19 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.filter(n => n.uuid !== note.uuid)
-		})
+		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
+		setTimeout(() => {
+			notesQueryUpdate({
+				updater: prev => prev.filter(n => n.uuid !== note.uuid)
+			})
+
+			noteContentQueryUpdate({
+				params: {
+					uuid: note.uuid
+				},
+				updater: () => undefined
+			})
+		}, 3000)
 	}
 
 	public async setTitle({ note, newTitle, signal }: { note: Note; newTitle: string; signal?: AbortSignal }) {
@@ -514,9 +524,19 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.filter(n => n.uuid !== note.uuid)
-		})
+		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
+		setTimeout(() => {
+			notesQueryUpdate({
+				updater: prev => prev.filter(n => n.uuid !== note.uuid)
+			})
+
+			noteContentQueryUpdate({
+				params: {
+					uuid: note.uuid
+				},
+				updater: () => undefined
+			})
+		}, 3000)
 
 		return note
 	}

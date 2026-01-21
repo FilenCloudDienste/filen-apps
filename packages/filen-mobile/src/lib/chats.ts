@@ -1,9 +1,12 @@
 import auth from "@/lib/auth"
 import { type Chat, type ChatMessagePartial, ChatTypingType, type ChatMessage, type Contact } from "@filen/sdk-rs"
-import { chatsQueryUpdate } from "@/queries/useChats.query"
-import { chatMessagesQueryUpdate } from "@/queries/useChatMessages.query"
+import { chatsQueryUpdate, chatsQueryGet, fetchData as chatsQueryFetch } from "@/queries/useChats.query"
+import { chatMessagesQueryUpdate, fetchData as chatMessagesQueryFetch } from "@/queries/useChatMessages.query"
+import { Semaphore, run } from "@filen/utils"
 
 export class Chats {
+	private readonly refetchChatsAndMessagesMutex: Semaphore = new Semaphore(1)
+
 	public async listBefore({ chat, before, signal }: { chat: Chat; before: bigint; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
 
@@ -21,15 +24,15 @@ export class Chats {
 	public async sendMessage({
 		chat,
 		message,
-		inflightId,
 		replyTo,
-		signal
+		signal,
+		inflightId
 	}: {
 		chat: Chat
 		message: string
-		inflightId: string
 		replyTo?: ChatMessagePartial
 		signal?: AbortSignal
+		inflightId: string
 	}) {
 		const sdkClient = await auth.getSdkClient()
 
@@ -50,6 +53,23 @@ export class Chats {
 				: undefined
 		)
 
+		const [[updatedChat]] = await Promise.all([
+			this.updateLastFocusTimesNow({
+				chats: [chat],
+				signal
+			}),
+			this.markRead({
+				chat,
+				signal
+			})
+		])
+
+		if (!updatedChat) {
+			throw new Error("Failed to update chat after sending message")
+		}
+
+		chat = updatedChat
+
 		chatsQueryUpdate({
 			updater: prev => prev.map(c => (c.uuid === chat.uuid ? chat : c))
 		})
@@ -65,7 +85,7 @@ export class Chats {
 				uuid: chat.uuid
 			},
 			updater: prev => [
-				...prev.filter(m => m.inner.uuid !== lastMessage.inner.uuid),
+				...prev.filter(m => m.inner.uuid !== lastMessage.inner.uuid && m.inflightId !== inflightId),
 				{
 					...lastMessage,
 					inflightId
@@ -164,7 +184,7 @@ export class Chats {
 				...prev.filter(m => m.inner.uuid !== message.inner.uuid),
 				{
 					...message,
-					inflightId: ""
+					inflightId: "" // Placeholder, actual inflightId is only needed for send sync
 				}
 			]
 		})
@@ -184,6 +204,12 @@ export class Chats {
 				: undefined
 		)
 
+		const chat = chatsQueryGet()?.find(c => c.uuid === message.chat)
+
+		if (!chat) {
+			throw new Error("Chat not found for message")
+		}
+
 		chatMessagesQueryUpdate({
 			params: {
 				uuid: message.chat
@@ -193,7 +219,7 @@ export class Chats {
 					m.inner.uuid === message.inner.uuid
 						? {
 								...message,
-								inflightId: ""
+								inflightId: "" // Placeholder, actual inflightId is only needed for send sync
 							}
 						: m
 				)
@@ -398,7 +424,7 @@ export class Chats {
 		return chat
 	}
 
-	public async updateLastFocusTimes({ chats, signal }: { chats: Chat[]; signal?: AbortSignal }) {
+	public async updateLastFocusTimesNow({ chats, signal }: { chats: Chat[]; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
 
 		chats = await sdkClient.updateLastChatFocusTimesNow(
@@ -417,6 +443,51 @@ export class Chats {
 		}
 
 		return chats
+	}
+
+	public async refetchChatsAndMessages() {
+		const result = await run(async defer => {
+			await this.refetchChatsAndMessagesMutex.acquire()
+
+			defer(() => {
+				this.refetchChatsAndMessagesMutex.release()
+			})
+
+			let chats = await chatsQueryFetch()
+
+			chatsQueryUpdate({
+				updater: () => chats
+			})
+
+			if (!chats || chats.length === 0) {
+				return
+			}
+
+			await Promise.all(
+				chats.map(async chat => {
+					const messages = await chatMessagesQueryFetch({
+						uuid: chat.uuid
+					})
+
+					chatMessagesQueryUpdate({
+						params: {
+							uuid: chat.uuid
+						},
+						updater: () => messages
+					})
+				})
+			)
+
+			chats = await chatsQueryFetch()
+
+			chatsQueryUpdate({
+				updater: () => chats
+			})
+		})
+
+		if (!result.success) {
+			throw result.error
+		}
 	}
 }
 

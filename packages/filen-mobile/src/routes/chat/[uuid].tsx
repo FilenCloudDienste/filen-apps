@@ -3,8 +3,8 @@ import SafeAreaView from "@/components/ui/safeAreaView"
 import StackHeader from "@/components/ui/header"
 import { useLocalSearchParams, Redirect, useRouter } from "expo-router"
 import type { Chat as TChat } from "@filen/sdk-rs"
-import { Platform, ActivityIndicator } from "react-native"
-import { memo, useMemo } from "@/lib/memo"
+import { Platform, ActivityIndicator, useWindowDimensions } from "react-native"
+import { memo, useMemo, useCallback } from "@/lib/memo"
 import useChatsQuery from "@/queries/useChats.query"
 import View, { CrossGlassContainerView } from "@/components/ui/view"
 import Text from "@/components/ui/text"
@@ -22,10 +22,18 @@ import events from "@/lib/events"
 import useSocketStore from "@/stores/useSocket.store"
 import Messages from "@/components/chats/chat/messages"
 import { createMenuButtons } from "@/components/chats/list/chat/menu"
+import { PressableOpacity } from "@/components/ui/pressables"
+import Ionicons from "@expo/vector-icons/Ionicons"
+import chats from "@/lib/chats"
+import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
+import alerts from "@/lib/alerts"
+import { simpleDateNoTime } from "@/lib/time"
+import useChatUnreadCount from "@/hooks/useChatUnreadCount"
 
-export const Header = memo(({ chat }: { chat: TChat }) => {
+const Header = memo(({ chat }: { chat: TChat }) => {
 	const stringigiedClient = useStringifiedClient()
 	const textForeground = useResolveClassNames("text-foreground")
+	const windowDimensions = useWindowDimensions()
 
 	const title = useMemo(() => {
 		if (chat.name && chat.name.length > 0) {
@@ -47,40 +55,61 @@ export const Header = memo(({ chat }: { chat: TChat }) => {
 			.join(", ")
 	}, [chat.name, chat.participants, stringigiedClient?.userId])
 
-	const avatar = useMemo(() => {
-		if (chat.participants.length === 2) {
-			const otherParticipant = chat.participants.find(p => p.userId !== stringigiedClient?.userId)
-
-			if (otherParticipant && otherParticipant.avatar && otherParticipant.avatar.startsWith("http")) {
-				return otherParticipant.avatar
-			}
-		}
-
-		return undefined
+	const participantsWithAvatars = useMemo(() => {
+		return chat.participants
+			.filter(p => p.userId !== stringigiedClient?.userId && p.avatar && p.avatar.startsWith("http"))
+			.sort((a, b) => fastLocaleCompare(contactDisplayName(a), contactDisplayName(b)))
+			.map(p => p.avatar)
+			.slice(0, 5)
 	}, [chat.participants, stringigiedClient?.userId])
 
 	return (
 		<StackHeader
 			title={
-				avatar
+				participantsWithAvatars.length > 0
 					? () => {
 							return (
 								<View
 									className={cn(
-										"items-center flex-col justify-center bg-transparent gap-0.5",
-										Platform.OS === "android" && "py-2"
+										"items-center flex-col justify-center bg-transparent flex-1",
+										Platform.OS === "ios" ? "mr-8" : "mr-3"
 									)}
 								>
-									<Avatar
-										className="shrink-0 z-100 size-9"
-										size={36}
-										source={{
-											uri: avatar
-										}}
-									/>
+									<View className="flex-row items-center -mt-1 bg-transparent">
+										{participantsWithAvatars.length === 1 ? (
+											<Avatar
+												className="shrink-0 z-10"
+												size={36}
+												source={{
+													uri: participantsWithAvatars.at(0)
+												}}
+											/>
+										) : (
+											<View className="flex-row items-center bg-transparent">
+												{participantsWithAvatars.map((avatar, index) => {
+													return (
+														<Avatar
+															key={avatar}
+															className={cn("shrink-0", index > 0 && "-ml-12")}
+															size={32}
+															style={{
+																zIndex: 100 - index
+															}}
+															source={{
+																uri: avatar
+															}}
+														/>
+													)
+												})}
+											</View>
+										)}
+									</View>
 									<CrossGlassContainerView
-										className="bg-background-secondary border border-border py-0.5 px-1.5 rounded-full max-w-32 -mt-1.5"
+										className="bg-background-secondary border border-border py-0.5 px-1.5 rounded-full -mt-2"
 										disableBlur={Platform.OS === "android"}
+										style={{
+											maxWidth: windowDimensions.width - 200
+										}}
 									>
 										<Text
 											className="text-foreground"
@@ -98,7 +127,7 @@ export const Header = memo(({ chat }: { chat: TChat }) => {
 			backVisible={true}
 			transparent={false}
 			shadowVisible={true}
-			backTitle="tbd_back"
+			backTitle=""
 			rightItems={() => {
 				if (!stringigiedClient) {
 					return []
@@ -127,6 +156,59 @@ export const Header = memo(({ chat }: { chat: TChat }) => {
 				]
 			}}
 		/>
+	)
+})
+
+const Unread = memo(({ chat }: { chat: TChat }) => {
+	const unreadCount = useChatUnreadCount(chat)
+
+	const markAsRead = useCallback(async () => {
+		if (!chat) {
+			return
+		}
+
+		const result = await runWithLoading(async () => {
+			return await Promise.all([
+				chats.updateLastFocusTimesNow({
+					chats: [chat]
+				}),
+				chats.markRead({
+					chat
+				})
+			])
+		})
+
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
+
+			return
+		}
+	}, [chat])
+
+	if (unreadCount === 0) {
+		return null
+	}
+
+	return (
+		<PressableOpacity
+			className="absolute top-0 left-0 right-0 items-center z-20 bg-blue-500 py-2 flex-row justify-between gap-4 px-4 rounded-b-lg"
+			onPress={markAsRead}
+		>
+			<Text
+				className="text-white"
+				numberOfLines={1}
+				ellipsizeMode="middle"
+			>
+				{unreadCount} tbd_new_messages_since {simpleDateNoTime(Number(chat.lastFocus))}
+			</Text>
+			<Ionicons
+				className="shrink-0"
+				name="checkmark"
+				size={20}
+				color="white"
+			/>
+		</PressableOpacity>
 	)
 })
 
@@ -204,6 +286,7 @@ export const Chat = memo(() => {
 							</Text>
 						</View>
 					)}
+					<Unread chat={chat} />
 					<Messages chat={chat} />
 				</AnimatedView>
 			</SafeAreaView>

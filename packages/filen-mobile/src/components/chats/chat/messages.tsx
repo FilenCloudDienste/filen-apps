@@ -12,188 +12,179 @@ import { interpolate, useAnimatedStyle } from "react-native-reanimated"
 import useChatsStore, { type ChatMessageWithInflightId } from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
 import Message from "@/components/chats/chat/message"
-import isEqual from "react-fast-compare"
 import { ActivityIndicator } from "react-native"
 import { useResolveClassNames } from "uniwind"
 import { run } from "@filen/utils"
 import chats from "@/lib/chats"
 import alerts from "@/lib/alerts"
 
-export const Messages = memo(
-	({ chat }: { chat: TChat }) => {
-		const insets = useSafeAreaInsets()
-		const keyboardAnimation = useReanimatedKeyboardAnimation()
-		const inputViewLayout = useChatsStore(useShallow(state => state.inputViewLayout))
-		const listRef = useRef<ListRef<ChatMessageWithInflightId>>(null)
-		const inflightChatMessages = useChatsStore(useShallow(state => state.inflightMessages[chat.uuid]?.messages ?? []))
-		const [fetchedMessages, setFetchedMessages] = useState<ChatMessageWithInflightId[]>([])
-		const textMutedForeground = useResolveClassNames("text-muted-foreground")
-		const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false)
-		const isFetchingMoreRef = useRef<boolean>(false)
-		const hasMoreRef = useRef<boolean>(true)
+export const Messages = memo(({ chat }: { chat: TChat }) => {
+	const insets = useSafeAreaInsets()
+	const keyboardAnimation = useReanimatedKeyboardAnimation()
+	const inputViewLayout = useChatsStore(useShallow(state => state.inputViewLayout))
+	const listRef = useRef<ListRef<ChatMessageWithInflightId>>(null)
+	const [fetchedMessages, setFetchedMessages] = useState<ChatMessageWithInflightId[]>([])
+	const textMutedForeground = useResolveClassNames("text-muted-foreground")
+	const [isFetchingMore, setIsFetchingMore] = useState<boolean>(false)
+	const isFetchingMoreRef = useRef<boolean>(false)
+	const hasMoreRef = useRef<boolean>(true)
 
-		const chatMessagesQuery = useChatMessagesQuery(
-			{
-				uuid: chat.uuid
-			},
-			{
-				enabled: !!chat
+	const chatMessagesQuery = useChatMessagesQuery(
+		{
+			uuid: chat.uuid
+		},
+		{
+			enabled: !!chat
+		}
+	)
+
+	const messages = useMemo(() => {
+		if (chatMessagesQuery.status !== "success") {
+			return []
+		}
+
+		return chatMessagesQuery.data.concat(fetchedMessages).sort((a, b) => Number(b.sentTimestamp) - Number(a.sentTimestamp))
+	}, [chatMessagesQuery.data, chatMessagesQuery.status, fetchedMessages])
+
+	const headerStyle = useAnimatedStyle(() => {
+		const standardHeight = insets.bottom + inputViewLayout.height + 16
+
+		return {
+			height: interpolate(keyboardAnimation.progress.value, [0, 1], [standardHeight, standardHeight - 16]),
+			width: "100%",
+			backgroundColor: "transparent"
+		}
+	}, [insets.bottom, keyboardAnimation, inputViewLayout.height])
+
+	const renderItem = useCallback(
+		(info: ListRenderItemInfo<ChatMessageWithInflightId>) => {
+			if (!chat) {
+				return null
 			}
-		)
 
-		const messages = useMemo(() => {
-			if (chatMessagesQuery.status !== "success") {
+			return (
+				<Message
+					chat={chat}
+					info={info}
+					nextMessage={messages[info.index - 1]}
+					prevMessage={messages[info.index + 1]}
+				/>
+			)
+		},
+		[chat, messages]
+	)
+
+	const keyExtractor = useCallback((item: ChatMessageWithInflightId) => {
+		return item.inner.uuid
+	}, [])
+
+	const fetchMore = useCallback(async () => {
+		if (isFetchingMoreRef.current || chatMessagesQuery.status !== "success" || messages.length === 0 || !hasMoreRef.current) {
+			return
+		}
+
+		const result = await run(async defer => {
+			isFetchingMoreRef.current = true
+
+			setIsFetchingMore(true)
+
+			defer(() => {
+				isFetchingMoreRef.current = false
+
+				setIsFetchingMore(false)
+			})
+
+			const lastMessage = messages[messages.length - 1]
+
+			if (!lastMessage) {
 				return []
 			}
 
-			return [...chatMessagesQuery.data, ...inflightChatMessages, ...fetchedMessages].sort(
-				(a, b) => Number(b.sentTimestamp) - Number(a.sentTimestamp)
-			)
-		}, [chatMessagesQuery.data, chatMessagesQuery.status, inflightChatMessages, fetchedMessages])
-
-		const headerStyle = useAnimatedStyle(() => {
-			const standardHeight = insets.bottom + inputViewLayout.height + 16
-
-			return {
-				height: interpolate(keyboardAnimation.progress.value, [0, 1], [standardHeight, standardHeight - 16]),
-				width: "100%",
-				backgroundColor: "transparent"
-			}
-		}, [insets.bottom, keyboardAnimation, inputViewLayout.height])
-
-		const renderItem = useCallback(
-			(info: ListRenderItemInfo<ChatMessageWithInflightId>) => {
-				if (!chat) {
-					return null
-				}
-
-				return (
-					<Message
-						chat={chat}
-						info={info}
-						nextMessage={messages[info.index - 1]}
-						prevMessage={messages[info.index + 1]}
-					/>
-				)
-			},
-			[chat, messages]
-		)
-
-		const keyExtractor = useCallback((item: ChatMessageWithInflightId) => {
-			return item.inner.uuid
-		}, [])
-
-		const fetchMore = useCallback(async () => {
-			if (isFetchingMoreRef.current || chatMessagesQuery.status !== "success" || messages.length === 0 || !hasMoreRef.current) {
-				return
-			}
-
-			const result = await run(async defer => {
-				isFetchingMoreRef.current = true
-
-				setIsFetchingMore(true)
-
-				defer(() => {
-					isFetchingMoreRef.current = false
-
-					setIsFetchingMore(false)
-				})
-
-				const lastMessage = messages[messages.length - 1]
-
-				if (!lastMessage) {
-					return []
-				}
-
-				const moreMessages = await chats.listBefore({
-					chat,
-					before: lastMessage.sentTimestamp
-				})
-
-				return moreMessages.map(message => ({
-					...message,
-					inflightId: ""
-				})) satisfies ChatMessageWithInflightId[]
+			const moreMessages = await chats.listBefore({
+				chat,
+				before: lastMessage.sentTimestamp
 			})
 
-			if (!result.success) {
-				console.error(result.error)
-				alerts.error(result.error)
+			return moreMessages.map(m => ({
+				...m,
+				inflightId: "" // Placeholder, actual inflightId is only needed for send sync
+			})) satisfies ChatMessageWithInflightId[]
+		})
 
-				return
-			}
+		if (!result.success) {
+			console.error(result.error)
+			alerts.error(result.error)
 
-			if (result.data.length === 0) {
-				hasMoreRef.current = false
-			}
+			return
+		}
 
-			setFetchedMessages(prev => [...prev, ...result.data])
-		}, [chatMessagesQuery.status, chat, messages])
+		if (result.data.length === 0) {
+			hasMoreRef.current = false
+		}
 
-		return (
-			<View
-				className="bg-transparent flex-1"
-				style={{
-					transform: [
-						{
-							scaleY: -1
-						}
-					]
-				}}
-			>
-				<VirtualList
-					ref={listRef}
-					className="flex-1"
-					contentInsetAdjustmentBehavior="automatic"
-					contentContainerClassName="android:pb-8"
-					keyExtractor={keyExtractor}
-					data={messages}
-					renderItem={renderItem}
-					onEndReachedThreshold={0.5}
-					footerComponent={
-						isFetchingMore
-							? () => {
-									return (
-										<View className="w-full h-auto items-center justify-center pt-4">
-											<ActivityIndicator
-												size="small"
-												color={textMutedForeground.color}
-											/>
-										</View>
-									)
-								}
-							: undefined
+		setFetchedMessages(prev => [...prev, ...result.data])
+	}, [chatMessagesQuery.status, chat, messages])
+
+	return (
+		<View
+			className="bg-transparent flex-1"
+			style={{
+				transform: [
+					{
+						scaleY: -1
 					}
-					onEndReached={() => fetchMore()}
-					maintainVisibleContentPosition={{
-						disabled: true
-					}}
-					headerComponent={() => {
-						return <AnimatedView style={headerStyle} />
-					}}
-					emptyComponent={() => {
-						return (
-							<View
-								className="flex-1 items-center justify-center"
-								style={{
-									transform: [
-										{
-											scaleY: -1
-										}
-									]
-								}}
-							>
-								<Text>tbd_no_messages</Text>
-							</View>
-						)
-					}}
-				/>
-			</View>
-		)
-	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
-	}
-)
+				]
+			}}
+		>
+			<VirtualList
+				ref={listRef}
+				className="flex-1"
+				contentInsetAdjustmentBehavior="automatic"
+				contentContainerClassName="android:pb-8"
+				keyExtractor={keyExtractor}
+				data={messages}
+				renderItem={renderItem}
+				onEndReachedThreshold={0.5}
+				footerComponent={
+					isFetchingMore
+						? () => {
+								return (
+									<View className="w-full h-auto items-center justify-center pt-4">
+										<ActivityIndicator
+											size="small"
+											color={textMutedForeground.color}
+										/>
+									</View>
+								)
+							}
+						: undefined
+				}
+				onEndReached={() => fetchMore()}
+				maintainVisibleContentPosition={{
+					disabled: true
+				}}
+				headerComponent={() => {
+					return <AnimatedView style={headerStyle} />
+				}}
+				emptyComponent={() => {
+					return (
+						<View
+							className="flex-1 items-center justify-center"
+							style={{
+								transform: [
+									{
+										scaleY: -1
+									}
+								]
+							}}
+						>
+							<Text>tbd_no_messages</Text>
+						</View>
+					)
+				}}
+			/>
+		</View>
+	)
+})
 
 export default Messages

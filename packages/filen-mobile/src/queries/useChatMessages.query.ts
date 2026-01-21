@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, queryClient, useDefaultQueryParams, queryUpdater } from "@/queries/client"
+import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
 import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import cache from "@/lib/cache"
@@ -35,8 +35,8 @@ export async function fetchData(
 			: undefined
 	)
 
-	return messages.map(message => ({
-		...message,
+	return messages.map(m => ({
+		...m,
 		inflightId: "" // Placeholder, actual inflightId is only needed for send sync
 	})) satisfies ChatMessageWithInflightId[]
 }
@@ -81,14 +81,6 @@ export function chatMessagesQueryUpdate({
 
 	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY, sortedParams], prev => {
 		return typeof updater === "function" ? updater(prev ?? []) : updater
-	})
-}
-
-export async function chatMessagesQueryRefetch(params: UseChatMessagesQueryParams): Promise<void> {
-	const sortedParams = sortParams(params)
-
-	return await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY, sortedParams]
 	})
 }
 

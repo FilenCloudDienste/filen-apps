@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, queryClient, useDefaultQueryParams, queryUpdater } from "@/queries/client"
+import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
 import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 
@@ -50,12 +50,6 @@ export function chatsQueryUpdate({
 }) {
 	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY], prev => {
 		return typeof updater === "function" ? updater(prev ?? []) : updater
-	})
-}
-
-export async function chatsQueryRefetch(): Promise<void> {
-	return await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY]
 	})
 }
 

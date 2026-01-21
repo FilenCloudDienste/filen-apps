@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, queryClient, useDefaultQueryParams, queryUpdater } from "@/queries/client"
+import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
 import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import cache from "@/lib/cache"
@@ -217,14 +217,6 @@ export function driveItemsQueryUpdate({
 		const currentData = prev ?? ([] satisfies Awaited<ReturnType<typeof fetchData>>)
 
 		return typeof updater === "function" ? updater(currentData) : updater
-	})
-}
-
-export async function driveItemsQueryRefetch(params: Parameters<typeof fetchData>[0]): Promise<void> {
-	const sortedParams = sortParams(params)
-
-	return await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY, sortedParams]
 	})
 }
 

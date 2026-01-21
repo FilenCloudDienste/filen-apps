@@ -1,6 +1,6 @@
 import { EventEmitter } from "eventemitter3"
 import type { ShowActionSheetOptions } from "@/providers/actionSheet.provider"
-import type { ChatMessage, NoteContentEdited } from "@filen/sdk-rs"
+import type { NoteContentEdited } from "@filen/sdk-rs"
 
 export type Events = {
 	secureStoreChange: {
@@ -16,10 +16,6 @@ export type Events = {
 	hideFullScreenLoadingModal: void
 	forceHideFullScreenLoadingModal: void
 	showActionSheet: ShowActionSheetOptions
-	chatMessageNew: {
-		chatUuid: string
-		message: ChatMessage
-	}
 	chatConversationDeleted: {
 		uuid: string
 	}

@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater, queryClient } from "@/queries/client"
+import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import { sortParams } from "@filen/utils"
 import cache from "@/lib/cache"
@@ -84,14 +84,6 @@ export function noteHistoryQueryUpdate({
 		},
 		dataUpdatedAt
 	)
-}
-
-export async function noteHistoryQueryRefetch(params: Parameters<typeof fetchData>[0]): Promise<void> {
-	const sortedParams = sortParams(params)
-
-	return await queryClient.refetchQueries({
-		queryKey: [BASE_QUERY_KEY, sortedParams]
-	})
 }
 
 export default useNoteHistoryQuery

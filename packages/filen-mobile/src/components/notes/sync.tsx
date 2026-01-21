@@ -6,6 +6,7 @@ import { AppState } from "react-native"
 import useNotesStore, { type InflightContent } from "@/stores/useNotes.store"
 import sqlite from "@/lib/sqlite"
 import { memo } from "@/lib/memo"
+import { fetchData as notesQueryFetch } from "@/queries/useNotes.query"
 
 export class Sync {
 	private readonly mutex: Semaphore = new Semaphore(1)
@@ -33,12 +34,13 @@ export class Sync {
 				this.storageMutex.release()
 			})
 
-			const [fromDisk, fromCloud] = await Promise.all([sqlite.kvAsync.get<InflightContent>(this.sqliteKvKey), notes.list()])
+			const fromDisk = await sqlite.kvAsync.get<InflightContent>(this.sqliteKvKey)
 
 			if (!fromDisk || Object.keys(fromDisk).length === 0) {
-				return
+				return {}
 			}
 
+			const fromCloud = await notesQueryFetch()
 			const fromCloudEditedTimestamp: Record<string, number> = fromCloud.reduce(
 				(acc, note) => {
 					acc[note.uuid] = Number(note.editedTimestamp)
@@ -49,32 +51,28 @@ export class Sync {
 			)
 
 			for (const noteUuid of Object.keys(fromDisk)) {
-				useNotesStore.getState().setInflightContent(prev => {
-					const updated = {
-						...prev
-					}
+				// If the note no longer exists in the cloud, remove its inflight contents
+				if (!fromCloudEditedTimestamp[noteUuid]) {
+					delete fromDisk[noteUuid]
+				} else {
+					const editedTimestamp = fromCloudEditedTimestamp[noteUuid]
 
-					// If the note no longer exists in the cloud, remove its inflight contents
-					if (!fromCloudEditedTimestamp[noteUuid]) {
-						delete updated[noteUuid]
-					} else {
-						const editedTimestamp = fromCloudEditedTimestamp[noteUuid]
+					for (const [uuid, contents] of Object.entries(fromDisk)) {
+						if (noteUuid === uuid) {
+							// Remove any contents that are older than the cloud note's edited timestamp
+							fromDisk[noteUuid] = contents.filter(c => c.timestamp > editedTimestamp)
+						}
 
-						for (const [uuid, contents] of Object.entries(updated)) {
-							if (noteUuid === uuid) {
-								// Remove any contents that are older than the cloud note's edited timestamp
-								updated[noteUuid] = contents.filter(c => c.timestamp > editedTimestamp)
-							}
-
-							if (updated[noteUuid] && updated[noteUuid].length === 0) {
-								delete updated[noteUuid]
-							}
+						if (fromDisk[noteUuid] && fromDisk[noteUuid].length === 0) {
+							delete fromDisk[noteUuid]
 						}
 					}
-
-					return updated
-				})
+				}
 			}
+
+			useNotesStore.getState().setInflightContent(fromDisk)
+
+			return fromDisk
 		})
 
 		if (!result.success) {
@@ -83,6 +81,10 @@ export class Sync {
 
 		// We don't really care if it failed, we just proceed
 		this.initDone = true
+
+		if (Object.keys(result.data ?? {}).length > 0) {
+			this.sync()
+		}
 	}
 
 	public async flushToDisk(inflightContent: InflightContent, requireMutex: boolean = true): Promise<void> {

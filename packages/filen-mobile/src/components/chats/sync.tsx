@@ -6,6 +6,7 @@ import { AppState } from "react-native"
 import useChatsStore, { type InflightChatMessages } from "@/stores/useChats.store"
 import sqlite from "@/lib/sqlite"
 import { memo } from "@/lib/memo"
+import { fetchData as chatsQueryFetch } from "@/queries/useChats.query"
 
 export class Sync {
 	private readonly mutex: Semaphore = new Semaphore(1)
@@ -35,10 +36,29 @@ export class Sync {
 			const fromDisk = await sqlite.kvAsync.get<InflightChatMessages>(this.sqliteKvKey)
 
 			if (!fromDisk || Object.keys(fromDisk).length === 0) {
-				return
+				return {}
+			}
+
+			const chats = await chatsQueryFetch()
+			const existingChatUuids: Record<string, boolean> = chats.reduce(
+				(acc, chat) => {
+					acc[chat.uuid] = true
+
+					return acc
+				},
+				{} as Record<string, boolean>
+			)
+
+			for (const chatUuid of Object.keys(fromDisk)) {
+				// If the chat no longer exists, remove its inflight messages
+				if (!existingChatUuids[chatUuid]) {
+					delete fromDisk[chatUuid]
+				}
 			}
 
 			useChatsStore.getState().setInflightMessages(fromDisk)
+
+			return fromDisk
 		})
 
 		if (!result.success) {
@@ -47,6 +67,12 @@ export class Sync {
 
 		// We don't really care if it failed, we just proceed
 		this.initDone = true
+
+		console.log("Finished initializing chat sync.", result.data)
+
+		if (Object.keys(result.data ?? {}).length > 0) {
+			this.sync()
+		}
 	}
 
 	public async flushToDisk(inflightChatMessages: InflightChatMessages, requireMutex: boolean = true): Promise<void> {

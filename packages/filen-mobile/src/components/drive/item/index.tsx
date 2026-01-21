@@ -44,7 +44,7 @@ export const Item = memo(({ info, drivePath }: { info: ListRenderItemInfo<DriveI
 					className="w-full h-auto flex-row"
 					onPress={onPress}
 				>
-					<View className="w-full h-auto flex-row pl-4 gap-4">
+					<View className="w-full h-auto flex-row px-4 gap-4 bg-transparent">
 						<View className="bg-transparent shrink-0 items-center flex-row">
 							{info.item.type === "directory" ? (
 								<DirectoryIcon
@@ -60,8 +60,8 @@ export const Item = memo(({ info, drivePath }: { info: ListRenderItemInfo<DriveI
 								/>
 							)}
 						</View>
-						<View className="flex-1 flex-row items-center border-b border-border gap-4 py-3 pr-4">
-							<View className="flex-1 flex-col justify-center gap-0.5">
+						<View className="flex-1 flex-row items-center border-b border-border gap-4 py-3 bg-transparent">
+							<View className="flex-1 flex-col justify-center gap-0.5 bg-transparent">
 								<Text
 									numberOfLines={1}
 									ellipsizeMode="middle"
@@ -78,7 +78,7 @@ export const Item = memo(({ info, drivePath }: { info: ListRenderItemInfo<DriveI
 								</Text>
 							</View>
 							{Platform.OS === "android" && (
-								<View className="flex-row items-center shrink-0">
+								<View className="flex-row items-center shrink-0 bg-transparent">
 									<Menu
 										type="dropdown"
 										isAnchoredToRight={true}

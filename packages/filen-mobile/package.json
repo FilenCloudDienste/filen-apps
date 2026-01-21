@@ -37,6 +37,7 @@
     "@expo/vector-icons": "^15.0.3",
     "@filen/sdk-rs": "^0.3.31",
     "@filen/utils": "^0.0.5",
+    "@getlimelight/sdk": "^0.3.1",
     "@legendapp/list": "^2.0.19",
     "@react-native-community/netinfo": "11.4.1",
     "@react-native-menu/menu": "^2.0.0",

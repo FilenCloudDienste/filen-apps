@@ -1,5 +1,5 @@
 import Text from "@/components/ui/text"
-import { memo } from "@/lib/memo"
+import { memo, useMemo, useCallback } from "@/lib/memo"
 import type { ListRenderItemInfo } from "@/components/ui/virtualList"
 import type { Chat as TChat } from "@filen/sdk-rs"
 import View from "@/components/ui/view"
@@ -9,9 +9,61 @@ import Menu from "@/components/chats/list/chat/menu"
 import { contactDisplayName } from "@/lib/utils"
 import { useRouter } from "expo-router"
 import { Paths } from "expo-file-system"
+import { useStringifiedClient } from "@/lib/auth"
+import { fastLocaleCompare, cn } from "@filen/utils"
+import useChatUnreadCount from "@/hooks/useChatUnreadCount"
+import useChatsStore from "@/stores/useChats.store"
+import { useShallow } from "zustand/shallow"
 
 export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 	const router = useRouter()
+	const stringifiedClient = useStringifiedClient()
+	const unreadCount = useChatUnreadCount(info.item)
+	const typing = useChatsStore(useShallow(state => state.typing[info.item.uuid] ?? []))
+
+	const typingUsers = useMemo(() => {
+		return typing
+			.map(t => t.senderId)
+			.map(senderId => info.item.participants.find(p => p.userId === senderId))
+			.filter(Boolean)
+			.map(participant => contactDisplayName(participant!))
+	}, [typing, info.item.participants])
+
+	const participantsWithoutSelf = useMemo(() => {
+		return info.item.participants.filter(p => p.userId !== stringifiedClient?.userId)
+	}, [info.item.participants, stringifiedClient?.userId])
+
+	const title = useMemo(() => {
+		if (info.item.name && info.item.name.length > 0) {
+			return info.item.name
+		}
+
+		if (info.item.participants.length === 2) {
+			const otherParticipant = info.item.participants.find(p => p.userId !== stringifiedClient?.userId)
+
+			if (otherParticipant) {
+				return contactDisplayName(otherParticipant)
+			}
+		}
+
+		return info.item.participants
+			.filter(p => p.userId !== stringifiedClient?.userId)
+			.sort((a, b) => fastLocaleCompare(contactDisplayName(a), contactDisplayName(b)))
+			.map(p => contactDisplayName(p))
+			.join(", ")
+	}, [info.item.name, info.item.participants, stringifiedClient?.userId])
+
+	const participantsWithAvatars = useMemo(() => {
+		return info.item.participants
+			.filter(p => p.userId !== stringifiedClient?.userId && p.avatar && p.avatar.startsWith("http"))
+			.sort((a, b) => fastLocaleCompare(contactDisplayName(a), contactDisplayName(b)))
+			.map(p => p.avatar)
+			.slice(0, 5)
+	}, [info.item.participants, stringifiedClient?.userId])
+
+	const onPress = useCallback(() => {
+		router.push(Paths.join("/", "chat", info.item.uuid))
+	}, [router, info.item.uuid])
 
 	return (
 		<View className="flex-row w-full h-auto">
@@ -22,30 +74,56 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 			>
 				<PressableScale
 					className="flex-row w-full h-auto"
-					onPress={() => {
-						router.push(Paths.join("/", "chat", info.item.uuid))
-					}}
+					onPress={onPress}
 				>
-					<View className="flex-row w-full h-auto items-center pl-4 gap-3 bg-transparent">
-						<View className="bg-blue-500 size-3 rounded-full shrink-0" />
-						<Avatar
-							className="shrink-0"
-							size={38}
-							source={{
-								uri: info.item.participants.at(0)?.avatar
-							}}
-						/>
-						<View className="flex-col border-b border-border w-full py-3 items-start gap-0.5 bg-transparent flex-1 pr-4">
-							<Text>{info.item.name ?? contactDisplayName(info.item.participants.at(0)!)}</Text>
-							{info.item.lastMessage && (
+					<View className="flex-row w-full h-auto items-center px-4 pl-2 gap-2 bg-transparent">
+						<View className={cn("size-2.5 rounded-full shrink-0", unreadCount > 0 ? "bg-blue-500" : "bg-transparent")} />
+						{participantsWithAvatars.length === 0 ? (
+							<Avatar
+								className="shrink-0"
+								size={38}
+								immediateFallback={true}
+							/>
+						) : participantsWithAvatars.length === 1 ? (
+							<Avatar
+								className="shrink-0"
+								size={38}
+								source={{
+									uri: participantsWithAvatars.at(0)
+								}}
+							/>
+						) : (
+							<Avatar
+								className="shrink-0"
+								size={38}
+								group={participantsWithoutSelf.length}
+							/>
+						)}
+						<View className="flex-col border-b border-border w-full py-3 items-start gap-0.5 bg-transparent flex-1">
+							<Text
+								numberOfLines={1}
+								ellipsizeMode="middle"
+								className={cn("text-foreground", unreadCount > 0 && "font-bold")}
+							>
+								{title}
+							</Text>
+							{typingUsers.length > 0 ? (
 								<Text
-									numberOfLines={2}
+									numberOfLines={1}
 									ellipsizeMode="tail"
-									className="text-muted-foreground text-xs"
+									className="text-xs text-muted-foreground italic"
+								>
+									{typingUsers.length > 1 ? `${typingUsers.join(", ")} tbd_typing...` : "tbd_typing..."}
+								</Text>
+							) : info.item.lastMessage && info.item.lastMessage.inner.message ? (
+								<Text
+									numberOfLines={1}
+									ellipsizeMode="tail"
+									className={cn("text-xs", unreadCount > 0 ? "text-foreground font-bold" : "text-muted-foreground")}
 								>
 									{info.item.lastMessage?.inner.message}
 								</Text>
-							)}
+							) : null}
 						</View>
 					</View>
 				</PressableScale>

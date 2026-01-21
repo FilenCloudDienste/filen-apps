@@ -61,7 +61,7 @@ export const Message = memo(
 		prevMessage?: ChatMessageWithInflightId
 	}) => {
 		const stringifiedClient = useStringifiedClient()
-		const isInflightError = useChatsStore(useShallow(state => state.inflightErrors[info.item.inflightId]))
+		const isInflightError = useChatsStore(useShallow(state => state.inflightErrors[info.item.inflightId ?? ""]))
 
 		return (
 			<View
@@ -74,16 +74,32 @@ export const Message = memo(
 					]
 				}}
 			>
-				{prevMessage?.inner.senderId !== info.item.inner.senderId &&
-					!isTimestampSameMinute(Number(prevMessage?.sentTimestamp ?? 0), Number(info.item.sentTimestamp)) && (
-						<View className="w-full items-center justify-center py-2">
-							<Text
-								className="text-xs text-muted-foreground"
-								numberOfLines={1}
-								ellipsizeMode="middle"
-							>
-								{simpleDate(Number(info.item.sentTimestamp))}
-							</Text>
+				{!isTimestampSameMinute(Number(prevMessage?.sentTimestamp ?? 0), Number(info.item.sentTimestamp)) && (
+					<View className="w-full items-center justify-center py-2">
+						<Text
+							className="text-xs text-muted-foreground"
+							numberOfLines={1}
+							ellipsizeMode="middle"
+						>
+							{simpleDate(Number(info.item.sentTimestamp))}
+						</Text>
+					</View>
+				)}
+				{chat.lastFocus &&
+					info.item.sentTimestamp > chat.lastFocus &&
+					info.item.inner.senderId !== stringifiedClient?.userId &&
+					!(prevMessage && prevMessage.sentTimestamp > chat.lastFocus) && (
+						<View className="flex-1 flex-row px-4 items-center pb-2">
+							<View className="flex-row items-center justify-center bg-red-500 rounded-3xl p-1 px-2">
+								<Text
+									className="text-xs text-white"
+									numberOfLines={1}
+									ellipsizeMode="middle"
+								>
+									tbd_new
+								</Text>
+							</View>
+							<View className="flex-1 bg-red-500 h-[0.5px]" />
 						</View>
 					)}
 				{chat.participants.length > 2 &&
@@ -147,16 +163,6 @@ export const Message = memo(
 				</View>
 				{!nextMessage && <Typing chat={chat} />}
 			</View>
-		)
-	},
-	(prevProps, nextProps) => {
-		return (
-			prevProps.chat.uuid === nextProps.chat.uuid &&
-			isEqual(prevProps.chat.participants, nextProps.chat.participants) &&
-			isEqual(prevProps.info.item, nextProps.info.item) &&
-			prevProps.prevMessage?.sentTimestamp === nextProps.prevMessage?.sentTimestamp &&
-			prevProps.prevMessage?.inner.senderId === nextProps.prevMessage?.inner.senderId &&
-			nextProps.nextMessage?.inner.senderId === prevProps.nextMessage?.inner.senderId
 		)
 	}
 )

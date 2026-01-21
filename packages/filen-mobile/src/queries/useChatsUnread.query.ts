@@ -1,14 +1,14 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
-import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import auth from "@/lib/auth"
+import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 
-export const BASE_QUERY_KEY = "useNotesTagsQuery"
+export const BASE_QUERY_KEY = "useChatsUnread"
 
 export async function fetchData(params?: { signal?: AbortSignal }) {
 	const sdkClient = await auth.getSdkClient()
 
-	return await sdkClient.listNoteTags(
+	return await sdkClient.getAllChatsUnreadCount(
 		params?.signal
 			? {
 					signal: params.signal
@@ -17,7 +17,7 @@ export async function fetchData(params?: { signal?: AbortSignal }) {
 	)
 }
 
-export function useNotesTagsQuery(
+export function useChatsUnreadQuery(
 	options?: Omit<UseQueryOptions, "queryKey" | "queryFn">
 ): UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error> {
 	const defaultParams = useDefaultQueryParams(options)
@@ -41,7 +41,7 @@ export function useNotesTagsQuery(
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error>
 }
 
-export function notesTagsQueryUpdate({
+export function chatsUnreadQueryUpdate({
 	updater
 }: {
 	updater:
@@ -49,12 +49,12 @@ export function notesTagsQueryUpdate({
 		| ((prev: Awaited<ReturnType<typeof fetchData>>) => Awaited<ReturnType<typeof fetchData>>)
 }) {
 	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY], prev => {
-		return typeof updater === "function" ? updater(prev ?? []) : updater
+		return typeof updater === "function" ? updater(prev ?? BigInt(0)) : updater
 	})
 }
 
-export function notesTagsQueryGet() {
+export function chatsUnreadQueryGet() {
 	return queryUpdater.get<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY])
 }
 
-export default useNotesTagsQuery
+export default useChatsUnreadQuery

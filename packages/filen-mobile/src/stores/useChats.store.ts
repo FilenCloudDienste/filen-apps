@@ -10,9 +10,11 @@ export type InputViewLayout = {
 
 export type Suggestions = "mentions" | "reply" | "emojis"
 export type Typing = Omit<ChatTyping, "typingType">[]
+
 export type ChatMessageWithInflightId = ChatMessage & {
 	inflightId: string
 }
+
 export type InflightChatMessages = Record<
 	string,
 	{
