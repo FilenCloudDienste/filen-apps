@@ -474,7 +474,6 @@ export const Input = memo(
 		const suggestionsVisible = useChatsStore(useShallow(state => state.suggestionsVisible))
 		const stringifiedClient = useStringifiedClient()
 		const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-		const isTypingRef = useRef<boolean>(false)
 		const sendTypingEventSemaphoreRef = useRef<Semaphore>(new Semaphore(1))
 		const [chatReplyTo, setChatReplyTo] = useSecureStore<ChatMessageWithInflightId | null>(`chatReplyTo:${chat.uuid}`, null)
 		const [chatEditMessage, setChatEditMessage] = useSecureStore<ChatMessageWithInflightId | null>(`chatEditMessage:${chat.uuid}`, null)
@@ -534,12 +533,7 @@ export const Input = memo(
 			}
 
 			clearTimeout(typingTimeoutRef.current)
-
-			if (isTypingRef.current) {
-				isTypingRef.current = false
-
-				sendTypingEvent(ChatTypingType.Up).catch(console.error)
-			}
+			sendTypingEvent(ChatTypingType.Up).catch(console.error)
 
 			inputRef.current?.clear()
 
@@ -669,17 +663,11 @@ export const Input = memo(
 		])
 
 		const onKeyPress = useCallback(() => {
-			if (!isTypingRef.current) {
-				isTypingRef.current = true
-
-				sendTypingEvent(ChatTypingType.Down).catch(console.error)
-			}
+			sendTypingEvent(ChatTypingType.Down).catch(console.error)
 
 			clearTimeout(typingTimeoutRef.current)
 
 			typingTimeoutRef.current = setTimeout(() => {
-				isTypingRef.current = false
-
 				sendTypingEvent(ChatTypingType.Up).catch(console.error)
 			}, 3000)
 		}, [sendTypingEvent])
@@ -688,12 +676,7 @@ export const Input = memo(
 			useChatsStore.getState().setInputFocused(false)
 
 			clearTimeout(typingTimeoutRef.current)
-
-			if (isTypingRef.current) {
-				isTypingRef.current = false
-
-				sendTypingEvent(ChatTypingType.Up).catch(console.error)
-			}
+			sendTypingEvent(ChatTypingType.Up).catch(console.error)
 		}, [sendTypingEvent])
 
 		const onFocus = useCallback(() => {
@@ -744,12 +727,7 @@ export const Input = memo(
 		useEffect(() => {
 			return () => {
 				clearTimeout(typingTimeoutRef.current)
-
-				if (isTypingRef.current) {
-					isTypingRef.current = false
-
-					sendTypingEvent(ChatTypingType.Up).catch(console.error)
-				}
+				sendTypingEvent(ChatTypingType.Up).catch(console.error)
 			}
 		}, [sendTypingEvent])
 
