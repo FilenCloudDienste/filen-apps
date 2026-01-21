@@ -14,12 +14,15 @@ import { fastLocaleCompare, cn } from "@filen/utils"
 import useChatUnreadCount from "@/hooks/useChatUnreadCount"
 import useChatsStore from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
+import Ionicons from "@expo/vector-icons/Ionicons"
+import { useResolveClassNames } from "uniwind"
 
 export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 	const router = useRouter()
 	const stringifiedClient = useStringifiedClient()
 	const unreadCount = useChatUnreadCount(info.item)
 	const typing = useChatsStore(useShallow(state => state.typing[info.item.uuid] ?? []))
+	const textMutedForeground = useResolveClassNames("text-muted-foreground")
 
 	const typingUsers = useMemo(() => {
 		return typing
@@ -100,13 +103,23 @@ export const Chat = memo(({ info }: { info: ListRenderItemInfo<TChat> }) => {
 							/>
 						)}
 						<View className="flex-col border-b border-border w-full py-3 items-start gap-0.5 bg-transparent flex-1">
-							<Text
-								numberOfLines={1}
-								ellipsizeMode="middle"
-								className={cn("text-foreground", unreadCount > 0 && "font-bold")}
-							>
-								{title}
-							</Text>
+							<View className="flex-1 flex-row items-center gap-2">
+								{info.item.muted && (
+									<Ionicons
+										className="shrink-0"
+										name="volume-mute"
+										size={16}
+										color={textMutedForeground.color}
+									/>
+								)}
+								<Text
+									numberOfLines={1}
+									ellipsizeMode="middle"
+									className={cn("text-foreground flex-1", unreadCount > 0 && "font-bold")}
+								>
+									{title}
+								</Text>
+							</View>
 							{typingUsers.length > 0 ? (
 								<Text
 									numberOfLines={1}

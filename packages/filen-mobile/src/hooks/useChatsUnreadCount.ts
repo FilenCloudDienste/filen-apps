@@ -41,7 +41,7 @@ export function useChatsUnreadCount() {
 				message =>
 					chat.lastFocus &&
 					chat.lastMessage &&
-					chat.participants.length >= 2 &&
+					!chat.muted &&
 					message.sentTimestamp > chat.lastFocus &&
 					message.inner.senderId !== stringifiedClient?.userId
 			).length

@@ -23,18 +23,11 @@ export function useChatUnreadCount(chat: Chat): number {
 			message =>
 				chat.lastFocus &&
 				chat.lastMessage &&
-				chat.participants.length >= 2 &&
+				!chat.muted &&
 				message.sentTimestamp > chat.lastFocus &&
 				message.inner.senderId !== stringifiedClient?.userId
 		).length
-	}, [
-		chatMessagesQuery.status,
-		chatMessagesQuery.data,
-		chat.lastFocus,
-		chat.lastMessage,
-		chat.participants.length,
-		stringifiedClient?.userId
-	])
+	}, [chatMessagesQuery.status, chatMessagesQuery.data, chat.lastFocus, chat.lastMessage, chat.muted, stringifiedClient?.userId])
 
 	return unreadCount
 }
