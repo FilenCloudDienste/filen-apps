@@ -147,7 +147,7 @@ export const Note = memo(
 					>
 						<View
 							className={cn(
-								"w-full h-auto flex-row px-4",
+								"w-full h-auto flex-row px-4 shadow-sm",
 								roundedCn,
 								isActive
 									? Platform.select({

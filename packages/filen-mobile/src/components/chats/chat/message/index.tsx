@@ -120,7 +120,7 @@ export const Message = memo(
 					>
 						<View
 							className={cn(
-								"p-3 rounded-3xl w-auto h-auto flex-row",
+								"p-3 rounded-3xl w-auto h-auto flex-row shadow-sm",
 								info.item.inner.senderId === stringifiedClient?.userId
 									? cn(isInflightError ? "bg-red-500" : "bg-blue-500")
 									: "bg-background-secondary"

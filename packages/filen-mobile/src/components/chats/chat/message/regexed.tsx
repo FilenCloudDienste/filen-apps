@@ -308,7 +308,13 @@ export const Regexed = memo(
 								key={index}
 								className={cn(
 									"text-sm shrink-0 flex-wrap text-wrap items-center break-all",
-									isInflight ? "text-muted-foreground" : "text-foreground"
+									fromSelf
+										? isInflight
+											? "text-gray-200"
+											: "text-white"
+										: isInflight
+											? "text-muted-foreground"
+											: "text-foreground"
 								)}
 							>
 								{item}

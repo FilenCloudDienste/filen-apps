@@ -71,8 +71,11 @@ const Header = memo(({ chat }: { chat: TChat }) => {
 							return (
 								<View
 									className={cn(
-										"items-center flex-col justify-center bg-transparent flex-1",
-										Platform.OS === "ios" ? "mr-8" : "mr-3"
+										"items-center flex-col justify-center bg-transparent w-full",
+										Platform.select({
+											ios: "pr-9",
+											default: "pr-3"
+										})
 									)}
 								>
 									<View className="flex-row items-center -mt-1 bg-transparent">
@@ -127,7 +130,7 @@ const Header = memo(({ chat }: { chat: TChat }) => {
 			backVisible={true}
 			transparent={false}
 			shadowVisible={true}
-			backTitle=""
+			backTitle="tdb_back"
 			rightItems={() => {
 				if (!stringigiedClient) {
 					return []

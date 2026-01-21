@@ -771,10 +771,10 @@ export const Input = memo(
 							multiline={true}
 							scrollEnabled={true}
 							autoFocus={false}
-							autoCapitalize={suggestionsVisible.length > 0 ? "none" : undefined}
-							autoComplete={suggestionsVisible.length > 0 ? "off" : undefined}
-							autoCorrect={suggestionsVisible.length > 0 ? false : undefined}
-							spellCheck={suggestionsVisible.length > 0 ? false : undefined}
+							autoCapitalize={suggestionsVisible.length > 0 || chatInputValue.length === 0 ? "none" : undefined}
+							autoComplete={suggestionsVisible.length > 0 || chatInputValue.length === 0 ? "off" : undefined}
+							autoCorrect={suggestionsVisible.length > 0 || chatInputValue.length === 0 ? false : undefined}
+							spellCheck={suggestionsVisible.length > 0 || chatInputValue.length === 0 ? false : undefined}
 							keyboardType="default"
 							returnKeyType="default"
 							enterKeyHint="enter"
