@@ -101,18 +101,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 					[inner.msg.chat]: (prev[inner.msg.chat] ?? []).filter(t => t.senderId !== inner.msg.inner.senderId)
 				}))
 
-				chatsQueryUpdate({
-					updater: prev =>
-						prev.map(c =>
-							c.uuid === inner.msg.chat
-								? {
-										...c,
-										lastMessage: inner.msg
-									}
-								: c
-						)
-				})
-
 				setTimeout(
 					() => {
 						chatMessagesQueryUpdate({
@@ -127,9 +115,24 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 								}
 							]
 						})
-						// We delay this slightly to ensure local updates process first when sending a message
+
+						// Update messages query first, then chats query to ensure our unread count logic works correctly
+						setTimeout(() => {
+							chatsQueryUpdate({
+								updater: prev =>
+									prev.map(c =>
+										c.uuid === inner.msg.chat
+											? {
+													...c,
+													lastMessage: inner.msg
+												}
+											: c
+									)
+							})
+						}, 1)
 					},
-					userId === inner.msg.inner.senderId ? 3000 : 0
+					// We delay this slightly to ensure local updates process first when sending a message
+					userId === inner.msg.inner.senderId ? 3000 : 1
 				)
 
 				break

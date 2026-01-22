@@ -477,11 +477,7 @@ export class Chats {
 				this.refetchChatsAndMessagesMutex.release()
 			})
 
-			let chats = await chatsQueryFetch()
-
-			chatsQueryUpdate({
-				updater: () => chats
-			})
+			const chats = await chatsQueryFetch()
 
 			if (!chats || chats.length === 0) {
 				return
@@ -501,8 +497,6 @@ export class Chats {
 					})
 				})
 			)
-
-			chats = await chatsQueryFetch()
 
 			chatsQueryUpdate({
 				updater: () => chats
