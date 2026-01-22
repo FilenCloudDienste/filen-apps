@@ -166,7 +166,7 @@ export async function restoreQueries(): Promise<void> {
 							}
 						}
 
-						if (persistedQuery.queryKey.some(key => key === "useNotesQuery")) {
+						if (persistedQuery.queryKey.some(key => key === "useNotesWithContentQuery")) {
 							for (const note of persistedQuery.state.data as Note[]) {
 								cache.noteUuidToNote.set(note.uuid, note)
 							}
