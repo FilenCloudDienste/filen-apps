@@ -6,8 +6,7 @@ import {
 	ChatTypingType,
 	ListenerHandle,
 	MaybeEncryptedUniffi_Tags,
-	type SocketEvent,
-	type Note
+	type SocketEvent
 } from "@filen/sdk-rs"
 import { useEffect, useRef } from "react"
 import { runEffect } from "@filen/utils"
@@ -15,25 +14,17 @@ import useChatsStore from "@/stores/useChats.store"
 import { chatMessagesQueryUpdate, chatMessagesQueryGet } from "@/queries/useChatMessages.query"
 import { chatsQueryGet, chatsQueryUpdate } from "@/queries/useChats.query"
 import events from "@/lib/events"
-import useNotesQuery, { notesQueryUpdate, notesQueryGet } from "@/queries/useNotes.query"
+import { notesQueryUpdate, notesQueryGet } from "@/queries/useNotes.query"
 import useSocketStore from "@/stores/useSocket.store"
 import alerts from "@/lib/alerts"
 import { AppState, type AppStateStatus } from "react-native"
 import useEffectOnce from "@/hooks/useEffectOnce"
-import type { RefetchOptions, QueryObserverResult } from "@tanstack/react-query"
 import chats from "@/lib/chats"
+import { notesWithContentQueryUpdate, fetchData as notesWithContentQueryFetch } from "@/queries/useNotesWithContent.query"
 
 const chatTypingTimeoutsRef: Record<number, NodeJS.Timeout> = {}
 
-async function onEvent({
-	event,
-	notesQueryRefetch,
-	userId
-}: {
-	event: SocketEvent
-	notesQueryRefetch: (options?: RefetchOptions | undefined) => Promise<QueryObserverResult<Note[], Error>>
-	userId: bigint
-}) {
+async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }) {
 	try {
 		switch (event.tag) {
 			case SocketEvent_Tags.Reconnecting:
@@ -119,20 +110,24 @@ async function onEvent({
 						)
 				})
 
-				if (userId !== inner.msg.inner.senderId) {
-					chatMessagesQueryUpdate({
-						params: {
-							uuid: inner.msg.chat
-						},
-						updater: prev => [
-							...prev.filter(m => m.inner.uuid !== inner.msg.inner.uuid),
-							{
-								...inner.msg,
-								inflightId: "" // Placeholder, actual inflightId is only needed for send sync
-							}
-						]
-					})
-				}
+				setTimeout(
+					() => {
+						chatMessagesQueryUpdate({
+							params: {
+								uuid: inner.msg.chat
+							},
+							updater: prev => [
+								...prev.filter(m => m.inner.uuid !== inner.msg.inner.uuid),
+								{
+									...inner.msg,
+									inflightId: "" // Placeholder, actual inflightId is only needed for send sync
+								}
+							]
+						})
+						// We delay this slightly to ensure local updates process first when sending a message
+					},
+					userId === inner.msg.inner.senderId ? 3000 : 0
+				)
 
 				break
 			}
@@ -353,6 +348,18 @@ async function onEvent({
 						)
 				})
 
+				notesWithContentQueryUpdate({
+					updater: prev =>
+						prev.map(n =>
+							n.uuid === inner.note
+								? {
+										...n,
+										archived: true
+									}
+								: n
+						)
+				})
+
 				break
 			}
 
@@ -363,6 +370,10 @@ async function onEvent({
 					updater: prev => prev.filter(n => n.uuid !== inner.note)
 				})
 
+				notesWithContentQueryUpdate({
+					updater: prev => prev.filter(n => n.uuid !== inner.note)
+				})
+
 				break
 			}
 
@@ -370,6 +381,19 @@ async function onEvent({
 				const [inner] = event.inner
 
 				notesQueryUpdate({
+					updater: prev =>
+						prev.map(n =>
+							n.uuid === inner.note
+								? {
+										...n,
+										archived: false,
+										trashed: false
+									}
+								: n
+						)
+				})
+
+				notesWithContentQueryUpdate({
 					updater: prev =>
 						prev.map(n =>
 							n.uuid === inner.note
@@ -393,6 +417,18 @@ async function onEvent({
 						const [newTitle] = inner.newTitle.inner
 
 						notesQueryUpdate({
+							updater: prev =>
+								prev.map(n =>
+									n.uuid === inner.note
+										? {
+												...n,
+												title: newTitle
+											}
+										: n
+								)
+						})
+
+						notesWithContentQueryUpdate({
 							updater: prev =>
 								prev.map(n =>
 									n.uuid === inner.note
@@ -427,6 +463,21 @@ async function onEvent({
 						)
 				})
 
+				notesWithContentQueryUpdate({
+					updater: prev =>
+						prev.map(n =>
+							n.uuid === inner.note
+								? {
+										...n,
+										participants: [
+											...n.participants.filter(p => p.userId !== inner.participant.userId),
+											inner.participant
+										]
+									}
+								: n
+						)
+				})
+
 				break
 			}
 
@@ -434,6 +485,18 @@ async function onEvent({
 				const [inner] = event.inner
 
 				notesQueryUpdate({
+					updater: prev =>
+						prev.map(n =>
+							n.uuid === inner.note
+								? {
+										...n,
+										participants: n.participants.filter(p => p.userId !== inner.userId)
+									}
+								: n
+						)
+				})
+
+				notesWithContentQueryUpdate({
 					updater: prev =>
 						prev.map(n =>
 							n.uuid === inner.note
@@ -470,12 +533,39 @@ async function onEvent({
 						)
 				})
 
+				notesWithContentQueryUpdate({
+					updater: prev =>
+						prev.map(n =>
+							n.uuid === inner.note
+								? {
+										...n,
+										participants: n.participants.map(p =>
+											p.userId === inner.userId
+												? {
+														...p,
+														permissionsWrite: inner.permissionsWrite
+													}
+												: p
+										)
+									}
+								: n
+						)
+				})
+
 				break
 			}
 
 			case SocketEvent_Tags.NoteNew: {
 				// TODO: Don't refetch the query, build from socket event once added
-				notesQueryRefetch().catch(console.error)
+				const notesWithContent = await notesWithContentQueryFetch()
+
+				notesQueryUpdate({
+					updater: () => notesWithContent.map(({ content: _, ...note }) => note)
+				})
+
+				notesWithContentQueryUpdate({
+					updater: () => notesWithContent
+				})
 
 				break
 			}
@@ -509,10 +599,6 @@ export const InnerSocket = memo(({ sdkClient }: { sdkClient: JsClientInterface }
 	const socketListenerHandleRef = useRef<ListenerHandle | null>(null)
 	const stringifiedClient = useStringifiedClient()
 
-	const notesQuery = useNotesQuery({
-		enabled: false
-	})
-
 	const onAppStateChange = useCallback(
 		async (nextAppState: AppStateStatus) => {
 			switch (nextAppState) {
@@ -534,7 +620,6 @@ export const InnerSocket = memo(({ sdkClient }: { sdkClient: JsClientInterface }
 							onEvent: event => {
 								onEvent({
 									event,
-									notesQueryRefetch: notesQuery.refetch,
 									userId: stringifiedClient ? stringifiedClient.userId : BigInt(0)
 								}).catch(console.error)
 							}
@@ -560,7 +645,7 @@ export const InnerSocket = memo(({ sdkClient }: { sdkClient: JsClientInterface }
 				}
 			}
 		},
-		[sdkClient, notesQuery.refetch, stringifiedClient]
+		[sdkClient, stringifiedClient]
 	)
 
 	useEffect(() => {
