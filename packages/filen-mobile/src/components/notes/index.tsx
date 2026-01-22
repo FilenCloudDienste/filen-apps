@@ -57,6 +57,13 @@ const Header = memo(
 			useShallow(state => state.selectedNotes.every(n => n.ownerId === stringifiedClient?.userId))
 		)
 		const selectedNotesIncludesTrashed = useNotesStore(useShallow(state => state.selectedNotes.some(n => n.trash)))
+		const participantOfEverySelectedNote = useNotesStore(
+			useShallow(state =>
+				state.selectedNotes.every(
+					n => n.participants.some(p => p.userId === stringifiedClient?.userId) && n.ownerId !== stringifiedClient?.userId
+				)
+			)
+		)
 
 		const notesTagsQuery = useNotesTagsQuery({
 			enabled: false
@@ -649,7 +656,9 @@ const Header = memo(
 								}
 							})
 						}
-					} else {
+					}
+
+					if (participantOfEverySelectedNote) {
 						menuButtons.push({
 							id: "bulkLeave",
 							title: "tbd_leave_selected",
@@ -901,7 +910,8 @@ const Header = memo(
 			everySelectedNoteTrashed,
 			everySelectedNoteArchived,
 			everySelectedNoteOwned,
-			selectedNotesIncludesTrashed
+			selectedNotesIncludesTrashed,
+			participantOfEverySelectedNote
 		])
 
 		const headerLeftItems = useMemo(() => {
