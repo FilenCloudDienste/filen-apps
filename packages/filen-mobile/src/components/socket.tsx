@@ -14,13 +14,16 @@ import useChatsStore from "@/stores/useChats.store"
 import { chatMessagesQueryUpdate, chatMessagesQueryGet } from "@/queries/useChatMessages.query"
 import { chatsQueryGet, chatsQueryUpdate } from "@/queries/useChats.query"
 import events from "@/lib/events"
-import { notesQueryUpdate, notesQueryGet } from "@/queries/useNotes.query"
 import useSocketStore from "@/stores/useSocket.store"
 import alerts from "@/lib/alerts"
 import { AppState, type AppStateStatus } from "react-native"
 import useEffectOnce from "@/hooks/useEffectOnce"
 import chats from "@/lib/chats"
-import { notesWithContentQueryUpdate, fetchData as notesWithContentQueryFetch } from "@/queries/useNotesWithContent.query"
+import {
+	notesWithContentQueryUpdate,
+	fetchData as notesWithContentQueryFetch,
+	notesWithContentQueryGet
+} from "@/queries/useNotesWithContent.query"
 
 const chatTypingTimeoutsRef: Record<number, NodeJS.Timeout> = {}
 
@@ -336,18 +339,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 			case SocketEvent_Tags.NoteArchived: {
 				const [inner] = event.inner
 
-				notesQueryUpdate({
-					updater: prev =>
-						prev.map(n =>
-							n.uuid === inner.note
-								? {
-										...n,
-										archived: true
-									}
-								: n
-						)
-				})
-
 				notesWithContentQueryUpdate({
 					updater: prev =>
 						prev.map(n =>
@@ -366,10 +357,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 			case SocketEvent_Tags.NoteDeleted: {
 				const [inner] = event.inner
 
-				notesQueryUpdate({
-					updater: prev => prev.filter(n => n.uuid !== inner.note)
-				})
-
 				notesWithContentQueryUpdate({
 					updater: prev => prev.filter(n => n.uuid !== inner.note)
 				})
@@ -379,19 +366,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 
 			case SocketEvent_Tags.NoteRestored: {
 				const [inner] = event.inner
-
-				notesQueryUpdate({
-					updater: prev =>
-						prev.map(n =>
-							n.uuid === inner.note
-								? {
-										...n,
-										archived: false,
-										trashed: false
-									}
-								: n
-						)
-				})
 
 				notesWithContentQueryUpdate({
 					updater: prev =>
@@ -416,18 +390,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 					case MaybeEncryptedUniffi_Tags.Decrypted: {
 						const [newTitle] = inner.newTitle.inner
 
-						notesQueryUpdate({
-							updater: prev =>
-								prev.map(n =>
-									n.uuid === inner.note
-										? {
-												...n,
-												title: newTitle
-											}
-										: n
-								)
-						})
-
 						notesWithContentQueryUpdate({
 							updater: prev =>
 								prev.map(n =>
@@ -447,21 +409,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 
 			case SocketEvent_Tags.NoteParticipantNew: {
 				const [inner] = event.inner
-
-				notesQueryUpdate({
-					updater: prev =>
-						prev.map(n =>
-							n.uuid === inner.note
-								? {
-										...n,
-										participants: [
-											...n.participants.filter(p => p.userId !== inner.participant.userId),
-											inner.participant
-										]
-									}
-								: n
-						)
-				})
 
 				notesWithContentQueryUpdate({
 					updater: prev =>
@@ -484,18 +431,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 			case SocketEvent_Tags.NoteParticipantRemoved: {
 				const [inner] = event.inner
 
-				notesQueryUpdate({
-					updater: prev =>
-						prev.map(n =>
-							n.uuid === inner.note
-								? {
-										...n,
-										participants: n.participants.filter(p => p.userId !== inner.userId)
-									}
-								: n
-						)
-				})
-
 				notesWithContentQueryUpdate({
 					updater: prev =>
 						prev.map(n =>
@@ -513,25 +448,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 
 			case SocketEvent_Tags.NoteParticipantPermissions: {
 				const [inner] = event.inner
-
-				notesQueryUpdate({
-					updater: prev =>
-						prev.map(n =>
-							n.uuid === inner.note
-								? {
-										...n,
-										participants: n.participants.map(p =>
-											p.userId === inner.userId
-												? {
-														...p,
-														permissionsWrite: inner.permissionsWrite
-													}
-												: p
-										)
-									}
-								: n
-						)
-				})
 
 				notesWithContentQueryUpdate({
 					updater: prev =>
@@ -559,10 +475,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 				// TODO: Don't refetch the query, build from socket event once added
 				const notesWithContent = await notesWithContentQueryFetch()
 
-				notesQueryUpdate({
-					updater: () => notesWithContent.map(({ content: _, ...note }) => note)
-				})
-
 				notesWithContentQueryUpdate({
 					updater: () => notesWithContent
 				})
@@ -573,7 +485,7 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 			case SocketEvent_Tags.NoteContentEdited: {
 				const [inner] = event.inner
 
-				const notes = notesQueryGet()
+				const notes = notesWithContentQueryGet()
 				const note = notes?.find(n => n.uuid === inner.note)
 
 				if (!note) {

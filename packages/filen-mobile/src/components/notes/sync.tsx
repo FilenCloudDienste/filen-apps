@@ -6,7 +6,7 @@ import { AppState } from "react-native"
 import useNotesStore, { type InflightContent } from "@/stores/useNotes.store"
 import sqlite from "@/lib/sqlite"
 import { memo } from "@/lib/memo"
-import { fetchData as notesQueryFetch } from "@/queries/useNotes.query"
+import { fetchData as notesWithContentQueryFetch } from "@/queries/useNotesWithContent.query"
 
 export class Sync {
 	private readonly mutex: Semaphore = new Semaphore(1)
@@ -40,7 +40,7 @@ export class Sync {
 				return {}
 			}
 
-			const fromCloud = await notesQueryFetch()
+			const fromCloud = await notesWithContentQueryFetch()
 			const fromCloudEditedTimestamp: Record<string, number> = fromCloud.reduce(
 				(acc, note) => {
 					acc[note.uuid] = Number(note.editedTimestamp)

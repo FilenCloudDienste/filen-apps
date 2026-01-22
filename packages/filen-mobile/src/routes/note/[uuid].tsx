@@ -2,7 +2,7 @@ import { Fragment } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
 import StackHeader from "@/components/ui/header"
 import { useLocalSearchParams, Redirect, useRouter } from "expo-router"
-import useNotesQuery from "@/queries/useNotes.query"
+import useNotesWithContentQuery from "@/queries/useNotesWithContent.query"
 import type { Note as TNote, NoteHistory } from "@filen/sdk-rs"
 import Content from "@/components/notes/content"
 import { Platform } from "react-native"
@@ -189,13 +189,17 @@ export const Note = memo(() => {
 		historyItemPacked?: string
 	}>()
 
-	const notesQuery = useNotesQuery({
+	const notesWithContentQuery = useNotesWithContentQuery({
 		enabled: false
 	})
 
 	const note = useMemo(() => {
-		return notesQuery.data?.find(n => n.uuid === uuid) as TNote
-	}, [notesQuery.data, uuid])
+		if (notesWithContentQuery.status !== "success") {
+			return null as unknown as TNote
+		}
+
+		return notesWithContentQuery.data.find(n => n.uuid === uuid) as TNote
+	}, [notesWithContentQuery.data, uuid, notesWithContentQuery.status])
 
 	const history = useMemo(() => {
 		return historyItemPacked ? (unpack(Buffer.from(historyItemPacked, "base64")) as NoteHistory) : null

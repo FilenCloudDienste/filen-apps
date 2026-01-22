@@ -2,7 +2,6 @@ import auth from "@/lib/auth"
 import { type Note, NoteType, type NoteTag, type Contact, type NoteParticipant, type NoteHistory } from "@filen/sdk-rs"
 import { noteContentQueryUpdate } from "@/queries/useNoteContent.query"
 import { createNotePreviewFromContentText } from "@filen/utils"
-import { notesQueryUpdate } from "@/queries/useNotes.query"
 import { notesTagsQueryUpdate } from "@/queries/useNotesTags.query"
 import { notesWithContentQueryUpdate } from "@/queries/useNotesWithContent.query"
 
@@ -71,10 +70,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -127,10 +122,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -162,10 +153,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
@@ -199,10 +186,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -234,10 +217,6 @@ export class Notes {
 				signal
 			})
 		])
-
-		notesQueryUpdate({
-			updater: prev => [...prev.filter(n => n.uuid !== original.uuid && n.uuid !== duplicated.uuid), original, duplicated]
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev => [
@@ -294,10 +273,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -329,10 +304,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -360,10 +331,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
@@ -395,10 +362,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
@@ -433,10 +396,6 @@ export class Notes {
 
 		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
 		setTimeout(() => {
-			notesQueryUpdate({
-				updater: prev => prev.filter(n => n.uuid !== note.uuid)
-			})
-
 			notesWithContentQueryUpdate({
 				updater: prev => prev.filter(n => n.uuid !== note.uuid)
 			})
@@ -466,10 +425,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
@@ -502,10 +457,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === modifiedNote.uuid ? modifiedNote : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -537,10 +488,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
@@ -580,10 +527,6 @@ export class Notes {
 			content,
 			signal,
 			updateQuery: true
-		})
-
-		notesQueryUpdate({
-			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
 		})
 
 		notesWithContentQueryUpdate({
@@ -697,10 +640,6 @@ export class Notes {
 
 		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
 		setTimeout(() => {
-			notesQueryUpdate({
-				updater: prev => prev.filter(n => n.uuid !== note.uuid)
-			})
-
 			notesWithContentQueryUpdate({
 				updater: prev => prev.filter(n => n.uuid !== note.uuid)
 			})
@@ -732,10 +671,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
@@ -780,10 +715,6 @@ export class Notes {
 				: undefined
 		)
 
-		notesQueryUpdate({
-			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
-		})
-
 		notesWithContentQueryUpdate({
 			updater: prev =>
 				prev.map(n =>
@@ -826,18 +757,6 @@ export class Notes {
 					}
 				: undefined
 		)
-
-		notesQueryUpdate({
-			updater: prev =>
-				prev.map(n =>
-					n.uuid === note.uuid
-						? {
-								...note,
-								participants: note.participants.map(p => (p.userId === participant.userId ? participant : p))
-							}
-						: n
-				)
-		})
 
 		notesWithContentQueryUpdate({
 			updater: prev =>
