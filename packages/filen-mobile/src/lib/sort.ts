@@ -406,8 +406,10 @@ export class NotesSorter {
 
 		const now = Date.now()
 		const result: NoteListItem[] = []
+		const todayMs = 24 * 60 * 60 * 1000
 		const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
 		const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
+		const todayAgo = now - todayMs
 		const sevenDaysAgo = now - sevenDaysMs
 		const thirtyDaysAgo = now - thirtyDaysMs
 		const nowDate = new Date(now)
@@ -416,6 +418,7 @@ export class NotesSorter {
 		const oneMonthAgo = new Date(currentYear, currentMonth - 1, nowDate.getDate()).getTime()
 		const twoMonthsAgo = new Date(currentYear, currentMonth - 2, nowDate.getDate()).getTime()
 		const oneYearAgo = new Date(currentYear - 1, currentMonth, nowDate.getDate()).getTime()
+		const today: NoteItem[] = []
 		const last7Days: NoteItem[] = []
 		const last30Days: NoteItem[] = []
 		const previousMonth1: NoteItem[] = []
@@ -437,16 +440,17 @@ export class NotesSorter {
 				continue
 			}
 
-			// Order is important here
-			// 1. Pinned notes
-			// 2. Favorited notes
-			// 3. Notes from last 7 days
-			// 4. Notes from last 30 days
-			// 5. Notes from previous month
-			// 6. Notes from two months ago
-			// 7. Notes from previous years
-			// 8. Archived notes
-			// 9. Trashed notes
+			if (groupTrashed && note.trash) {
+				trashed.push(note)
+
+				continue
+			}
+
+			if (groupArchived && note.archive) {
+				archived.push(note)
+
+				continue
+			}
 
 			if (groupPinned && note.pinned) {
 				pinned.push(note)
@@ -460,21 +464,11 @@ export class NotesSorter {
 				continue
 			}
 
-			if (groupArchived && note.archive) {
-				archived.push(note)
-
-				continue
-			}
-
-			if (groupTrashed && note.trash) {
-				trashed.push(note)
-
-				continue
-			}
-
 			const editedTimestamp = Number(note.editedTimestamp ?? note.createdTimestamp)
 
-			if (editedTimestamp >= sevenDaysAgo) {
+			if (editedTimestamp >= todayAgo) {
+				today.push(note)
+			} else if (editedTimestamp >= sevenDaysAgo) {
 				last7Days.push(note)
 			} else if (editedTimestamp >= thirtyDaysAgo) {
 				last30Days.push(note)
@@ -531,6 +525,29 @@ export class NotesSorter {
 
 			for (let i = 0; i < favorited.length; i++) {
 				const notes = favorited[i]
+
+				if (!notes) {
+					continue
+				}
+
+				result.push({
+					...notes,
+					type: "note"
+				})
+			}
+		}
+
+		if (today.length > 0) {
+			today.sort(sortDesc)
+
+			result.push({
+				type: "header",
+				id: "header-today",
+				title: "tbd_today"
+			})
+
+			for (let i = 0; i < today.length; i++) {
+				const notes = today[i]
 
 				if (!notes) {
 					continue
