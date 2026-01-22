@@ -4,32 +4,11 @@ import { noteContentQueryUpdate } from "@/queries/useNoteContent.query"
 import { createNotePreviewFromContentText } from "@filen/utils"
 import { notesTagsQueryUpdate } from "@/queries/useNotesTags.query"
 import { notesWithContentQueryUpdate } from "@/queries/useNotesWithContent.query"
+import JSZip from "jszip"
+import * as FileSystem from "expo-file-system"
+import { sanitizeFileName } from "@/lib/utils"
 
 export class Notes {
-	public async list(signal?: AbortSignal) {
-		const sdkClient = await auth.getSdkClient()
-
-		return await sdkClient.listNotes(
-			signal
-				? {
-						signal
-					}
-				: undefined
-		)
-	}
-
-	public async listTags(signal?: AbortSignal) {
-		const sdkClient = await auth.getSdkClient()
-
-		return await sdkClient.listNoteTags(
-			signal
-				? {
-						signal
-					}
-				: undefined
-		)
-	}
-
 	public async getContent({ note, signal }: { note: Note; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
 
@@ -244,17 +223,67 @@ export class Notes {
 			signal
 		})
 
-		// TODO
+		if (!content) {
+			throw new Error("Note content is empty")
+		}
 
-		return content
+		const file = new FileSystem.File(FileSystem.Paths.join(FileSystem.Paths.cache, sanitizeFileName(`${note.title ?? note.uuid}.txt`)))
+
+		if (file.exists) {
+			file.delete()
+		}
+
+		file.write(content, {
+			encoding: "utf8"
+		})
+
+		return {
+			file,
+			cleanup: () => {
+				if (file.exists) {
+					file.delete()
+				}
+			}
+		}
 	}
 
-	public async exportAll({ signal }: { signal?: AbortSignal }) {
-		const notes = await this.list(signal)
+	public async exportMultiple({ signal, notes }: { signal?: AbortSignal; notes: Note[] }) {
+		const zip = new JSZip()
 
-		// TODO
+		await Promise.all(
+			notes.map(async note => {
+				const content = await this.getContent({
+					note,
+					signal
+				})
 
-		return notes
+				if (!content) {
+					return
+				}
+
+				const sanitizedFileName = sanitizeFileName(`${note.title ? `${note.title}_` : ""}${note.uuid}.txt`)
+
+				zip.file(sanitizedFileName, content)
+			})
+		)
+
+		const buffer = await zip.generateAsync({ type: "uint8array" })
+		const file = new FileSystem.File(FileSystem.Paths.join(FileSystem.Paths.cache, sanitizeFileName(`notes_export_${Date.now()}.zip`)))
+
+		if (file.exists) {
+			file.delete()
+		}
+
+		file.write(buffer)
+
+		return {
+			file,
+			cleanup: () => {
+				if (file.exists) {
+					file.delete()
+				}
+			}
+		}
 	}
 
 	public async archive({ note, signal }: { note: Note; signal?: AbortSignal }) {

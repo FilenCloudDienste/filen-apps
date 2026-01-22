@@ -21,6 +21,7 @@ import { Buffer } from "@craftzdog/react-native-buffer"
 import { Platform } from "react-native"
 import { contactDisplayName } from "@/lib/utils"
 import useAppStore from "@/stores/app.store"
+import * as Sharing from "expo-sharing"
 
 export type NoteMenuOrigin = "notes" | "search" | "content"
 
@@ -515,8 +516,40 @@ export function createMenuButtons({
 		id: "export",
 		title: "tbd_export",
 		icon: "export",
-		onPress: () => {
-			//TODO: Export note
+		onPress: async () => {
+			const exportResult = await runWithLoading(async () => {
+				return await notes.export({
+					note
+				})
+			})
+
+			if (!exportResult.success) {
+				console.error(exportResult.error)
+				alerts.error(exportResult.error)
+
+				return
+			}
+
+			const result = await run(async defer => {
+				defer(() => {
+					exportResult.data.cleanup()
+				})
+
+				// Small delay to ensure file is fully written before sharing
+				await new Promise<void>(resolve => setTimeout(resolve, 100))
+
+				await Sharing.shareAsync(exportResult.data.file.uri, {
+					mimeType: "text/plain",
+					dialogTitle: exportResult.data.file.name
+				})
+			})
+
+			if (!result.success) {
+				console.error(result.error)
+				alerts.error(result.error)
+
+				return
+			}
 		}
 	})
 

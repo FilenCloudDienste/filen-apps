@@ -1,18 +1,31 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
 import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
-import notes from "@/lib/notes"
+import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 
 export const BASE_QUERY_KEY = "useNotesWithContentQuery"
 
 export async function fetchData(params?: { signal?: AbortSignal }) {
-	const all = await notes.list(params?.signal)
+	const sdkClient = await auth.getSdkClient()
+
+	const all = await sdkClient.listNotes(
+		params?.signal
+			? {
+					signal: params.signal
+				}
+			: undefined
+	)
+
 	const withContent = await Promise.all(
 		all.map(async note => {
-			const content = await notes.getContent({
+			const content = await sdkClient.getNoteContent(
 				note,
-				signal: params?.signal
-			})
+				params?.signal
+					? {
+							signal: params.signal
+						}
+					: undefined
+			)
 
 			return {
 				...note,

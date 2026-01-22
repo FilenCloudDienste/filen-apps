@@ -26,6 +26,7 @@ import Text from "@/components/ui/text"
 import type { MenuButton } from "@/components/ui/menu"
 import type { SearchBarProps } from "react-native-screens"
 import { useStringifiedClient } from "@/lib/auth"
+import * as Sharing from "expo-sharing"
 
 const Header = memo(
 	({ withSearch, setSearchQuery }: { withSearch?: boolean; setSearchQuery?: React.Dispatch<React.SetStateAction<string>> }) => {
@@ -265,6 +266,15 @@ const Header = memo(
 							}
 						]
 					})
+
+					menuButtons.push({
+						id: "import",
+						title: "tbd_import_note",
+						icon: "export",
+						onPress: async () => {
+							// TODO: Implement import note for .txt file with type selection
+						}
+					})
 				}
 
 				if (selectedNotes.length > 0) {
@@ -457,6 +467,57 @@ const Header = memo(
 										})
 									)
 								)
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
+						}
+					})
+
+					menuButtons.push({
+						id: "bulkExport",
+						title: "tbd_export_selected",
+						icon: "export",
+						onPress: async () => {
+							const exportResult = await runWithLoading(async defer => {
+								defer(() => {
+									useNotesStore.getState().setSelectedNotes([])
+								})
+
+								if (selectedNotes.length === 1 && selectedNotes[0]) {
+									return await notesLib.export({
+										note: selectedNotes[0]
+									})
+								}
+
+								return await notesLib.exportMultiple({
+									notes: selectedNotes
+								})
+							})
+
+							if (!exportResult.success) {
+								console.error(exportResult.error)
+								alerts.error(exportResult.error)
+
+								return
+							}
+
+							const result = await run(async defer => {
+								defer(() => {
+									exportResult.data.cleanup()
+								})
+
+								// Small delay to ensure file is fully written before sharing
+								await new Promise<void>(resolve => setTimeout(resolve, 100))
+
+								await Sharing.shareAsync(exportResult.data.file.uri, {
+									mimeType: "text/plain",
+									dialogTitle: exportResult.data.file.name
+								})
 							})
 
 							if (!result.success) {
