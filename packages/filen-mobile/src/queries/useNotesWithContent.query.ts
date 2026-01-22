@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query"
-import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams } from "@/queries/client"
+import { DEFAULT_QUERY_OPTIONS, useDefaultQueryParams, queryUpdater } from "@/queries/client"
 import notes from "@/lib/notes"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 
@@ -46,6 +46,22 @@ export function useNotesWithContentQuery(
 	})
 
 	return query as UseQueryResult<Awaited<ReturnType<typeof fetchData>>, Error>
+}
+
+export function notesWithContentQueryUpdate({
+	updater
+}: {
+	updater:
+		| Awaited<ReturnType<typeof fetchData>>
+		| ((prev: Awaited<ReturnType<typeof fetchData>>) => Awaited<ReturnType<typeof fetchData>>)
+}) {
+	queryUpdater.set<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY], prev => {
+		return typeof updater === "function" ? updater(prev ?? []) : updater
+	})
+}
+
+export function notesWithContentQueryGet() {
+	return queryUpdater.get<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY])
 }
 
 export default useNotesWithContentQuery

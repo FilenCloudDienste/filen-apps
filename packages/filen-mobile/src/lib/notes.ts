@@ -4,6 +4,7 @@ import { noteContentQueryUpdate } from "@/queries/useNoteContent.query"
 import { createNotePreviewFromContentText } from "@filen/utils"
 import { notesQueryUpdate } from "@/queries/useNotes.query"
 import { notesTagsQueryUpdate } from "@/queries/useNotesTags.query"
+import { notesWithContentQueryUpdate } from "@/queries/useNotesWithContent.query"
 
 export class Notes {
 	public async list(signal?: AbortSignal) {
@@ -74,6 +75,18 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content
+							}
+						: n
+				)
+		})
+
 		if (updateQuery) {
 			noteContentQueryUpdate({
 				params: {
@@ -118,6 +131,18 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
+		})
+
 		return note
 	}
 
@@ -140,6 +165,18 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
 		})
 
 		return note
@@ -166,22 +203,54 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
+		})
+
 		return note
 	}
 
 	public async duplicate({ note, signal }: { note: Note; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
-		const { original, duplicated } = await sdkClient.duplicateNote(
-			note,
-			signal
-				? {
-						signal
-					}
-				: undefined
-		)
+		const [{ original, duplicated }, content] = await Promise.all([
+			sdkClient.duplicateNote(
+				note,
+				signal
+					? {
+							signal
+						}
+					: undefined
+			),
+			this.getContent({
+				note,
+				signal
+			})
+		])
 
 		notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== original.uuid && n.uuid !== duplicated.uuid), original, duplicated]
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev => [
+				...prev.filter(n => n.uuid !== original.uuid && n.uuid !== duplicated.uuid),
+				{
+					...original,
+					content
+				},
+				{
+					...duplicated,
+					content
+				}
+			]
 		})
 
 		return {
@@ -229,6 +298,18 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
+		})
+
 		return note
 	}
 
@@ -252,6 +333,18 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
+		})
+
 		return note
 	}
 
@@ -270,6 +363,18 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
 		})
 
 		return note
@@ -295,6 +400,18 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
+		})
+
 		return note
 	}
 
@@ -317,6 +434,10 @@ export class Notes {
 		// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
 		setTimeout(() => {
 			notesQueryUpdate({
+				updater: prev => prev.filter(n => n.uuid !== note.uuid)
+			})
+
+			notesWithContentQueryUpdate({
 				updater: prev => prev.filter(n => n.uuid !== note.uuid)
 			})
 
@@ -350,6 +471,18 @@ export class Notes {
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
 		})
 
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
+		})
+
 		return note
 	}
 
@@ -371,6 +504,18 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => prev.map(n => (n.uuid === modifiedNote.uuid ? modifiedNote : n))
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === modifiedNote.uuid
+						? {
+								...modifiedNote,
+								content: n.content
+							}
+						: n
+				)
 		})
 
 		return modifiedNote
@@ -395,6 +540,18 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
 		})
 
 		return note
@@ -427,6 +584,16 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => [...prev.filter(n => n.uuid !== note.uuid), note]
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev => [
+				...prev.filter(n => n.uuid !== note.uuid),
+				{
+					...note,
+					content
+				}
+			]
 		})
 
 		return note
@@ -534,6 +701,10 @@ export class Notes {
 				updater: prev => prev.filter(n => n.uuid !== note.uuid)
 			})
 
+			notesWithContentQueryUpdate({
+				updater: prev => prev.filter(n => n.uuid !== note.uuid)
+			})
+
 			noteContentQueryUpdate({
 				params: {
 					uuid: note.uuid
@@ -564,6 +735,18 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
 		})
 
 		return note
@@ -599,6 +782,18 @@ export class Notes {
 
 		notesQueryUpdate({
 			updater: prev => prev.map(n => (n.uuid === note.uuid ? note : n))
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content
+							}
+						: n
+				)
 		})
 
 		return note
@@ -638,6 +833,19 @@ export class Notes {
 					n.uuid === note.uuid
 						? {
 								...note,
+								participants: note.participants.map(p => (p.userId === participant.userId ? participant : p))
+							}
+						: n
+				)
+		})
+
+		notesWithContentQueryUpdate({
+			updater: prev =>
+				prev.map(n =>
+					n.uuid === note.uuid
+						? {
+								...note,
+								content: n.content,
 								participants: note.participants.map(p => (p.userId === participant.userId ? participant : p))
 							}
 						: n
