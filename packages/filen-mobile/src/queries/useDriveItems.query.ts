@@ -98,7 +98,7 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 			}
 
 			case "trash": {
-				return null // TODO: fix when exported from sdk-rs
+				return sdkClient.listTrash(signal)
 			}
 		}
 	})()
