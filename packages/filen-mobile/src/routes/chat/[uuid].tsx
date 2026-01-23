@@ -1,9 +1,9 @@
 import { Fragment, useEffect } from "react"
 import SafeAreaView from "@/components/ui/safeAreaView"
-import StackHeader from "@/components/ui/header"
+import StackHeader, { type HeaderItem } from "@/components/ui/header"
 import { useLocalSearchParams, Redirect, useRouter } from "expo-router"
 import type { Chat as TChat } from "@filen/sdk-rs"
-import { Platform, ActivityIndicator, useWindowDimensions } from "react-native"
+import { Platform, ActivityIndicator } from "react-native"
 import { memo, useMemo, useCallback } from "@/lib/memo"
 import useChatsQuery from "@/queries/useChats.query"
 import View, { CrossGlassContainerView } from "@/components/ui/view"
@@ -31,11 +31,8 @@ import { simpleDateNoTime } from "@/lib/time"
 import useChatUnreadCount from "@/hooks/useChatUnreadCount"
 import useChatsStore from "@/stores/useChats.store"
 
-const Header = memo(({ chat }: { chat: TChat }) => {
+const HeaderTitle = memo(({ chat }: { chat: TChat }) => {
 	const stringigiedClient = useStringifiedClient()
-	const textForeground = useResolveClassNames("text-foreground")
-	const windowDimensions = useWindowDimensions()
-	const isSelected = useChatsStore(useShallow(state => state.selectedChats.some(n => n.uuid === chat.uuid)))
 
 	const title = useMemo(() => {
 		if (chat.name && chat.name.length > 0) {
@@ -65,103 +62,110 @@ const Header = memo(({ chat }: { chat: TChat }) => {
 			.slice(0, 5)
 	}, [chat.participants, stringigiedClient?.userId])
 
+	if (participantsWithAvatars.length === 0) {
+		return title
+	}
+
+	return (
+		<View
+			className={cn(
+				"items-center flex-col justify-center bg-transparent w-full",
+				Platform.select({
+					ios: "pr-9",
+					default: "pr-3"
+				})
+			)}
+		>
+			<View className="flex-row items-center -mt-1 bg-transparent">
+				{participantsWithAvatars.length === 1 ? (
+					<Avatar
+						className="shrink-0 z-10"
+						size={36}
+						source={{
+							uri: participantsWithAvatars.at(0)
+						}}
+					/>
+				) : (
+					<View className="flex-row items-center bg-transparent">
+						{participantsWithAvatars.map((avatar, index) => {
+							return (
+								<Avatar
+									key={avatar}
+									className={cn("shrink-0", index > 0 && "-ml-12")}
+									size={32}
+									style={{
+										zIndex: 100 - index
+									}}
+									source={{
+										uri: avatar
+									}}
+								/>
+							)
+						})}
+					</View>
+				)}
+			</View>
+			<CrossGlassContainerView
+				className="bg-background-secondary border border-border py-0.5 px-1.5 rounded-full -mt-2"
+				disableBlur={Platform.OS === "android"}
+			>
+				<Text
+					className="text-foreground"
+					numberOfLines={1}
+					ellipsizeMode="tail"
+				>
+					{title}
+				</Text>
+			</CrossGlassContainerView>
+		</View>
+	)
+})
+
+const Header = memo(({ chat }: { chat: TChat }) => {
+	const stringigiedClient = useStringifiedClient()
+	const textForeground = useResolveClassNames("text-foreground")
+	const isSelected = useChatsStore(useShallow(state => state.selectedChats.some(n => n.uuid === chat.uuid)))
+	const unreadCount = useChatUnreadCount(chat)
+
+	const headerRightItems = useMemo(() => {
+		if (!stringigiedClient) {
+			return []
+		}
+
+		return [
+			{
+				type: "menu",
+				props: {
+					type: "dropdown",
+					hitSlop: 20,
+					buttons: createMenuButtons({
+						chat,
+						userId: stringigiedClient.userId,
+						origin: "chat",
+						isSelected,
+						unreadCount
+					})
+				},
+				triggerProps: {
+					hitSlop: 20
+				},
+				icon: {
+					name: "ellipsis-horizontal",
+					size: 24,
+					color: textForeground.color
+				}
+			}
+		] satisfies HeaderItem[]
+	}, [stringigiedClient, chat, isSelected, unreadCount, textForeground.color])
+
 	return (
 		<StackHeader
-			title={
-				participantsWithAvatars.length > 0
-					? () => {
-							return (
-								<View
-									className={cn(
-										"items-center flex-col justify-center bg-transparent w-full",
-										Platform.select({
-											ios: "pr-9",
-											default: "pr-3"
-										})
-									)}
-								>
-									<View className="flex-row items-center -mt-1 bg-transparent">
-										{participantsWithAvatars.length === 1 ? (
-											<Avatar
-												className="shrink-0 z-10"
-												size={36}
-												source={{
-													uri: participantsWithAvatars.at(0)
-												}}
-											/>
-										) : (
-											<View className="flex-row items-center bg-transparent">
-												{participantsWithAvatars.map((avatar, index) => {
-													return (
-														<Avatar
-															key={avatar}
-															className={cn("shrink-0", index > 0 && "-ml-12")}
-															size={32}
-															style={{
-																zIndex: 100 - index
-															}}
-															source={{
-																uri: avatar
-															}}
-														/>
-													)
-												})}
-											</View>
-										)}
-									</View>
-									<CrossGlassContainerView
-										className="bg-background-secondary border border-border py-0.5 px-1.5 rounded-full -mt-2"
-										disableBlur={Platform.OS === "android"}
-										style={{
-											maxWidth: windowDimensions.width - 200
-										}}
-									>
-										<Text
-											className="text-foreground"
-											numberOfLines={1}
-											ellipsizeMode="tail"
-										>
-											{title}
-										</Text>
-									</CrossGlassContainerView>
-								</View>
-							)
-						}
-					: title
-			}
+			title={<HeaderTitle chat={chat} />}
 			backVisible={true}
 			transparent={false}
 			shadowVisible={true}
 			backTitle="tdb_back"
-			rightItems={() => {
-				if (!stringigiedClient) {
-					return []
-				}
-
-				return [
-					{
-						type: "menu",
-						props: {
-							type: "dropdown",
-							hitSlop: 20,
-							buttons: createMenuButtons({
-								chat,
-								userId: stringigiedClient.userId,
-								origin: "chat",
-								isSelected
-							})
-						},
-						triggerProps: {
-							hitSlop: 20
-						},
-						icon: {
-							name: "ellipsis-horizontal",
-							size: 24,
-							color: textForeground.color
-						}
-					}
-				]
-			}}
+			rightItems={headerRightItems}
 		/>
 	)
 })

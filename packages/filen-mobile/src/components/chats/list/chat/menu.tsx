@@ -17,6 +17,7 @@ import { router } from "expo-router"
 import useAppStore from "@/stores/app.store"
 import useChatsStore from "@/stores/useChats.store"
 import { useShallow } from "zustand/shallow"
+import useChatUnreadCount from "@/hooks/useChatUnreadCount"
 
 export type ChatMenuOrigin = "chats" | "search" | "chat"
 
@@ -24,12 +25,14 @@ export function createMenuButtons({
 	chat,
 	userId,
 	origin,
-	isSelected
+	isSelected,
+	unreadCount
 }: {
 	chat: TChat
 	userId: bigint
 	origin: ChatMenuOrigin
 	isSelected: boolean
+	unreadCount: number
 }): MenuButton[] {
 	return [
 		...(origin !== "chat"
@@ -47,6 +50,35 @@ export function createMenuButtons({
 									return [...prev.filter(n => n.uuid !== chat.uuid), chat]
 								}
 							})
+						}
+					} satisfies MenuButton
+				]
+			: []),
+		...(unreadCount > 0
+			? [
+					{
+						id: "markAsRead",
+						title: "tbd_mark_as_read",
+						icon: "archive",
+						checked: isSelected,
+						onPress: async () => {
+							const result = await runWithLoading(async () => {
+								return await Promise.all([
+									chats.updateLastFocusTimesNow({
+										chats: [chat]
+									}),
+									chats.markRead({
+										chat
+									})
+								])
+							})
+
+							if (!result.success) {
+								console.error(result.error)
+								alerts.error(result.error)
+
+								return
+							}
 						}
 					} satisfies MenuButton
 				]
@@ -344,6 +376,7 @@ export const Menu = memo(
 	}) => {
 		const stringifiedClient = useStringifiedClient()
 		const isSelected = useChatsStore(useShallow(state => state.selectedChats.some(n => n.uuid === info.item.uuid)))
+		const chatUnreadCount = useChatUnreadCount(info.item)
 
 		const buttons = useMemo(() => {
 			if (!stringifiedClient) {
@@ -354,9 +387,10 @@ export const Menu = memo(
 				chat: info.item,
 				userId: stringifiedClient.userId,
 				origin,
-				isSelected
+				isSelected,
+				unreadCount: chatUnreadCount
 			})
-		}, [info.item, stringifiedClient, origin, isSelected])
+		}, [info.item, stringifiedClient, origin, isSelected, chatUnreadCount])
 
 		return (
 			<MenuComponent

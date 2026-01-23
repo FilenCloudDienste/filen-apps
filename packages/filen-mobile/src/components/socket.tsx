@@ -268,10 +268,6 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 			case SocketEvent_Tags.ChatConversationDeleted: {
 				const [inner] = event.inner
 
-				chatsQueryUpdate({
-					updater: prev => (prev ?? []).filter(c => c.uuid !== inner.uuid)
-				})
-
 				const chats = chatsQueryGet()
 				const chat = chats?.find(c => c.uuid === inner.uuid)
 
@@ -282,6 +278,20 @@ async function onEvent({ event, userId }: { event: SocketEvent; userId: bigint }
 				events.emit("chatConversationDeleted", {
 					uuid: inner.uuid
 				})
+
+				// We have to set a timeout here, otherwise the main chat _layout redirect kicks in too early and which feels janky and messes with the navigation stack
+				setTimeout(() => {
+					chatMessagesQueryUpdate({
+						params: {
+							uuid: inner.uuid
+						},
+						updater: () => []
+					})
+
+					chatsQueryUpdate({
+						updater: prev => (prev ?? []).filter(c => c.uuid !== inner.uuid)
+					})
+				}, 3000)
 
 				break
 			}

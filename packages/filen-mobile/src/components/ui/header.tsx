@@ -170,7 +170,12 @@ export const Header = memo(
 		leftItems,
 		rightItems
 	}: {
-		title: string | ((props: { children: string; tintColor?: string | undefined }) => React.ReactNode)
+		title:
+			| string
+			| React.ReactNode
+			| React.ReactElement
+			| React.JSX.Element
+			| ((props: { children: string; tintColor?: string | undefined }) => React.ReactNode | React.ReactElement | React.JSX.Element)
 		shown?: boolean
 		largeTitle?: boolean
 		backVisible?: boolean
@@ -209,7 +214,7 @@ export const Header = memo(
 		return (
 			<Stack.Screen
 				options={{
-					headerTitle: typeof title === "function" ? props => title(props) : title,
+					headerTitle: typeof title === "function" ? props => title(props) : () => title,
 					headerShown: shown ?? true,
 					headerShadowVisible: shadowVisible,
 					headerBlurEffect: !liquidGlassAvailable && Platform.OS === "ios" ? (blurEffect ?? "systemChromeMaterial") : undefined,

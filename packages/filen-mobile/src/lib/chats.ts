@@ -470,42 +470,43 @@ export class Chats {
 	}
 
 	public async refetchChatsAndMessages() {
-		const result = await run(async defer => {
-			await this.refetchChatsAndMessagesMutex.acquire()
+		await run(
+			async defer => {
+				await this.refetchChatsAndMessagesMutex.acquire()
 
-			defer(() => {
-				this.refetchChatsAndMessagesMutex.release()
-			})
-
-			const chats = await chatsQueryFetch()
-
-			if (!chats || chats.length === 0) {
-				return
-			}
-
-			await Promise.all(
-				chats.map(async chat => {
-					const messages = await chatMessagesQueryFetch({
-						uuid: chat.uuid
-					})
-
-					chatMessagesQueryUpdate({
-						params: {
-							uuid: chat.uuid
-						},
-						updater: () => messages
-					})
+				defer(() => {
+					this.refetchChatsAndMessagesMutex.release()
 				})
-			)
 
-			chatsQueryUpdate({
-				updater: () => chats
-			})
-		})
+				const chats = await chatsQueryFetch()
 
-		if (!result.success) {
-			throw result.error
-		}
+				if (!chats || chats.length === 0) {
+					return
+				}
+
+				await Promise.all(
+					chats.map(async chat => {
+						const messages = await chatMessagesQueryFetch({
+							uuid: chat.uuid
+						})
+
+						chatMessagesQueryUpdate({
+							params: {
+								uuid: chat.uuid
+							},
+							updater: () => messages
+						})
+					})
+				)
+
+				chatsQueryUpdate({
+					updater: () => chats
+				})
+			},
+			{
+				throw: true
+			}
+		)
 	}
 }
 
