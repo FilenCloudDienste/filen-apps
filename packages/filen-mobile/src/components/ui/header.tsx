@@ -214,7 +214,7 @@ export const Header = memo(
 		return (
 			<Stack.Screen
 				options={{
-					headerTitle: typeof title === "function" ? props => title(props) : () => title,
+					headerTitle: typeof title === "function" ? props => title(props) : typeof title === "string" ? title : () => title,
 					headerShown: shown ?? true,
 					headerShadowVisible: shadowVisible,
 					headerBlurEffect: !liquidGlassAvailable && Platform.OS === "ios" ? (blurEffect ?? "systemChromeMaterial") : undefined,
