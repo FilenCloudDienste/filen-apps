@@ -15,11 +15,11 @@ import Icon from "@/components/notes/note/icon"
 import Menu, { NoteMenuOrigin } from "@/components/notes/note/menu"
 import { cn, fastLocaleCompare } from "@filen/utils"
 import { PressableScale } from "@/components/ui/pressables"
-import { Image } from "@/components/ui/image"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
 import Ionicons from "@expo/vector-icons/Ionicons"
+import Avatar from "@/components/ui/avatar"
 
 export type Item = TNote & {
 	content?: string
@@ -240,13 +240,13 @@ export const Note = memo(
 										<View className="flex-row flex-wrap gap-2 bg-transparent pt-1">
 											{participantsWithoutCurrentUser.map(participant => {
 												return (
-													<Image
+													<Avatar
+														className="shrink-0"
 														key={participant.userId}
 														source={{
 															uri: participant.avatar?.startsWith("https://") ? participant.avatar : undefined
 														}}
-														className="w-6 h-6 rounded-full bg-secondary-foreground"
-														cachePolicy="disk"
+														size={24}
 													/>
 												)
 											})}

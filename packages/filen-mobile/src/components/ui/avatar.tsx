@@ -31,7 +31,10 @@ export const Avatar = memo(
 
 		return (
 			<View
-				className={cn("flex-row overflow-hidden rounded-full bg-background-tertiary items-center justify-center", props.className)}
+				className={cn(
+					"flex-row overflow-hidden rounded-full bg-background-tertiary items-center justify-center shrink-0",
+					props.className
+				)}
 				style={[
 					props.style,
 					{
@@ -54,6 +57,7 @@ export const Avatar = memo(
 					/>
 				) : (
 					<Image
+						className="shrink-0"
 						source={props.source}
 						onError={onError}
 						onLoad={onLoad}

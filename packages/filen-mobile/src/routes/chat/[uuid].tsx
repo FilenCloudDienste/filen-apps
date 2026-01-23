@@ -62,10 +62,6 @@ const HeaderTitle = memo(({ chat }: { chat: TChat }) => {
 			.slice(0, 5)
 	}, [chat.participants, stringigiedClient?.userId])
 
-	if (participantsWithAvatars.length === 0) {
-		return title
-	}
-
 	return (
 		<View
 			className={cn(
@@ -77,7 +73,13 @@ const HeaderTitle = memo(({ chat }: { chat: TChat }) => {
 			)}
 		>
 			<View className="flex-row items-center -mt-1 bg-transparent">
-				{participantsWithAvatars.length === 1 ? (
+				{participantsWithAvatars.length === 0 ? (
+					<Avatar
+						className="shrink-0 z-10"
+						size={36}
+						immediateFallback={true}
+					/>
+				) : participantsWithAvatars.length === 1 ? (
 					<Avatar
 						className="shrink-0 z-10"
 						size={36}
