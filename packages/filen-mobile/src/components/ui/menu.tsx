@@ -2,15 +2,7 @@ import { memo, useCallback, useMemo } from "@/lib/memo"
 import { withUniwind, useResolveClassNames } from "uniwind"
 import { type StyleProp, type ViewStyle, Platform } from "react-native"
 import { MenuView, type NativeActionEvent, type MenuAction } from "@react-native-menu/menu"
-import {
-	ContextMenu as SwiftUiContextMenu,
-	Host as SwiftUiHost,
-	Button as SwiftUiButton,
-	Text as SwiftUiText,
-	// Switch as SwiftUiSwitch,
-	Image as SwiftUiImage
-} from "@expo/ui/swift-ui"
-// import * as swiftUiModifiers from "@expo/ui/swift-ui/modifiers"
+import { Image as SwiftUiImage } from "@expo/ui/swift-ui"
 import {
 	ContextMenuView,
 	type MenuConfig,
@@ -71,7 +63,7 @@ export type Icons =
 	| "list"
 	| "grid"
 
-export function iconToSwiftUiIcon(name: Icons, fill?: boolean): React.ComponentPropsWithoutRef<typeof SwiftUiImage>["systemName"] {
+function iconToSwiftUiIcon(name: Icons, fill?: boolean): React.ComponentPropsWithoutRef<typeof SwiftUiImage>["systemName"] {
 	switch (name) {
 		case "heart": {
 			return fill ? "heart.fill" : "heart"
@@ -187,7 +179,7 @@ export function iconToSwiftUiIcon(name: Icons, fill?: boolean): React.ComponentP
 	}
 }
 
-export function findButtonById(buttons: MenuButton[], id: string): MenuButton | null {
+function findButtonById(buttons: MenuButton[], id: string): MenuButton | null {
 	if (!buttons) {
 		return null
 	}
@@ -209,7 +201,7 @@ export function findButtonById(buttons: MenuButton[], id: string): MenuButton | 
 	return null
 }
 
-export function checkIfButtonIdsAreUnique(buttons: MenuButton[]): boolean {
+function checkIfButtonIdsAreUnique(buttons: MenuButton[]): boolean {
 	const ids = new Set<string>()
 
 	function checkButtons(buttonsToCheck: MenuButton[]): boolean {
@@ -235,10 +227,28 @@ export function checkIfButtonIdsAreUnique(buttons: MenuButton[]): boolean {
 	return checkButtons(buttons)
 }
 
-export function toAndroidMenuActions(buttons: MenuButton[]): MenuAction[] {
+function toReactNativeMenuActions({
+	buttons,
+	colors
+}: {
+	buttons: MenuButton[]
+	colors: {
+		normal: string
+		destructive: string
+		disabled: string
+	}
+}): MenuAction[] {
 	return buttons.map(button => {
+		const iosIcon = button.icon ? iconToSwiftUiIcon(button.icon) : undefined
+
 		return {
-			subactions: button.subButtons && button.subButtons.length > 0 ? toAndroidMenuActions(button.subButtons) : undefined,
+			subactions:
+				button.subButtons && button.subButtons.length > 0
+					? toReactNativeMenuActions({
+							buttons: button.subButtons,
+							colors
+						})
+					: undefined,
 			id: button.id,
 			title: button.title ?? "",
 			state: button.checked ? "on" : undefined,
@@ -246,6 +256,12 @@ export function toAndroidMenuActions(buttons: MenuButton[]): MenuAction[] {
 			titleColor: button.titleColor,
 			imageColor: button.iconColor,
 			displayInline: button.subButtonsInline,
+			...(iosIcon
+				? {
+						image: iosIcon,
+						imageColor: button.destructive ? colors.destructive : button.disabled ? colors.disabled : colors.normal
+					}
+				: {}),
 			attributes: {
 				destructive: button.destructive,
 				disabled: button.disabled,
@@ -256,7 +272,7 @@ export function toAndroidMenuActions(buttons: MenuButton[]): MenuAction[] {
 	})
 }
 
-export function iosMenuAttributesFromButton(button: MenuButton): MenuAttributes[] {
+function iosMenuAttributesFromButton(button: MenuButton): MenuAttributes[] {
 	const attributes: MenuAttributes[] = []
 
 	if (button.destructive) {
@@ -278,7 +294,7 @@ export function iosMenuAttributesFromButton(button: MenuButton): MenuAttributes[
 	return attributes
 }
 
-export function toIosMenuSubMenuConfig(button: MenuButton): MenuElementConfig {
+function toIosMenuSubMenuConfig(button: MenuButton): MenuElementConfig {
 	if (button.loading) {
 		return {
 			type: "deferred",
@@ -316,7 +332,7 @@ export function toIosMenuSubMenuConfig(button: MenuButton): MenuElementConfig {
 	}
 }
 
-export function toIosMenuElementConfig(button: MenuButton): MenuElementConfig {
+function toIosMenuElementConfig(button: MenuButton): MenuElementConfig {
 	if (button.loading) {
 		return {
 			type: "deferred",
@@ -344,7 +360,7 @@ export function toIosMenuElementConfig(button: MenuButton): MenuElementConfig {
 	} satisfies MenuElementConfig
 }
 
-export function toIosMenuConfig({
+function toIosMenuConfig({
 	buttons,
 	title,
 	iOSItemSize
@@ -369,95 +385,6 @@ export function toIosMenuConfig({
 	} satisfies MenuConfig
 }
 
-export const ContextMenuItemsIos = memo(({ title, buttons }: { title?: string; buttons: MenuButton[] }) => {
-	const textPrimary = useResolveClassNames("text-primary")
-
-	return (
-		<SwiftUiContextMenu.Items>
-			{title && <SwiftUiText>{title}</SwiftUiText>}
-			{buttons.map(button => {
-				if (button.hidden) {
-					return null
-				}
-
-				if (button.subButtons && button.subButtons.length > 0) {
-					return (
-						<SwiftUiContextMenu
-							key={button.id}
-							activationMethod="singlePress"
-						>
-							<ContextMenuItemsIos buttons={button.subButtons} />
-							<SwiftUiContextMenu.Trigger>
-								<SwiftUiButton
-									role={button.destructive ? "destructive" : undefined}
-									systemImage={button.icon ? iconToSwiftUiIcon(button.icon) : undefined}
-									disabled={button.disabled}
-									testID={button.testID}
-								>
-									{button.title}
-								</SwiftUiButton>
-							</SwiftUiContextMenu.Trigger>
-						</SwiftUiContextMenu>
-					)
-				}
-
-				// TODO: Add back when updating expo/ui (sdk 55+)
-				/*
-				if (button.checked) {
-					return (
-						<SwiftUiSwitch
-							key={button.id}
-							variant="button"
-							label={button.title}
-							value={button.checked}
-							testID={button.testID}
-							modifiers={button.disabled ? [swiftUiModifiers.disabled(button.disabled)] : undefined}
-							onValueChange={e => {
-								if (e) {
-									return
-								}
-
-								button.onPress?.()
-							}}
-							systemImage={button.icon ? iconToSwiftUiIcon(button.icon) : undefined}
-						/>
-					)
-				}
-
-				 if (button.subTitle) {
-					return (
-						<SwiftUiButton
-							key={button.id}
-							onPress={button.onPress}
-							testID={button.testID}
-							role={button.destructive ? "destructive" : undefined}
-							disabled={button.disabled}
-						>
-							{button.icon && <SwiftUiImage systemName={iconToSwiftUiIcon(button.icon)} />}
-							<SwiftUiText>{button.title}</SwiftUiText>
-							<SwiftUiText>{button.subTitle}</SwiftUiText>
-						</SwiftUiButton>
-					)
-				} */
-
-				return (
-					<SwiftUiButton
-						key={button.id}
-						onPress={button.onPress}
-						testID={button.testID}
-						role={button.destructive ? "destructive" : undefined}
-						systemImage={button.icon ? iconToSwiftUiIcon(button.icon) : undefined}
-						color={button.checked ? (textPrimary.color as string) : button.titleColor}
-						disabled={button.disabled}
-					>
-						{button.title}
-					</SwiftUiButton>
-				)
-			})}
-		</SwiftUiContextMenu.Items>
-	)
-})
-
 export const MenuInner = memo(
 	({
 		buttons,
@@ -472,7 +399,6 @@ export const MenuInner = memo(
 		testID,
 		renderPreview,
 		hitSlop,
-		iosLib,
 		previewConfig
 	}: {
 		children: React.ReactNode
@@ -495,9 +421,12 @@ export const MenuInner = memo(
 					left?: number
 					right?: number
 			  }
-		iosLib?: "expo-ui" | "react-native-ios-context-menu"
 		previewConfig?: MenuPreviewConfig
 	}) => {
+		const textForeground = useResolveClassNames("text-foreground")
+		const textRed500 = useResolveClassNames("text-red-500")
+		const textMutedForeground = useResolveClassNames("text-muted-foreground")
+
 		const uniqueButtons = useMemo(() => {
 			if (!buttons) {
 				return []
@@ -540,67 +469,52 @@ export const MenuInner = memo(
 			return children
 		}
 
-		if (Platform.OS === "ios") {
-			// TODO
-			// We have to fallback to react-native-ios-context-menu for context menus due to bugs with expo/ui ContextMenu. Expo/ui ContextMenu does not like being in a ScrollView.
-			// We almost always use context menus in a ScrollView, so we have to use the more stable library for now.
-			if (type === "context" && iosLib !== "expo-ui") {
-				return (
-					<ContextMenuView
-						hitSlop={hitSlop}
-						style={style}
-						testID={testID}
-						onMenuWillShow={onOpenMenu}
-						onMenuWillHide={onCloseMenu}
-						renderPreview={renderPreview}
-						lazyPreview={!!renderPreview}
-						previewConfig={
-							renderPreview && !previewConfig
-								? {
-										previewSize: "INHERIT",
-										preferredCommitStyle: "dismiss",
-										isResizeAnimated: true,
-										previewType: "CUSTOM"
-									}
-								: previewConfig
-						}
-						onPressMenuItem={onPressMenuItem}
-						shouldWaitForMenuToHideBeforeFiringOnPressMenuItem={false}
-						menuConfig={toIosMenuConfig({
-							buttons: uniqueButtons,
-							title
-						})}
-					>
-						{children}
-					</ContextMenuView>
-				)
-			}
-
+		// Due to a bug in react-native-ios-context-menu, we can only use it for context menus (long press).
+		// When placed into an iOS 26 Header, it breaks the layout.
+		// For dropdown menus, we use react-native-menu which works correctly in all scenarios.
+		if (Platform.OS === "ios" && type === "context") {
 			return (
-				<SwiftUiHost
+				<ContextMenuView
+					hitSlop={hitSlop}
 					style={style}
-					testID={testID ? `${testID}-host` : undefined}
+					testID={testID}
+					onMenuWillShow={onOpenMenu}
+					onMenuWillHide={onCloseMenu}
+					renderPreview={renderPreview}
+					lazyPreview={!!renderPreview}
+					previewConfig={
+						renderPreview && !previewConfig
+							? {
+									previewSize: "INHERIT",
+									preferredCommitStyle: "dismiss",
+									isResizeAnimated: true,
+									previewType: "CUSTOM"
+								}
+							: previewConfig
+					}
+					onPressMenuItem={onPressMenuItem}
+					shouldWaitForMenuToHideBeforeFiringOnPressMenuItem={false}
+					menuConfig={toIosMenuConfig({
+						buttons: uniqueButtons,
+						title
+					})}
 				>
-					<SwiftUiContextMenu
-						activationMethod={type === "context" ? "longPress" : "singlePress"}
-						testID={testID}
-					>
-						{renderPreview && <SwiftUiContextMenu.Preview>{renderPreview()}</SwiftUiContextMenu.Preview>}
-						<ContextMenuItemsIos
-							title={title}
-							buttons={uniqueButtons}
-						/>
-						<SwiftUiContextMenu.Trigger>{children}</SwiftUiContextMenu.Trigger>
-					</SwiftUiContextMenu>
-				</SwiftUiHost>
+					{children}
+				</ContextMenuView>
 			)
 		}
 
-		// TODO: Migrate to expo/ui ContextMenu when Android menus are stable and support dropdown/context mode + nesting
 		return (
 			<MenuView
 				shouldOpenOnLongPress={type === "context"}
-				actions={toAndroidMenuActions(uniqueButtons)}
+				actions={toReactNativeMenuActions({
+					buttons: uniqueButtons,
+					colors: {
+						normal: (textForeground.color as string) ?? "white",
+						destructive: (textRed500.color as string) ?? "white",
+						disabled: (textMutedForeground.color as string) ?? "white"
+					}
+				})}
 				onPressAction={onPressAction}
 				style={style}
 				isAnchoredToRight={isAnchoredToRight}

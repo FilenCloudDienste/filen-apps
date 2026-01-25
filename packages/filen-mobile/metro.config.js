@@ -23,6 +23,5 @@ const config = {
 
 module.exports = withUniwindConfig(config, {
 	cssEntryFile: "./src/global.css",
-	dtsFile: "./src/uniwind-types.d.ts",
-	extraThemes: ["darkandroid", "lightandroid"]
+	dtsFile: "./src/uniwind-types.d.ts"
 })

@@ -44,7 +44,7 @@ export const ICON_SIZE = Platform.select({
 
 export const HeaderLeftRightWrapper = memo(
 	({ className, isLeft, isRight, items }: { className?: string; isLeft?: boolean; isRight?: boolean; items?: HeaderItem[] }) => {
-		const liquidGlassAvailable = useMemo(() => isLiquidGlassAvailable(), [])
+		const liquidGlassAvailable = isLiquidGlassAvailable()
 
 		return (
 			<View
