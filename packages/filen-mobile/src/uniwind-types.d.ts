@@ -3,7 +3,7 @@
 
 declare module 'uniwind' {
     export interface UniwindConfig {
-        themes: readonly ['light', 'dark', 'darkandroid', 'lightandroid']
+        themes: readonly ['light', 'dark']
     }
 }
 
