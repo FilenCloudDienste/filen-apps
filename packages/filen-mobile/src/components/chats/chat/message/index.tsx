@@ -102,15 +102,13 @@ export const Message = memo(
 							<View className="flex-1 bg-red-500 h-[0.5px]" />
 						</View>
 					)}
-				{chat.participants.length > 2 &&
-					nextMessage?.inner.senderId !== info.item.inner.senderId &&
-					info.item.inner.senderId !== stringifiedClient?.userId && (
-						<View className="max-w-3/4 flex-row items-center px-4 pb-1 pl-6">
-							<Text className="text-xs text-muted-foreground">
-								{contactDisplayName(chat.participants.find(p => p.userId === info.item.inner.senderId)!)}
-							</Text>
-						</View>
-					)}
+				{chat.participants.length > 2 && info.item.inner.senderId !== stringifiedClient?.userId && (
+					<View className="max-w-3/4 flex-row items-center px-4 pb-1 pl-6">
+						<Text className="text-xs text-muted-foreground">
+							{contactDisplayName(chat.participants.find(p => p.userId === info.item.inner.senderId)!)}
+						</Text>
+					</View>
+				)}
 				<View className="h-auto max-w-3/4">
 					<Menu
 						chat={chat}
