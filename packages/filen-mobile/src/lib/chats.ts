@@ -4,7 +4,7 @@ import { chatsQueryUpdate, chatsQueryGet, fetchData as chatsQueryFetch } from "@
 import { chatMessagesQueryUpdate, fetchData as chatMessagesQueryFetch } from "@/queries/useChatMessages.query"
 import { Semaphore, run } from "@filen/utils"
 
-export class Chats {
+class Chats {
 	private readonly refetchChatsAndMessagesMutex: Semaphore = new Semaphore(1)
 
 	public async listBefore({ chat, before, signal }: { chat: Chat; before: bigint; signal?: AbortSignal }) {
@@ -510,6 +510,6 @@ export class Chats {
 	}
 }
 
-export const chats = new Chats()
+const chats = new Chats()
 
 export default chats

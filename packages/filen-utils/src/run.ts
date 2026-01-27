@@ -4,13 +4,13 @@ export type Success<T> = {
 	error: null
 }
 
-export type Failure<E = Error> = {
+export type Failure<E = unknown> = {
 	success: false
 	data: null
 	error: E
 }
 
-export type Result<T, E = Error> = Success<T> | Failure<E>
+export type Result<T, E = unknown> = Success<T> | Failure<E>
 
 export type GenericFnResult =
 	| number
@@ -30,10 +30,10 @@ export type DeferredFunctions = Array<DeferredFunction>
 
 export type Options = {
 	throw?: boolean
-	onError?: (err: Error) => void
+	onError?: (err: unknown) => void
 }
 
-export async function run<TResult, E = Error>(
+export async function run<TResult, E = unknown>(
 	fn: (deferFn: DeferFn) => Promise<TResult> | TResult,
 	options?: Options
 ): Promise<Result<TResult, E>> {
@@ -52,18 +52,16 @@ export async function run<TResult, E = Error>(
 			error: null
 		}
 	} catch (e) {
-		const error = e instanceof Error ? e : new Error("Unknown error")
-
-		options?.onError?.(error)
+		options?.onError?.(e)
 
 		if (options?.throw) {
-			throw error
+			throw e
 		}
 
 		return {
 			success: false,
 			data: null,
-			error: error as E
+			error: e as E
 		}
 	} finally {
 		// Needs to be LIFO to properly clean up resources and not interfere with each other and cause race conditions
@@ -71,7 +69,7 @@ export async function run<TResult, E = Error>(
 			try {
 				await deferredFunctions[i]?.()
 			} catch (e) {
-				options?.onError?.(e instanceof Error ? e : new Error("Unknown error"))
+				options?.onError?.(e)
 			}
 		}
 	}
@@ -108,7 +106,7 @@ export function abortSignalReason(signal: AbortSignal): string | undefined {
 	}
 }
 
-export async function runAbortable<TResult, E = Error>(
+export async function runAbortable<TResult, E = unknown>(
 	fn: ({
 		abortable,
 		defer,
@@ -169,8 +167,8 @@ export async function runAbortable<TResult, E = Error>(
 					}
 
 					resolve(result)
-				} catch (error) {
-					reject(error)
+				} catch (e) {
+					reject(e)
 				} finally {
 					signal.removeEventListener("abort", abortHandler)
 				}
@@ -200,18 +198,16 @@ export async function runAbortable<TResult, E = Error>(
 			error: null
 		}
 	} catch (e) {
-		const error = e instanceof Error ? e : new Error("Unknown error")
-
-		options?.onError?.(error)
+		options?.onError?.(e)
 
 		if (options?.throw) {
-			throw error
+			throw e
 		}
 
 		return {
 			success: false,
 			data: null,
-			error: error as E
+			error: e as E
 		}
 	} finally {
 		// Needs to be LIFO to properly clean up resources
@@ -219,13 +215,13 @@ export async function runAbortable<TResult, E = Error>(
 			try {
 				await deferredFunctions[i]?.()
 			} catch (e) {
-				options?.onError?.(e instanceof Error ? e : new Error("Unknown error"))
+				options?.onError?.(e)
 			}
 		}
 	}
 }
 
-export function runEffect<TResult, E = Error>(
+export function runEffect<TResult, E = unknown>(
 	fn: (deferFn: DeferFn) => TResult,
 	options?: Options & {
 		automaticCleanup?: boolean
@@ -244,7 +240,7 @@ export function runEffect<TResult, E = Error>(
 			try {
 				deferredFunctions[i]?.()
 			} catch (e) {
-				options?.onError?.(e instanceof Error ? e : new Error("Unknown error"))
+				options?.onError?.(e)
 			}
 		}
 	}
@@ -259,18 +255,16 @@ export function runEffect<TResult, E = Error>(
 			cleanup
 		}
 	} catch (e) {
-		const error = e instanceof Error ? e : new Error("Unknown error")
-
-		options?.onError?.(error)
+		options?.onError?.(e)
 
 		if (options?.throw) {
-			throw error
+			throw e
 		}
 
 		return {
 			success: false,
 			data: null,
-			error: error as E,
+			error: e as E,
 			cleanup
 		}
 	} finally {
@@ -280,7 +274,7 @@ export function runEffect<TResult, E = Error>(
 	}
 }
 
-export async function runRetry<TResult, E = Error>(
+export async function runRetry<TResult, E = unknown>(
 	fn: (deferFn: DeferFn, attempt: number) => Promise<TResult> | TResult,
 	options?: Options & {
 		maxAttempts?: number
@@ -342,7 +336,7 @@ export class TimeoutError extends Error {
 	}
 }
 
-export async function runTimeout<TResult, E = Error>(
+export async function runTimeout<TResult, E = unknown>(
 	fn: (deferFn: DeferFn) => Promise<TResult> | TResult,
 	timeoutMs: number,
 	options?: Options
@@ -365,18 +359,16 @@ export async function runTimeout<TResult, E = Error>(
 
 		return result as Result<TResult, E>
 	} catch (e) {
-		const error = e instanceof Error ? e : new Error("Unknown error")
-
-		options?.onError?.(error)
+		options?.onError?.(e)
 
 		if (options?.throw) {
-			throw error
+			throw e
 		}
 
 		return {
 			success: false,
 			data: null,
-			error: error as E
+			error: e as E
 		}
 	}
 }
@@ -385,9 +377,9 @@ export function runDebounced<TResult, TArgs extends unknown[]>(
 	fn: (defer: DeferFn, ...args: TArgs) => Promise<TResult> | TResult,
 	delayMs: number,
 	options?: Options
-): (...args: TArgs) => Promise<Result<TResult, Error>> {
+): (...args: TArgs) => Promise<Result<TResult, unknown>> {
 	let timeoutId: NodeJS.Timeout | null = null
-	let pendingPromise: Promise<Result<TResult, Error>> | null = null
+	let pendingPromise: Promise<Result<TResult, unknown>> | null = null
 
 	return (...args: TArgs) => {
 		if (timeoutId) {

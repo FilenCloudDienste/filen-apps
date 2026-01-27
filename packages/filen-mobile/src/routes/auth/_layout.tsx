@@ -7,7 +7,16 @@ export const AuthLayout = memo(() => {
 	const isAuthed = useIsAuthed()
 
 	if (isAuthed) {
-		return <Redirect href="/tabs/drive" />
+		return (
+			<Redirect
+				href={{
+					pathname: "/tabs/drive/[uuid]",
+					params: {
+						uuid: ""
+					}
+				}}
+			/>
+		)
 	}
 
 	return (

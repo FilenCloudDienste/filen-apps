@@ -2,7 +2,7 @@ import { type JsClientInterface, fromStringified, type StringifiedClient, login 
 import secureStore, { useSecureStore } from "@/lib/secureStore"
 import { useEffect, useState } from "react"
 
-export class Auth {
+class Auth {
 	private sdkClient: JsClientInterface | null = null
 	public readonly stringifiedClientStorageKey: string = "stringifiedClient"
 
@@ -79,7 +79,7 @@ export class Auth {
 	}
 }
 
-export const auth = new Auth()
+const auth = new Auth()
 
 export function useIsAuthed(): boolean {
 	const [stringifiedClient] = useSecureStore<StringifiedClient | null>(auth.stringifiedClientStorageKey, null)

@@ -4,7 +4,7 @@ import { run, Semaphore } from "@filen/utils"
 import { restoreQueries } from "@/queries/client"
 import sqlite from "@/lib/sqlite"
 
-export class Setup {
+class Setup {
 	private readonly mutex: Semaphore = new Semaphore(1)
 
 	public async setup(): Promise<{
@@ -40,6 +40,6 @@ export class Setup {
 	}
 }
 
-export const setup = new Setup()
+const setup = new Setup()
 
 export default setup

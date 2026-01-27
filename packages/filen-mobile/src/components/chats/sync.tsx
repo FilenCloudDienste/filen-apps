@@ -7,6 +7,7 @@ import useChatsStore, { type InflightChatMessages } from "@/stores/useChats.stor
 import sqlite from "@/lib/sqlite"
 import { memo } from "@/lib/memo"
 import { fetchData as chatsQueryFetch } from "@/queries/useChats.query"
+import { FilenSdkError } from "@filen/sdk-rs"
 
 export class Sync {
 	private readonly mutex: Semaphore = new Semaphore(1)
@@ -160,7 +161,8 @@ export class Sync {
 									...prev
 								}
 
-								updated[message.inflightId] = e instanceof Error ? e : new Error(String(e))
+								updated[message.inflightId] =
+									e instanceof Error ? e : FilenSdkError.hasInner(e) ? FilenSdkError.getInner(e) : new Error(String(e))
 
 								return updated
 							})

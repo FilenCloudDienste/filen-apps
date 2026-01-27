@@ -33,7 +33,12 @@ export const Login = memo(() => {
 
 							console.log("Logged in")
 
-							router.replace("/tabs/drive")
+							router.replace({
+								pathname: "/tabs/drive/[uuid]",
+								params: {
+									uuid: ""
+								}
+							})
 						}}
 					>
 						Login

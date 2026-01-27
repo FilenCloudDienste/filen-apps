@@ -43,7 +43,7 @@ export type InputPromptOptions = {
 	placeholder?: string
 }
 
-export class Prompts {
+class Prompts {
 	public async alert(options?: AlertPromptOptions): Promise<AlertPromptResult> {
 		return await new Promise<AlertPromptResult>(resolve => {
 			Alert.alert(
@@ -160,6 +160,6 @@ export class Prompts {
 	}
 }
 
-export const prompts = new Prompts()
+const prompts = new Prompts()
 
 export default prompts

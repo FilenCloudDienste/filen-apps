@@ -9,9 +9,9 @@ import { Semaphore, run } from "@filen/utils"
 import { unpack, pack } from "msgpackr"
 import alerts from "@/lib/alerts"
 import type { DriveItem } from "@/types"
-import { unwrapDirMeta } from "@/utils"
+import { unwrapDirMeta } from "@/lib/utils"
 import cache from "@/lib/cache"
-import { AnyDirEnumWithShareInfo, type Note, type Chat } from "@filen/sdk-rs"
+import { AnyDirEnumWithShareInfo, type Note, type Chat, FilenSdkError, ErrorKind } from "@filen/sdk-rs"
 
 export const VERSION = 1
 export const QUERY_CLIENT_PERSISTER_PREFIX = `reactQuery_v${VERSION}`
@@ -220,8 +220,13 @@ export const DEFAULT_QUERY_OPTIONS: Pick<
 	throwOnError(err) {
 		console.error(err)
 
-		if (err instanceof Error) {
+		if (FilenSdkError.hasInner(err) && FilenSdkError.getInner(err).kind() === ErrorKind.Unauthenticated) {
 			// TODO: Logout on auth errors
+
+			return
+		}
+
+		if (err instanceof Error) {
 			alerts.error(err.message)
 		}
 
@@ -262,8 +267,13 @@ export const DEFAULT_QUERY_OPTIONS_ETERNAL: Pick<
 	throwOnError(err) {
 		console.error(err)
 
-		if (err instanceof Error) {
+		if (FilenSdkError.hasInner(err) && FilenSdkError.getInner(err).kind() === ErrorKind.Unauthenticated) {
 			// TODO: Logout on auth errors
+
+			return
+		}
+
+		if (err instanceof Error) {
 			alerts.error(err.message)
 		}
 

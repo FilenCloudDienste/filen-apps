@@ -20,7 +20,7 @@ import { pack } from "msgpackr"
 import { Buffer } from "@craftzdog/react-native-buffer"
 import { Platform } from "react-native"
 import { contactDisplayName } from "@/lib/utils"
-import useAppStore from "@/stores/app.store"
+import useAppStore from "@/stores/useApp.store"
 import * as Sharing from "expo-sharing"
 
 export type NoteMenuOrigin = "notes" | "search" | "content"

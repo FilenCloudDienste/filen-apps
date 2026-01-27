@@ -5,24 +5,25 @@ import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import cache from "@/lib/cache"
 import { sortParams } from "@filen/utils"
 import { DirEnum, DirWithMetaEnum, AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
-import { Paths } from "expo-file-system"
 import type { DrivePath } from "@/hooks/useDrivePath"
-import { unwrapFileMeta, unwrapDirMeta } from "@/utils"
+import { unwrapFileMeta, unwrapDirMeta } from "@/lib/utils"
 import type { DriveItem } from "@/types"
-
-export type UseDriveItemsQueryParams = {
-	path: DrivePath
-	signal?: AbortSignal
-}
 
 export const BASE_QUERY_KEY = "useDriveItemsQuery"
 
-export async function fetchData(params: UseDriveItemsQueryParams) {
-	if (!params.path.type || !params.path.pathname) {
+export type UseDriveItemsQueryParams = {
+	path: DrivePath
+}
+
+export async function fetchData(
+	params: UseDriveItemsQueryParams & {
+		signal?: AbortSignal
+	}
+) {
+	if (!params.path.type) {
 		return []
 	}
 
-	const parsedPath = Paths.parse(params.path.pathname)
 	const sdkClient = await auth.getSdkClient()
 
 	const signal = params.signal
@@ -37,11 +38,11 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 				const dir = (() => {
 					const root = new DirEnum.Root(sdkClient.root())
 
-					if (parsedPath.base.length === 0 || parsedPath.base === "/" || parsedPath.base === ".") {
+					if (!params.path.uuid || params.path.uuid.length === 0) {
 						return root
 					}
 
-					const cachedDir = cache.directoryUuidToDir.get(parsedPath.base)
+					const cachedDir = cache.directoryUuidToDir.get(params.path.uuid)
 
 					if (cachedDir) {
 						return new DirEnum.Dir(cachedDir)
@@ -63,11 +64,11 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 
 			case "sharedIn": {
 				const dir = (() => {
-					if (parsedPath.base.length === 0 || parsedPath.base === "/" || parsedPath.base === ".") {
+					if (!params.path.uuid || params.path.uuid.length === 0) {
 						return undefined
 					}
 
-					const cachedDir = cache.directoryUuidToDir.get(parsedPath.base)
+					const cachedDir = cache.directoryUuidToDir.get(params.path.uuid)
 
 					if (cachedDir) {
 						return new DirWithMetaEnum.Dir(cachedDir)
@@ -81,11 +82,11 @@ export async function fetchData(params: UseDriveItemsQueryParams) {
 
 			case "sharedOut": {
 				const dir = (() => {
-					if (parsedPath.base.length === 0 || parsedPath.base === "/" || parsedPath.base === ".") {
+					if (!params.path.uuid || params.path.uuid.length === 0) {
 						return undefined
 					}
 
-					const cachedDir = cache.directoryUuidToDir.get(parsedPath.base)
+					const cachedDir = cache.directoryUuidToDir.get(params.path.uuid)
 
 					if (cachedDir) {
 						return new DirWithMetaEnum.Dir(cachedDir)
@@ -218,6 +219,12 @@ export function driveItemsQueryUpdate({
 
 		return typeof updater === "function" ? updater(currentData) : updater
 	})
+}
+
+export function driveItemsQueryGet(params: UseDriveItemsQueryParams) {
+	const sortedParams = sortParams(params)
+
+	return queryUpdater.get<Awaited<ReturnType<typeof fetchData>>>([BASE_QUERY_KEY, sortedParams])
 }
 
 export default useDriveItemsQuery

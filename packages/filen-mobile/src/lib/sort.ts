@@ -17,7 +17,7 @@ export type SortByType =
 	| "creationAsc"
 	| "creationDesc"
 
-export class ItemSorter {
+class ItemSorter {
 	private uuidCache = new Map<string, number>()
 	private lowerCache = new Map<string, string>()
 	private numericPartsCache = new Map<string, (string | number)[]>()
@@ -341,7 +341,7 @@ export class ItemSorter {
 
 export const itemSorter = new ItemSorter()
 
-export class NotesSorter {
+class NotesSorter {
 	public sort(
 		notes: (
 			| Note

@@ -8,5 +8,14 @@ export default function Index() {
 		return <Redirect href="/auth/login" />
 	}
 
-	return <Redirect href="/tabs/drive" />
+	return (
+		<Redirect
+			href={{
+				pathname: "/tabs/drive/[uuid]",
+				params: {
+					uuid: ""
+				}
+			}}
+		/>
+	)
 }

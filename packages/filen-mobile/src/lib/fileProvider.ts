@@ -22,7 +22,7 @@ export type AuthFileSchema = {
 	maxCacheFilesBudget?: number | null
 }
 
-export class FileProvider {
+class FileProvider {
 	private readonly authFile: FileSystem.File = new FileSystem.File(
 		FileSystem.Paths.join(
 			Platform.select({
@@ -101,6 +101,6 @@ export class FileProvider {
 	}
 }
 
-export const fileProvider = new FileProvider()
+const fileProvider = new FileProvider()
 
 export default fileProvider

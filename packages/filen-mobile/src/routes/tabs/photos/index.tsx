@@ -15,7 +15,7 @@ import { memo, useCallback, useMemo } from "@/lib/memo"
 
 const drivePath = {
 	type: "drive",
-	pathname: "/"
+	uuid: "6fc3d024-083f-41ba-906e-638a12a13a71"
 } as const
 
 export const Photos = memo(() => {

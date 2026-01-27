@@ -5,7 +5,7 @@ import { Platform } from "react-native"
 import { pack, unpack } from "msgpackr"
 import { IOS_APP_GROUP_IDENTIFIER } from "@/constants"
 
-export const INIT_QUERIES: {
+const INIT_QUERIES: {
 	query: string
 	pragma: boolean
 }[] = [
@@ -115,7 +115,7 @@ export const INIT_QUERIES: {
 	}
 ]
 
-export class Sqlite {
+class Sqlite {
 	public db: ExpoSqlite.SQLiteDatabase | null = null
 	private initDone: boolean = false
 
@@ -241,6 +241,6 @@ export class Sqlite {
 	}
 }
 
-export const sqlite = new Sqlite()
+const sqlite = new Sqlite()
 
 export default sqlite

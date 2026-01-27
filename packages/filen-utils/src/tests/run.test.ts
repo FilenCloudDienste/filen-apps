@@ -25,7 +25,7 @@ describe("run", () => {
 				data: null,
 				error: expect.any(Error)
 			})
-			expect(result.success === false && result.error.message).toBe("failed")
+			expect(result.success === false && (result.error as Error).message).toBe("failed")
 		})
 
 		it("should work with synchronous functions", async () => {
@@ -35,16 +35,6 @@ describe("run", () => {
 
 			expect(result.success).toBe(true)
 			expect(result.success && result.data).toBe(42)
-		})
-
-		it("should convert non-Error throws to Error", async () => {
-			const result = await run(async () => {
-				throw "string error"
-			})
-
-			expect(result.success).toBe(false)
-			expect(result.success === false && result.error).toBeInstanceOf(Error)
-			expect(result.success === false && result.error.message).toBe("Unknown error")
 		})
 	})
 
@@ -495,7 +485,7 @@ describe("runEffect", () => {
 			})
 
 			expect(result.success).toBe(false)
-			expect(result.success === false && result.error.message).toBe("failed")
+			expect(result.success === false && (result.error as Error).message).toBe("failed")
 		})
 
 		it("should still provide cleanup function on error", () => {
@@ -561,7 +551,7 @@ describe("runRetry", () => {
 			})
 
 			expect(result.success).toBe(false)
-			expect(result.success === false && result.error.message).toBe("persistent failure")
+			expect(result.success === false && (result.error as Error).message).toBe("persistent failure")
 			expect(fn).toHaveBeenCalledTimes(3)
 		})
 
@@ -609,7 +599,7 @@ describe("runRetry", () => {
 				maxAttempts: 5,
 				delayMs: 10,
 				shouldRetry: error => {
-					return !error.message.includes("FATAL")
+					return !(error as Error).message.includes("FATAL")
 				}
 			})
 
@@ -707,7 +697,7 @@ describe("runTimeout", () => {
 
 			expect(result.success).toBe(false)
 			expect(result.success === false && result.error).toBeInstanceOf(TimeoutError)
-			expect(result.success === false && result.error.message).toContain("20ms")
+			expect(result.success === false && (result.error as Error).message).toContain("20ms")
 		})
 
 		it("should throw when throw option is true", async () => {
@@ -770,7 +760,7 @@ describe("runTimeout", () => {
 			}, 100)
 
 			expect(result.success).toBe(false)
-			expect(result.success === false && result.error.message).toBe("function error")
+			expect(result.success === false && (result.error as Error).message).toBe("function error")
 		})
 	})
 })

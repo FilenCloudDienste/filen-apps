@@ -21,7 +21,7 @@ try {
  * Detect user's locale and date formatting preferences
  * This is called once and cached for performance
  */
-export let cachedLocaleInfo: {
+let cachedLocaleInfo: {
 	locale: string
 	dateFormat: "MDY" | "DMY" | "YMD"
 	dateSeparator: string
@@ -29,7 +29,7 @@ export let cachedLocaleInfo: {
 	use24Hour: boolean
 } | null = null
 
-export function detectLocaleInfo() {
+function detectLocaleInfo() {
 	if (cachedLocaleInfo) {
 		return cachedLocaleInfo
 	}
@@ -98,40 +98,16 @@ export function detectLocaleInfo() {
 }
 
 /**
- * Allow manual override of locale detection
- * Useful for testing or explicit locale setting
- */
-export function setLocaleFormat(
-	dateFormat: "MDY" | "DMY" | "YMD",
-	options?: {
-		dateSeparator?: string
-		timeSeparator?: string
-		use24Hour?: boolean
-		locale?: string
-	}
-) {
-	const current = detectLocaleInfo()
-
-	cachedLocaleInfo = {
-		locale: options?.locale || current.locale,
-		dateFormat,
-		dateSeparator: options?.dateSeparator || current.dateSeparator,
-		timeSeparator: options?.timeSeparator || current.timeSeparator,
-		use24Hour: options?.use24Hour ?? current.use24Hour
-	}
-}
-
-/**
  * Pads a number with leading zero if needed
  */
-export function pad2(num: number): string {
+function pad2(num: number): string {
 	return num < 10 ? "0" + num : "" + num
 }
 
 /**
  * Converts various timestamp formats to Date object
  */
-export function toDate(timestamp: number | Date): Date {
+function toDate(timestamp: number | Date): Date {
 	if (timestamp instanceof Date) {
 		return timestamp
 	}
@@ -148,7 +124,7 @@ export function toDate(timestamp: number | Date): Date {
 /**
  * Format date according to locale preferences
  */
-export function formatDatePart(year: number, month: string, day: string): string {
+function formatDatePart(year: number, month: string, day: string): string {
 	const info = detectLocaleInfo()
 
 	switch (info.dateFormat) {
@@ -170,7 +146,7 @@ export function formatDatePart(year: number, month: string, day: string): string
 /**
  * Format time according to locale preferences (12h vs 24h)
  */
-export function formatTimePart(hours: number, minutes: string, seconds: string): string {
+function formatTimePart(hours: number, minutes: string, seconds: string): string {
 	const info = detectLocaleInfo()
 
 	if (info.use24Hour) {

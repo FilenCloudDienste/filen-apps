@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { ChatTyping, ChatMessage, Chat } from "@filen/sdk-rs"
+import { type ChatTyping, type ChatMessage, type Chat, FilenSdkError } from "@filen/sdk-rs"
 
 export type InputViewLayout = {
 	width: number
@@ -33,10 +33,12 @@ export type ChatsStore = {
 	inputFocused: boolean
 	typing: Record<string, Typing>
 	inflightMessages: InflightChatMessages
-	inflightErrors: Record<string, Error>
+	inflightErrors: Record<string, Error | FilenSdkError>
 	selectedChats: Chat[]
 	setSelectedChats: (fn: Chat[] | ((prev: Chat[]) => Chat[])) => void
-	setInflightErrors: (fn: Record<string, Error> | ((prev: Record<string, Error>) => Record<string, Error>)) => void
+	setInflightErrors: (
+		fn: Record<string, Error | FilenSdkError> | ((prev: Record<string, Error | FilenSdkError>) => Record<string, Error | FilenSdkError>)
+	) => void
 	setInflightMessages: (fn: InflightChatMessages | ((prev: InflightChatMessages) => InflightChatMessages)) => void
 	setTyping: (fn: Record<string, Typing> | ((prev: Record<string, Typing>) => Record<string, Typing>)) => void
 	setInputFocused: (fn: boolean | ((prev: boolean) => boolean)) => void

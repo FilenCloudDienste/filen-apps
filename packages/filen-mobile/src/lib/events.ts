@@ -28,7 +28,7 @@ export type Events = {
 	}
 }
 
-export class TypedEventEmitter<T> {
+class TypedEventEmitter<T> {
 	private readonly emitter = new EventEmitter()
 
 	public subscribe<K extends keyof T>(event: K, listener: (payload: T[K]) => void) {
@@ -64,6 +64,6 @@ export class TypedEventEmitter<T> {
 	}
 }
 
-export const events = new TypedEventEmitter<Events>()
+const events = new TypedEventEmitter<Events>()
 
 export default events

@@ -8,7 +8,7 @@ import JSZip from "jszip"
 import * as FileSystem from "expo-file-system"
 import { sanitizeFileName } from "@/lib/utils"
 
-export class Notes {
+class Notes {
 	public async getContent({ note, signal }: { note: Note; signal?: AbortSignal }) {
 		const sdkClient = await auth.getSdkClient()
 
@@ -804,6 +804,6 @@ export class Notes {
 	}
 }
 
-export const notes = new Notes()
+const notes = new Notes()
 
 export default notes

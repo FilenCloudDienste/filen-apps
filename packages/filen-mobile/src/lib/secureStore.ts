@@ -13,7 +13,7 @@ import { IOS_APP_GROUP_IDENTIFIER } from "@/constants"
 import isEqual from "react-fast-compare"
 import { useCallback } from "@/lib/memo"
 
-export class SecureStore {
+class SecureStore {
 	private readonly mmkv: MMKV
 
 	private available: boolean | null = null
@@ -344,9 +344,9 @@ export class SecureStore {
 	}
 }
 
-export const secureStore = new SecureStore()
+const secureStore = new SecureStore()
 
-export const useSecureStoreFlushMutex: Semaphore = new Semaphore(1)
+const useSecureStoreFlushMutex: Semaphore = new Semaphore(1)
 
 export function useSecureStore<T>(key: string, initialValue: T): [T, (fn: T | ((prev: T) => void)) => void] {
 	const fromCache = cache.secureStore.get(key)

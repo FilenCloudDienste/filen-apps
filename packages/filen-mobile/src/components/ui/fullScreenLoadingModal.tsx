@@ -92,7 +92,7 @@ export function forceHide(): void {
 	events.emit("forceHideFullScreenLoadingModal")
 }
 
-export async function runWithLoading<TResult, E = Error>(
+export async function runWithLoading<TResult, E = unknown>(
 	fn: (defer: DeferFn, hideLoader?: () => void) => TResult | Promise<TResult>,
 	options?: Options
 ): Promise<Result<TResult, E>> {

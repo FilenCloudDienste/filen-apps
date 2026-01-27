@@ -1,6 +1,6 @@
 import type { Dir, Note, SharedDir, AnyDirEnumWithShareInfo, Chat } from "@filen/sdk-rs"
 
-export const cache = {
+const cache = {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	secureStore: new Map<string, any>(),
 	directoryUuidToName: new Map<string, string>(),

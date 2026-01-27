@@ -1,4 +1,4 @@
-import useAppStore from "@/stores/app.store"
+import useAppStore from "@/stores/useApp.store"
 import { memo } from "@/lib/memo"
 import { useEffect } from "react"
 import { usePathname } from "expo-router"
