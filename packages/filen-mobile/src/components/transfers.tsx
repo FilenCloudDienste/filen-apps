@@ -1,7 +1,7 @@
 import useTransfersStore from "@/stores/useTransfers.store"
 import { useShallow } from "zustand/shallow"
 import { memo, useMemo, useCallback } from "@/lib/memo"
-import { Fragment } from "react"
+import { Fragment, useRef, useEffect, useState } from "react"
 import View, { CrossGlassContainerView } from "@/components/ui/view"
 import Text from "@/components/ui/text"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -14,17 +14,72 @@ import { bpsToReadable } from "@filen/utils"
 import { PressableScale } from "@/components/ui/pressables"
 import { router } from "expo-router"
 
+const Speed = memo(
+	() => {
+		const speedUpdateIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined)
+		const [speed, setSpeed] = useState<number>(0)
+		const lastBytesTransferredRef = useRef<number>(0)
+		const lastUpdateTimeRef = useRef<number>(0)
+
+		const updateSpeed = useCallback(() => {
+			const activeTransfers = useTransfersStore.getState().transfers.filter(t => !t.finishedAt)
+			const now = Date.now()
+			let totalBytesTransferred = 0
+
+			for (const transfer of activeTransfers) {
+				totalBytesTransferred += transfer.bytesTransferred
+			}
+
+			const bytesDelta = totalBytesTransferred - lastBytesTransferredRef.current
+			const timeDelta = now - (lastUpdateTimeRef.current === 0 ? now - 1000 : lastUpdateTimeRef.current)
+
+			if (timeDelta > 0) {
+				const currentSpeed = Math.max(0, bytesDelta / timeDelta)
+
+				setSpeed(currentSpeed)
+			} else {
+				setSpeed(0)
+			}
+
+			lastBytesTransferredRef.current = totalBytesTransferred
+			lastUpdateTimeRef.current = now
+		}, [])
+
+		useEffect(() => {
+			updateSpeed()
+
+			speedUpdateIntervalRef.current = setInterval(updateSpeed, 1000)
+
+			return () => {
+				clearInterval(speedUpdateIntervalRef.current)
+			}
+		}, [updateSpeed])
+
+		return (
+			<Text
+				className="shrink-0"
+				numberOfLines={1}
+				ellipsizeMode="middle"
+			>
+				{bpsToReadable(speed)}
+			</Text>
+		)
+	},
+	() => {
+		return true
+	}
+)
+
 const TransfersInner = memo(() => {
 	const activeTransfers = useTransfersStore(useShallow(state => state.transfers.filter(t => !t.finishedAt)))
 	const textBlue500 = useResolveClassNames("text-blue-500")
 	const bgBackgroundTertiary = useResolveClassNames("bg-background-tertiary")
 
-	const { progress, speed } = useMemo((): {
+	const { progress } = useMemo((): {
 		progress: number
 		uploadsCount: number
 		downloadsCount: number
 		transfersCount: number
-		speed: number
 		totalSize: number
 	} => {
 		if (activeTransfers.length === 0) {
@@ -33,7 +88,6 @@ const TransfersInner = memo(() => {
 				uploadsCount: 0,
 				downloadsCount: 0,
 				transfersCount: 0,
-				speed: 0,
 				totalSize: 0
 			}
 		}
@@ -42,7 +96,6 @@ const TransfersInner = memo(() => {
 		let bytesTransferred = 0
 		let uploadsCount = 0
 		let downloadsCount = 0
-		let firstProgressAt: number | null = null
 
 		for (const transfer of activeTransfers) {
 			totalSize += transfer.size
@@ -53,21 +106,6 @@ const TransfersInner = memo(() => {
 			} else {
 				downloadsCount += 1
 			}
-
-			if (
-				transfer.lastProgressBytesTransferredAt &&
-				(firstProgressAt === null || transfer.lastProgressBytesTransferredAt < firstProgressAt)
-			) {
-				firstProgressAt = transfer.lastProgressBytesTransferredAt
-			}
-		}
-
-		let speed = 0
-
-		if (firstProgressAt !== null) {
-			const timeElapsedSeconds = (Date.now() - firstProgressAt) / 1000
-
-			speed = Math.max(0, bytesTransferred / timeElapsedSeconds)
 		}
 
 		return {
@@ -75,7 +113,6 @@ const TransfersInner = memo(() => {
 			uploadsCount,
 			downloadsCount,
 			transfersCount: activeTransfers.length,
-			speed,
 			totalSize
 		}
 	}, [activeTransfers])
@@ -90,13 +127,7 @@ const TransfersInner = memo(() => {
 				>
 					{activeTransfers.length} active transfer{activeTransfers.length !== 1 ? "s" : ""}
 				</Text>
-				<Text
-					className="shrink-0"
-					numberOfLines={1}
-					ellipsizeMode="middle"
-				>
-					{bpsToReadable(speed)}
-				</Text>
+				<Speed />
 			</View>
 			{progress > 0 && (
 				<Progress.Bar
@@ -117,7 +148,7 @@ const TransfersInner = memo(() => {
 
 const Transfers = memo(() => {
 	const insets = useSafeAreaInsets()
-	const transfersActive = useTransfersStore(useShallow(state => state.transfers.filter(t => !t.finishedAt).length >= 0))
+	const transfersActive = useTransfersStore(useShallow(state => state.transfers.filter(t => !t.finishedAt).length > 0))
 
 	const onPress = useCallback(() => {
 		router.push("/transfers")
