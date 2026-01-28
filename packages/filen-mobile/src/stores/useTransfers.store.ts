@@ -1,6 +1,14 @@
 import { create } from "zustand"
 import * as FileSystem from "expo-file-system"
-import type { Dir, FilenSdkErrorInterface, UploadError, DownloadError, File, DirEnum } from "@filen/sdk-rs"
+import type {
+	Dir,
+	FilenSdkErrorInterface,
+	UploadError,
+	DownloadError,
+	File,
+	AnyDirEnumWithShareInfo,
+	NonRootItemTagged
+} from "@filen/sdk-rs"
 
 export type Transfer = {
 	id: string
@@ -40,7 +48,9 @@ export type Transfer = {
 	| {
 			type: "downloadFile"
 			errors: {
-				download: DownloadError[]
+				download: (Omit<DownloadError, "item"> & {
+					item?: NonRootItemTagged
+				})[]
 				scan: FilenSdkErrorInterface[]
 				unknown: Error[]
 			}
@@ -56,11 +66,13 @@ export type Transfer = {
 				totalBytes: number
 			}
 			errors: {
-				download: DownloadError[]
+				download: (Omit<DownloadError, "item"> & {
+					item?: NonRootItemTagged
+				})[]
 				scan: FilenSdkErrorInterface[]
 				unknown: Error[]
 			}
-			item: DirEnum
+			item: AnyDirEnumWithShareInfo
 			destination: FileSystem.Directory
 	  }
 )

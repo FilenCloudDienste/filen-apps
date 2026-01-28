@@ -4,37 +4,28 @@ import * as FileSystem from "expo-file-system"
 import {
 	type Dir,
 	type File,
-	DirEnum,
-	DirEnum_Tags,
+	type AnyDirEnumWithShareInfo,
 	type FileWithPath,
 	type DirWithPath,
 	FilenSdkError,
-	NonRootItemTagged
+	NonRootItemTagged,
+	ManagedFuture
 } from "@filen/sdk-rs"
 import useTransfersStore from "@/stores/useTransfers.store"
-import { normalizeFilePathForSdk, unwrapDirMeta, unwrapFileMeta } from "@/lib/utils"
+import {
+	normalizeFilePathForSdk,
+	unwrapDirMeta,
+	unwrapFileMeta,
+	wrapAbortSignalForSdk,
+	PauseSignal,
+	createCompositeAbortSignal,
+	createCompositePauseSignal
+} from "@/lib/utils"
 import { driveItemsQueryUpdate } from "@/queries/useDriveItems.query"
-
-function createCompositeAbortSignal(...signals: AbortSignal[]): AbortSignal {
-	const controller = new AbortController()
-
-	for (const signal of signals) {
-		if (signal.aborted) {
-			controller.abort()
-
-			return controller.signal
-		}
-
-		signal.addEventListener("abort", () => controller.abort(), {
-			once: true
-		})
-	}
-
-	return controller.signal
-}
 
 class Transfers {
 	private globalAbortController = new AbortController()
+	private globalPauseSignal = new PauseSignal()
 
 	public cancelAll(): void {
 		this.globalAbortController.abort()
@@ -42,11 +33,11 @@ class Transfers {
 	}
 
 	public pauseAll(): void {
-		// TODO: Implement PauseController
+		this.globalPauseSignal.pause()
 	}
 
 	public resumeAll(): void {
-		// TODO: Implement PauseController
+		this.globalPauseSignal.resume()
 	}
 
 	public async upload({
@@ -74,7 +65,8 @@ class Transfers {
 
 		const sdkClient = await auth.getSdkClient()
 		const transferAbortController = new AbortController()
-		// TODO: Implement PauseController
+		const transferPauseSignal = new PauseSignal()
+		const compositePauseSignal = createCompositePauseSignal(this.globalPauseSignal, transferPauseSignal)
 		const compositeAbortSignal = createCompositeAbortSignal(this.globalAbortController.signal, transferAbortController.signal)
 
 		if (localFileOrDir instanceof FileSystem.File) {
@@ -105,10 +97,10 @@ class Transfers {
 						transferAbortController.abort()
 					},
 					pause: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.pause()
 					},
 					resume: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.resume()
 					}
 				})
 			)
@@ -142,10 +134,10 @@ class Transfers {
 						transferAbortController.abort()
 					},
 					pause: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.pause()
 					},
 					resume: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.resume()
 					}
 				})
 			)
@@ -315,6 +307,10 @@ class Transfers {
 						}
 					},
 					parent,
+					ManagedFuture.new({
+						pauseSignal: compositePauseSignal.getSignal(),
+						abortSignal: wrapAbortSignalForSdk(compositeAbortSignal)
+					}),
 					{
 						signal: compositeAbortSignal
 					}
@@ -358,7 +354,7 @@ class Transfers {
 			return result.data
 		}
 
-		// TODO: Add metadata timestamps to uploadFile SDK method as soon as they are supported
+		// TODO: Add metadata timestamps before upload to copied file
 		const result = await run(async defer => {
 			defer(() => {
 				useTransfersStore.getState().setTransfers(prev =>
@@ -393,6 +389,10 @@ class Transfers {
 						)
 					}
 				},
+				ManagedFuture.new({
+					pauseSignal: compositePauseSignal.getSignal(),
+					abortSignal: wrapAbortSignalForSdk(compositeAbortSignal)
+				}),
 				{
 					signal: compositeAbortSignal
 				}
@@ -468,7 +468,7 @@ class Transfers {
 		destination
 	}: {
 		itemUuid: string
-		item: DirEnum | File
+		item: AnyDirEnumWithShareInfo | File
 		destination: FileSystem.File | FileSystem.Directory
 	}): Promise<{
 		files: FileWithPath[]
@@ -484,10 +484,13 @@ class Transfers {
 
 		const sdkClient = await auth.getSdkClient()
 		const transferAbortController = new AbortController()
-		// TODO: Implement PauseController
+		const transferPauseSignal = new PauseSignal()
+		const compositePauseSignal = createCompositePauseSignal(this.globalPauseSignal, transferPauseSignal)
 		const compositeAbortSignal = createCompositeAbortSignal(this.globalAbortController.signal, transferAbortController.signal)
+		// Ugly but works for now, until we have a better way to type-check AnyDirEnumWithShareInfo
+		const isFile = "region" in item && "bucket" in item
 
-		if (!DirEnum.instanceOf(item)) {
+		if (isFile) {
 			if (!(destination instanceof FileSystem.File)) {
 				throw new Error("Destination must be a file for file downloads.")
 			}
@@ -515,10 +518,10 @@ class Transfers {
 						transferAbortController.abort()
 					},
 					pause: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.pause()
 					},
 					resume: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.resume()
 					}
 				})
 			)
@@ -556,10 +559,10 @@ class Transfers {
 						transferAbortController.abort()
 					},
 					pause: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.pause()
 					},
 					resume: () => {
-						// TODO: Implement PauseController
+						transferPauseSignal.resume()
 					}
 				})
 			)
@@ -569,7 +572,7 @@ class Transfers {
 			throw new Error("Destination already exists.")
 		}
 
-		if (DirEnum.instanceOf(item)) {
+		if (!isFile) {
 			const result = await run(async defer => {
 				defer(() => {
 					useTransfersStore.getState().setTransfers(prev =>
@@ -584,11 +587,6 @@ class Transfers {
 						)
 					)
 				})
-
-				// TODO: Once sdk supports downloading shared/public dirs, add proper NonRootItemTagged/DirEnum_Tags here
-				if (item.tag !== DirEnum_Tags.Dir) {
-					throw new Error("Invalid directory item.")
-				}
 
 				const transferred: {
 					files: FileWithPath[]
@@ -703,6 +701,10 @@ class Transfers {
 						}
 					},
 					item,
+					ManagedFuture.new({
+						pauseSignal: compositePauseSignal.getSignal(),
+						abortSignal: wrapAbortSignalForSdk(compositeAbortSignal)
+					}),
 					{
 						signal: compositeAbortSignal
 					}
@@ -719,14 +721,12 @@ class Transfers {
 									...t,
 									errors: {
 										...t.errors,
-										// TODO: Once sdk supports downloading shared/public dirs, add proper NonRootItemTagged/DirEnum_Tags here
-										...(FilenSdkError.hasInner(result.error) && item.tag === DirEnum_Tags.Dir
+										...(FilenSdkError.hasInner(result.error)
 											? {
 													download: t.errors.download.concat([
 														{
 															path: destination.uri,
-															error: FilenSdkError.getInner(result.error),
-															item: new NonRootItemTagged.Dir(item.inner[0])
+															error: FilenSdkError.getInner(result.error)
 														}
 													])
 												}
@@ -782,6 +782,10 @@ class Transfers {
 						)
 					}
 				},
+				ManagedFuture.new({
+					pauseSignal: compositePauseSignal.getSignal(),
+					abortSignal: wrapAbortSignalForSdk(compositeAbortSignal)
+				}),
 				{
 					signal: compositeAbortSignal
 				}

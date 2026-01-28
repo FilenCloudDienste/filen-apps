@@ -10,8 +10,132 @@ import {
 	DirWithMetaEnum_Tags,
 	type ChatParticipant,
 	type NoteParticipant,
-	type Contact
+	type Contact,
+	ManagedAbortController,
+	type ManagedAbortSignal,
+	PauseSignal as SdkPauseSignal
 } from "@filen/sdk-rs"
+
+export function wrapAbortSignalForSdk(abortSignal: AbortSignal) {
+	const abortController = new ManagedAbortController()
+
+	abortSignal.addEventListener(
+		"abort",
+		() => {
+			abortController.abort()
+		},
+		{
+			once: true
+		}
+	)
+
+	// Need to cast because of a bug in uniffi generated types
+	return abortController.signal() as ManagedAbortSignal
+}
+
+export function createCompositeAbortSignal(...signals: AbortSignal[]): AbortSignal {
+	const controller = new AbortController()
+
+	for (const signal of signals) {
+		if (signal.aborted) {
+			controller.abort()
+
+			return controller.signal
+		}
+
+		signal.addEventListener("abort", () => controller.abort(), {
+			once: true
+		})
+	}
+
+	return controller.signal
+}
+
+export class PauseSignal {
+	private readonly signal: SdkPauseSignal = new SdkPauseSignal()
+	private readonly pauseListeners: Set<() => void> = new Set()
+	private readonly resumeListeners: Set<() => void> = new Set()
+
+	public pause(): void {
+		if (this.isPaused()) {
+			return
+		}
+
+		this.signal.pause()
+
+		for (const listener of this.pauseListeners) {
+			try {
+				listener()
+			} catch {
+				// Noop
+			}
+		}
+	}
+
+	public resume(): void {
+		if (!this.isPaused()) {
+			return
+		}
+
+		this.signal.resume()
+
+		for (const listener of this.resumeListeners) {
+			try {
+				listener()
+			} catch {
+				// Noop
+			}
+		}
+	}
+
+	public isPaused(): boolean {
+		return this.signal.isPaused()
+	}
+
+	public getSignal(): SdkPauseSignal {
+		return this.signal
+	}
+
+	public addEventListener<T extends "pause" | "resume">(
+		event: T,
+		callback: () => void
+	): {
+		remove: () => void
+	} {
+		if (event === "resume") {
+			this.resumeListeners.add(callback)
+
+			return {
+				remove: () => {
+					this.resumeListeners.delete(callback)
+				}
+			}
+		}
+
+		this.pauseListeners.add(callback)
+
+		return {
+			remove: () => {
+				this.pauseListeners.delete(callback)
+			}
+		}
+	}
+}
+
+export function createCompositePauseSignal(...signals: PauseSignal[]): PauseSignal {
+	const controller = new PauseSignal()
+
+	for (const signal of signals) {
+		if (signal.isPaused()) {
+			controller.pause()
+		}
+
+		controller.addEventListener("pause", () => controller.pause())
+		controller.addEventListener("resume", () => controller.resume())
+	}
+
+	return controller
+}
 
 export function unwrapDirMeta(dir: Dir | SharedDir):
 	| {

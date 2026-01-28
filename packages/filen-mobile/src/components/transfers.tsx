@@ -7,7 +7,7 @@ import Text from "@/components/ui/text"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { AnimatedView } from "@/components/ui/animated"
 import { FadeIn, FadeOut } from "react-native-reanimated"
-import { Platform } from "react-native"
+import { Platform, ActivityIndicator } from "react-native"
 import * as Progress from "react-native-progress"
 import { useResolveClassNames } from "uniwind"
 import { bpsToReadable } from "@filen/utils"
@@ -20,6 +20,7 @@ const Speed = memo(
 		const [speed, setSpeed] = useState<number>(0)
 		const lastBytesTransferredRef = useRef<number>(0)
 		const lastUpdateTimeRef = useRef<number>(0)
+		const textForeground = useResolveClassNames("text-foreground")
 
 		const updateSpeed = useCallback(() => {
 			const activeTransfers = useTransfersStore.getState().transfers.filter(t => !t.finishedAt)
@@ -55,13 +56,23 @@ const Speed = memo(
 			}
 		}, [updateSpeed])
 
+		if (speed === 0) {
+			return (
+				<ActivityIndicator
+					className="shrink-0"
+					size="small"
+					color={textForeground.color}
+				/>
+			)
+		}
+
 		return (
 			<Text
 				className="shrink-0"
 				numberOfLines={1}
 				ellipsizeMode="middle"
 			>
-				{bpsToReadable(speed)}
+				{bpsToReadable(speed)}/s
 			</Text>
 		)
 	},
