@@ -149,14 +149,16 @@ export const Menu = memo(
 			</MenuComponent>
 		)
 	},
-	(prevProps, nextProps) => {
-		return (
-			prevProps.chat.uuid === nextProps.chat.uuid &&
-			isEqual(prevProps.info.item, nextProps.info.item) &&
-			isEqual(prevProps.children, nextProps.children) &&
-			prevProps.className === nextProps.className &&
-			prevProps.isAnchoredToRight === nextProps.isAnchoredToRight
-		)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return (
+				prevProps.chat.uuid === nextProps.chat.uuid &&
+				isEqual(prevProps.info.item, nextProps.info.item) &&
+				isEqual(prevProps.children, nextProps.children) &&
+				prevProps.className === nextProps.className &&
+				prevProps.isAnchoredToRight === nextProps.isAnchoredToRight
+			)
+		}
 	}
 )
 

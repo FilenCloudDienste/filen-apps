@@ -220,8 +220,10 @@ export const MentionSuggestions = memo(
 			</PopupContainerView>
 		)
 	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+		}
 	}
 )
 
@@ -352,8 +354,10 @@ export const EmojiSuggestions = memo(
 			</PopupContainerView>
 		)
 	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.uuid === nextProps.chat.uuid
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.chat.uuid === nextProps.chat.uuid
+		}
 	}
 )
 
@@ -457,8 +461,10 @@ export const ReplyTo = memo(
 			</PopupContainerView>
 		)
 	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+		}
 	}
 )
 
@@ -808,8 +814,10 @@ export const Input = memo(
 			</KeyboardStickyView>
 		)
 	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+		}
 	}
 )
 

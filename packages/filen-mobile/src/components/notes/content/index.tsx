@@ -259,14 +259,15 @@ export const Content = memo(
 			</Loading>
 		)
 	},
-	(prevProps, nextProps) => {
-		// We have to manually prevent re-renders here, otherwise the text editor will re-render on every note state change
-		return (
-			prevProps.note.uuid === nextProps.note.uuid &&
-			isEqual(prevProps.note.participants, nextProps.note.participants) &&
-			prevProps.note.ownerId === nextProps.note.ownerId &&
-			prevProps.note.noteType === nextProps.note.noteType
-		)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return (
+				prevProps.note.uuid === nextProps.note.uuid &&
+				isEqual(prevProps.note.participants, nextProps.note.participants) &&
+				prevProps.note.ownerId === nextProps.note.ownerId &&
+				prevProps.note.noteType === nextProps.note.noteType
+			)
+		}
 	}
 )
 

@@ -25,8 +25,10 @@ export const Size = memo(
 
 		return formatBytes(Number(directorySizeQuery.data.size))
 	},
-	(prevProps, nextProps) => {
-		return prevProps.info.item.data.uuid === nextProps.info.item.data.uuid && prevProps.info.item.type === nextProps.info.item.type
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.info.item.data.uuid === nextProps.info.item.data.uuid && prevProps.info.item.type === nextProps.info.item.type
+		}
 	}
 )
 

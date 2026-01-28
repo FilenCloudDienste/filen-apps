@@ -32,8 +32,10 @@ export const DateComponent = memo(
 
 		return simpleDate(new Date().getTime())
 	},
-	(prevProps, nextProps) => {
-		return prevProps.info.item.type === nextProps.info.item.type && isEqual(prevProps.info.item.data, nextProps.info.item.data)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.info.item.type === nextProps.info.item.type && isEqual(prevProps.info.item.data, nextProps.info.item.data)
+		}
 	}
 )
 

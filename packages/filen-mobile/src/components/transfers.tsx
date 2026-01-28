@@ -65,8 +65,10 @@ const Speed = memo(
 			</Text>
 		)
 	},
-	() => {
-		return true
+	{
+		propsAreEqual() {
+			return true
+		}
 	}
 )
 

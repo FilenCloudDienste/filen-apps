@@ -58,12 +58,14 @@ export const Mention = memo(
 			</PressableScale>
 		)
 	},
-	(prevProps, nextProps) => {
-		return (
-			prevProps.name === nextProps.name &&
-			isEqual(prevProps.participant, nextProps.participant) &&
-			prevProps.inflight === nextProps.inflight
-		)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return (
+				prevProps.name === nextProps.name &&
+				isEqual(prevProps.participant, nextProps.participant) &&
+				prevProps.inflight === nextProps.inflight
+			)
+		}
 	}
 )
 
@@ -327,14 +329,16 @@ export const Regexed = memo(
 			</View>
 		)
 	},
-	(prevProps, nextProps) => {
-		return (
-			isEqual(prevProps.chat.participants, nextProps.chat.participants) &&
-			prevProps.chat.uuid === nextProps.chat.uuid &&
-			prevProps.message.inner.message === nextProps.message.inner.message &&
-			prevProps.message.inflightId === nextProps.message.inflightId &&
-			prevProps.fromSelf === nextProps.fromSelf
-		)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return (
+				isEqual(prevProps.chat.participants, nextProps.chat.participants) &&
+				prevProps.chat.uuid === nextProps.chat.uuid &&
+				prevProps.message.inner.message === nextProps.message.inner.message &&
+				prevProps.message.inflightId === nextProps.message.inflightId &&
+				prevProps.fromSelf === nextProps.fromSelf
+			)
+		}
 	}
 )
 

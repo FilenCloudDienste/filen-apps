@@ -43,8 +43,10 @@ export const Typing = memo(
 			</AnimatedView>
 		)
 	},
-	(prevProps, nextProps) => {
-		return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return prevProps.chat.uuid === nextProps.chat.uuid && isEqual(prevProps.chat.participants, nextProps.chat.participants)
+		}
 	}
 )
 

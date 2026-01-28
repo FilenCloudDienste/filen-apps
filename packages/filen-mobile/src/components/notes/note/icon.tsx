@@ -69,15 +69,16 @@ export const Icon = memo(
 			/>
 		)
 	},
-	(prevProps, nextProps) => {
-		// Only re-render if relevant note properties or icon size change
-		return (
-			prevProps.note.uuid === nextProps.note.uuid &&
-			prevProps.note.trash === nextProps.note.trash &&
-			prevProps.note.archive === nextProps.note.archive &&
-			prevProps.note.noteType === nextProps.note.noteType &&
-			prevProps.iconSize === nextProps.iconSize
-		)
+	{
+		propsAreEqual(prevProps, nextProps) {
+			return (
+				prevProps.note.uuid === nextProps.note.uuid &&
+				prevProps.note.trash === nextProps.note.trash &&
+				prevProps.note.archive === nextProps.note.archive &&
+				prevProps.note.noteType === nextProps.note.noteType &&
+				prevProps.iconSize === nextProps.iconSize
+			)
+		}
 	}
 )
 

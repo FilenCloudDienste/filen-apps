@@ -11,11 +11,26 @@ import {
 import isEqual from "react-fast-compare"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function memoInner<T extends ComponentType<any>>(...params: Parameters<typeof reactMemo<T>>): ReturnType<typeof reactMemo<T>> {
-	return reactMemo<T>(params[0], params[1] ? params[1] : isEqual)
+function memoInner<T extends ComponentType<any>>(
+	component: T,
+	options?: {
+		propsAreEqual?: (prevProps: Readonly<React.ComponentProps<T>>, nextProps: Readonly<React.ComponentProps<T>>) => boolean
+	}
+): ReturnType<typeof reactMemo<T>> {
+	return reactMemo<T>(component, options?.propsAreEqual ? options.propsAreEqual : isEqual)
 }
 
-export const memo = __DEV__ ? reactMemo : memoInner
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function memoInnerDev<T extends ComponentType<any>>(
+	component: T,
+	options?: {
+		propsAreEqual?: (prevProps: Readonly<React.ComponentProps<T>>, nextProps: Readonly<React.ComponentProps<T>>) => boolean
+	}
+): ReturnType<typeof reactMemo<T>> {
+	return reactMemo<T>(component, options?.propsAreEqual)
+}
+
+export const memo = __DEV__ ? memoInnerDev : memoInner
 
 function useMemoInner<T>(...params: Parameters<typeof reactUseMemo<T>>): ReturnType<typeof reactUseMemo<T>> {
 	const depsRef = useRef<DependencyList>(params[1])
