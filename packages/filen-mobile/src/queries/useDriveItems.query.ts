@@ -5,7 +5,7 @@ import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import cache from "@/lib/cache"
 import { sortParams } from "@filen/utils"
 import { DirEnum, DirWithMetaEnum, AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
-import type { DrivePath } from "@/hooks/useDrivePath"
+import { type DrivePath, DRIVE_PATH_TYPES } from "@/hooks/useDrivePath"
 import { unwrapFileMeta, unwrapDirMeta } from "@/lib/utils"
 import type { DriveItem } from "@/types"
 
@@ -219,6 +219,40 @@ export function driveItemsQueryUpdate({
 
 		return typeof updater === "function" ? updater(currentData) : updater
 	})
+}
+
+const DRIVE_PATH_TYPES_EXTENDED: (string | null)[] = [...DRIVE_PATH_TYPES, null]
+
+export function driveItemsQueryUpdateGlobal({
+	updater,
+	parentUuid
+}: {
+	updater:
+		| Awaited<ReturnType<typeof fetchData>>
+		| ((prev: Awaited<ReturnType<typeof fetchData>>) => Awaited<ReturnType<typeof fetchData>>)
+	parentUuid: string
+}): void {
+	for (const pathType of DRIVE_PATH_TYPES_EXTENDED) {
+		driveItemsQueryUpdate({
+			params: {
+				path: {
+					type: pathType,
+					uuid: parentUuid
+				} as DrivePath
+			},
+			updater
+		})
+
+		driveItemsQueryUpdate({
+			params: {
+				path: {
+					type: pathType,
+					uuid: null
+				} as DrivePath
+			},
+			updater
+		})
+	}
 }
 
 export function driveItemsQueryGet(params: UseDriveItemsQueryParams) {

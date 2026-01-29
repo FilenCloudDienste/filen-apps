@@ -96,13 +96,13 @@ export const TabsLayout = memo(() => {
 			<NativeTabs.Trigger name="settings">
 				<Label>tbd</Label>
 				{Platform.select({
-					ios: <Icon sf="gearshape.fill" />,
+					ios: <Icon sf="ellipsis" />,
 					default: (
 						<Icon
 							src={
 								<VectorIcon
 									family={MaterialIcons}
-									name="settings"
+									name="more-horiz"
 								/>
 							}
 						/>

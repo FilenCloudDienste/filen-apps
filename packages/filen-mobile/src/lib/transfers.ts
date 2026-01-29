@@ -3,13 +3,16 @@ import { run } from "@filen/utils"
 import * as FileSystem from "expo-file-system"
 import {
 	type Dir,
-	type File,
-	type AnyDirEnumWithShareInfo,
+	File,
+	AnyDirEnumWithShareInfo,
 	type FileWithPath,
 	type DirWithPath,
 	FilenSdkError,
 	NonRootItemTagged,
-	ManagedFuture
+	ManagedFuture,
+	ParentUuid,
+	type DirEnum,
+	DirEnum_Tags
 } from "@filen/sdk-rs"
 import useTransfersStore from "@/stores/useTransfers.store"
 import {
@@ -22,6 +25,7 @@ import {
 	createCompositePauseSignal
 } from "@/lib/utils"
 import { driveItemsQueryUpdate } from "@/queries/useDriveItems.query"
+import type { DriveItem } from "@/types"
 
 class Transfers {
 	private globalAbortController = new AbortController()
@@ -47,7 +51,7 @@ class Transfers {
 	}: {
 		id: string
 		localFileOrDir: FileSystem.File | FileSystem.Directory
-		parent: Dir
+		parent: DirEnum
 	}): Promise<{
 		files: File[]
 		directories: Dir[]
@@ -145,14 +149,17 @@ class Transfers {
 
 		if (localFileOrDir instanceof FileSystem.Directory) {
 			const result = await run(async defer => {
+				if (parent.tag === DirEnum_Tags.Root) {
+					throw new Error("Cannot upload to root directory.")
+				}
+
 				defer(() => {
 					useTransfersStore.getState().setTransfers(prev =>
 						prev.map(t =>
 							t.id === id
 								? {
 										...t,
-										finishedAt: Date.now(),
-										lastProgressAt: Date.now()
+										finishedAt: Date.now()
 									}
 								: t
 						)
@@ -178,8 +185,7 @@ class Transfers {
 												...t,
 												size: Number(totalBytes),
 												knownDirectories: Number(totalDirs),
-												knownFiles: Number(totalFiles),
-												lastProgressAt: Date.now()
+												knownFiles: Number(totalFiles)
 											}
 										: t
 								)
@@ -194,8 +200,7 @@ class Transfers {
 												errors: {
 													...t.errors,
 													scan: t.errors.scan.concat(errors)
-												},
-												lastProgressAt: Date.now()
+												}
 											}
 										: t
 								)
@@ -209,8 +214,7 @@ class Transfers {
 												...t,
 												size: Number(knownBytes),
 												knownDirectories: Number(knownDirs),
-												knownFiles: Number(knownFiles),
-												lastProgressAt: Date.now()
+												knownFiles: Number(knownFiles)
 											}
 										: t
 								)
@@ -225,8 +229,7 @@ class Transfers {
 												errors: {
 													...t.errors,
 													upload: t.errors.upload.concat(errors)
-												},
-												lastProgressAt: Date.now()
+												}
 											}
 										: t
 								)
@@ -238,9 +241,7 @@ class Transfers {
 									t.id === id
 										? {
 												...t,
-												bytesTransferred: t.bytesTransferred + Number(uploadedBytes),
-												lastProgressAt: Date.now(),
-												lastProgressBytesTransferredAt: Date.now()
+												bytesTransferred: t.bytesTransferred + Number(uploadedBytes)
 											}
 										: t
 								)
@@ -256,7 +257,7 @@ class Transfers {
 										params: {
 											path: {
 												type: "drive",
-												uuid: parent.uuid
+												uuid: parent.inner[0].uuid
 											}
 										},
 										updater: prev =>
@@ -286,7 +287,7 @@ class Transfers {
 										params: {
 											path: {
 												type: "drive",
-												uuid: parent.uuid
+												uuid: parent.inner[0].uuid
 											}
 										},
 										updater: prev =>
@@ -306,7 +307,7 @@ class Transfers {
 							}
 						}
 					},
-					parent,
+					new NonRootItemTagged.Dir(parent.inner[0]).inner[0],
 					ManagedFuture.new({
 						pauseSignal: compositePauseSignal.getSignal(),
 						abortSignal: wrapAbortSignalForSdk(compositeAbortSignal)
@@ -332,7 +333,7 @@ class Transfers {
 													upload: t.errors.upload.concat([
 														{
 															error: FilenSdkError.getInner(result.error),
-															path: localFileOrDir.uri
+															path: normalizeFilePathForSdk(localFileOrDir.uri)
 														}
 													])
 												}
@@ -341,8 +342,7 @@ class Transfers {
 														result.error instanceof Error ? result.error : new Error(String(result.error))
 													])
 												})
-									},
-									lastProgressAt: Date.now()
+									}
 								}
 							: t
 					)
@@ -362,8 +362,7 @@ class Transfers {
 						t.id === id
 							? {
 									...t,
-									finishedAt: Date.now(),
-									lastProgressAt: Date.now()
+									finishedAt: Date.now()
 								}
 							: t
 					)
@@ -380,9 +379,7 @@ class Transfers {
 								t.id === id
 									? {
 											...t,
-											bytesTransferred: t.bytesTransferred + Number(uploadedBytes),
-											lastProgressAt: Date.now(),
-											lastProgressBytesTransferredAt: Date.now()
+											bytesTransferred: t.bytesTransferred + Number(uploadedBytes)
 										}
 									: t
 							)
@@ -412,7 +409,7 @@ class Transfers {
 												upload: t.errors.upload.concat([
 													{
 														error: FilenSdkError.getInner(result.error),
-														path: localFileOrDir.uri
+														path: normalizeFilePathForSdk(localFileOrDir.uri)
 													}
 												])
 											}
@@ -421,8 +418,7 @@ class Transfers {
 													result.error instanceof Error ? result.error : new Error(String(result.error))
 												])
 											})
-								},
-								lastProgressAt: Date.now()
+								}
 							}
 						: t
 				)
@@ -438,7 +434,7 @@ class Transfers {
 				params: {
 					path: {
 						type: "drive",
-						uuid: parent.uuid
+						uuid: parent.inner[0].uuid
 					}
 				},
 				updater: prev =>
@@ -468,7 +464,7 @@ class Transfers {
 		destination
 	}: {
 		itemUuid: string
-		item: AnyDirEnumWithShareInfo | File
+		item: DriveItem
 		destination: FileSystem.File | FileSystem.Directory
 	}): Promise<{
 		files: FileWithPath[]
@@ -487,10 +483,8 @@ class Transfers {
 		const transferPauseSignal = new PauseSignal()
 		const compositePauseSignal = createCompositePauseSignal(this.globalPauseSignal, transferPauseSignal)
 		const compositeAbortSignal = createCompositeAbortSignal(this.globalAbortController.signal, transferAbortController.signal)
-		// Ugly but works for now, until we have a better way to type-check AnyDirEnumWithShareInfo
-		const isFile = "region" in item && "bucket" in item
 
-		if (isFile) {
+		if (item.type === "file" || item.type === "sharedFile") {
 			if (!(destination instanceof FileSystem.File)) {
 				throw new Error("Destination must be a file for file downloads.")
 			}
@@ -498,9 +492,9 @@ class Transfers {
 			useTransfersStore.getState().setTransfers(prev =>
 				prev.concat({
 					id: itemUuid,
-					item,
+					item: item.data,
 					type: "downloadFile",
-					size: Number(item.size),
+					size: Number(item.data.size),
 					bytesTransferred: 0,
 					startedAt: Date.now(),
 					abortController: transferAbortController,
@@ -533,7 +527,7 @@ class Transfers {
 			useTransfersStore.getState().setTransfers(prev =>
 				prev.concat({
 					id: itemUuid,
-					item,
+					item: item.data,
 					type: "downloadDirectory",
 					size: 0,
 					knownDirectories: 0,
@@ -572,7 +566,7 @@ class Transfers {
 			throw new Error("Destination already exists.")
 		}
 
-		if (!isFile) {
+		if (item.type === "directory" || item.type === "sharedDirectory") {
 			const result = await run(async defer => {
 				defer(() => {
 					useTransfersStore.getState().setTransfers(prev =>
@@ -580,8 +574,7 @@ class Transfers {
 							t.id === itemUuid
 								? {
 										...t,
-										finishedAt: Date.now(),
-										lastProgressAt: Date.now()
+										finishedAt: Date.now()
 									}
 								: t
 						)
@@ -608,8 +601,7 @@ class Transfers {
 												errors: {
 													...t.errors,
 													download: t.errors.download.concat(errors)
-												},
-												lastProgressAt: Date.now()
+												}
 											}
 										: t
 								)
@@ -629,9 +621,7 @@ class Transfers {
 									t.id === itemUuid
 										? {
 												...t,
-												bytesTransferred: t.bytesTransferred + Number(downloadedBytes),
-												lastProgressAt: Date.now(),
-												lastProgressBytesTransferredAt: Date.now()
+												bytesTransferred: t.bytesTransferred + Number(downloadedBytes)
 											}
 										: t
 								)
@@ -646,8 +636,7 @@ class Transfers {
 												directoryQueryProgress: {
 													bytesTransferred: Number(knownBytes),
 													totalBytes: Number(totalBytes)
-												},
-												lastProgressAt: Date.now()
+												}
 											}
 										: t
 								)
@@ -661,8 +650,7 @@ class Transfers {
 												...t,
 												size: Number(totalBytes),
 												knownDirectories: Number(totalDirs),
-												knownFiles: Number(totalFiles),
-												lastProgressAt: Date.now()
+												knownFiles: Number(totalFiles)
 											}
 										: t
 								)
@@ -677,8 +665,7 @@ class Transfers {
 												errors: {
 													...t.errors,
 													scan: t.errors.scan.concat(errors)
-												},
-												lastProgressAt: Date.now()
+												}
 											}
 										: t
 								)
@@ -692,15 +679,16 @@ class Transfers {
 												...t,
 												size: Number(knownBytes),
 												knownDirectories: Number(knownDirs),
-												knownFiles: Number(knownFiles),
-												lastProgressAt: Date.now()
+												knownFiles: Number(knownFiles)
 											}
 										: t
 								)
 							)
 						}
 					},
-					item,
+					item.type === "directory"
+						? new AnyDirEnumWithShareInfo.Dir(item.data)
+						: new AnyDirEnumWithShareInfo.SharedDir(item.data),
 					ManagedFuture.new({
 						pauseSignal: compositePauseSignal.getSignal(),
 						abortSignal: wrapAbortSignalForSdk(compositeAbortSignal)
@@ -725,7 +713,7 @@ class Transfers {
 											? {
 													download: t.errors.download.concat([
 														{
-															path: destination.uri,
+															path: normalizeFilePathForSdk(destination.uri),
 															error: FilenSdkError.getInner(result.error)
 														}
 													])
@@ -735,8 +723,7 @@ class Transfers {
 														result.error instanceof Error ? result.error : new Error(String(result.error))
 													])
 												})
-									},
-									lastProgressAt: Date.now()
+									}
 								}
 							: t
 					)
@@ -748,6 +735,18 @@ class Transfers {
 			return result.data
 		}
 
+		const file =
+			item.type === "file"
+				? // Regular file
+					new NonRootItemTagged.File(item.data).inner[0]
+				: // Shared file
+					new NonRootItemTagged.File({
+						...item.data.file,
+						// We don't really care about the parent for downloads, just need to provide some value
+						parent: new ParentUuid.Uuid(item.data.uuid),
+						favorited: false
+					}).inner[0]
+
 		const result = await run(async defer => {
 			defer(() => {
 				useTransfersStore.getState().setTransfers(prev =>
@@ -755,8 +754,7 @@ class Transfers {
 						t.id === itemUuid
 							? {
 									...t,
-									finishedAt: Date.now(),
-									lastProgressAt: Date.now()
+									finishedAt: Date.now()
 								}
 							: t
 					)
@@ -764,18 +762,16 @@ class Transfers {
 			})
 
 			await sdkClient.downloadFile(
-				item,
+				file,
 				normalizeFilePathForSdk(destination.uri),
 				{
-					onUpdate(uploadedBytes) {
+					onUpdate(downloadedBytes) {
 						useTransfersStore.getState().setTransfers(prev =>
 							prev.map(t =>
 								t.id === itemUuid
 									? {
 											...t,
-											bytesTransferred: t.bytesTransferred + Number(uploadedBytes),
-											lastProgressAt: Date.now(),
-											lastProgressBytesTransferredAt: Date.now()
+											bytesTransferred: t.bytesTransferred + Number(downloadedBytes)
 										}
 									: t
 							)
@@ -794,8 +790,8 @@ class Transfers {
 			return {
 				files: [
 					{
-						path: destination.uri,
-						file: item
+						path: normalizeFilePathForSdk(destination.uri),
+						file
 					}
 				],
 				directories: []
@@ -814,9 +810,9 @@ class Transfers {
 										? {
 												download: t.errors.download.concat([
 													{
-														path: destination.uri,
+														path: normalizeFilePathForSdk(destination.uri),
 														error: FilenSdkError.getInner(result.error),
-														item: new NonRootItemTagged.File(item)
+														item: new NonRootItemTagged.File(file)
 													}
 												])
 											}
@@ -825,8 +821,7 @@ class Transfers {
 													result.error instanceof Error ? result.error : new Error(String(result.error))
 												])
 											})
-								},
-								lastProgressAt: Date.now()
+								}
 							}
 						: t
 				)

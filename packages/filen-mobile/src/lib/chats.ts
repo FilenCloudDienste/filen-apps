@@ -237,7 +237,7 @@ class Chats {
 	}
 
 	public async rename({ chat, newName, signal }: { chat: Chat; newName: string; signal?: AbortSignal }) {
-		if (chat.name === newName) {
+		if (chat.name === newName || newName.trim().length === 0) {
 			return chat
 		}
 

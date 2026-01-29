@@ -85,7 +85,7 @@ class Notes {
 		knownContent?: string
 	}) {
 		if (type === note.noteType) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -118,7 +118,7 @@ class Notes {
 
 	public async setPinned({ note, pinned, signal }: { note: Note; pinned: boolean; signal?: AbortSignal }) {
 		if (pinned === note.pinned) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -150,7 +150,7 @@ class Notes {
 
 	public async setFavorited({ note, favorite, signal }: { note: Note; favorite: boolean; signal?: AbortSignal }) {
 		if (favorite === note.favorite) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -288,7 +288,7 @@ class Notes {
 
 	public async archive({ note, signal }: { note: Note; signal?: AbortSignal }) {
 		if (note.archive || note.trash) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -319,7 +319,7 @@ class Notes {
 
 	public async restore({ note, signal }: { note: Note; signal?: AbortSignal }) {
 		if (!(note.trash || note.archive)) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -378,7 +378,7 @@ class Notes {
 
 	public async trash({ note, signal }: { note: Note; signal?: AbortSignal }) {
 		if (note.trash || note.archive) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -439,8 +439,8 @@ class Notes {
 	}
 
 	public async setTitle({ note, newTitle, signal }: { note: Note; newTitle: string; signal?: AbortSignal }) {
-		if (newTitle === note.title) {
-			return
+		if (newTitle === note.title || newTitle.trim().length === 0) {
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -472,7 +472,7 @@ class Notes {
 
 	public async addTag({ note, tag, signal }: { note: Note; tag: NoteTag; signal?: AbortSignal }) {
 		if (note.tags.find(t => t.uuid === tag.uuid)) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -503,7 +503,7 @@ class Notes {
 
 	public async removeTag({ note, tag, signal }: { note: Note; tag: NoteTag; signal?: AbortSignal }) {
 		if (!note.tags.find(t => t.uuid === tag.uuid)) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -590,8 +590,8 @@ class Notes {
 	}
 
 	public async renameTag({ tag, newName, signal }: { tag: NoteTag; newName: string; signal?: AbortSignal }) {
-		if (newName === tag.name) {
-			return
+		if (newName === tag.name || newName.trim().length === 0) {
+			return tag
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -632,7 +632,7 @@ class Notes {
 
 	public async favoriteTag({ tag, signal, favorite }: { tag: NoteTag; signal?: AbortSignal; favorite: boolean }) {
 		if (tag.favorite === favorite) {
-			return
+			return tag
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -686,7 +686,7 @@ class Notes {
 
 	public async removeParticipant({ note, signal, participantUserId }: { note: Note; signal?: AbortSignal; participantUserId: bigint }) {
 		if (!note.participants.find(p => p.userId === participantUserId)) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()
@@ -728,7 +728,7 @@ class Notes {
 		contact: Contact
 	}) {
 		if (note.participants.find(p => p.userId === contact.userId)) {
-			return
+			return note
 		}
 
 		const sdkClient = await auth.getSdkClient()

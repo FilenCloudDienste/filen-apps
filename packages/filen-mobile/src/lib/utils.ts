@@ -13,7 +13,9 @@ import {
 	type Contact,
 	ManagedAbortController,
 	type ManagedAbortSignal,
-	PauseSignal as SdkPauseSignal
+	PauseSignal as SdkPauseSignal,
+	ParentUuid_Tags,
+	type ParentUuid
 } from "@filen/sdk-rs"
 
 export function wrapAbortSignalForSdk(abortSignal: AbortSignal) {
@@ -135,6 +137,18 @@ export function createCompositePauseSignal(...signals: PauseSignal[]): PauseSign
 	}
 
 	return controller
+}
+
+export function unwrapParentUuid(parent: ParentUuid) {
+	switch (parent.tag) {
+		case ParentUuid_Tags.Uuid: {
+			return parent.inner[0]
+		}
+
+		default: {
+			return null
+		}
+	}
 }
 
 export function unwrapDirMeta(dir: Dir | SharedDir):
@@ -339,9 +353,15 @@ export function sanitizeFileName(filename: string, replacement: string = "_"): s
 export function normalizeFilePathForSdk(filePath: string): string {
 	const normalizedPath = filePath.trim().replace(/^file:\/+/, "/")
 
-	return normalizedPath.startsWith("/") ? normalizedPath : "/" + normalizedPath
+	return (normalizedPath.startsWith("/") ? normalizedPath : "/" + normalizedPath)
+		.split("/")
+		.map(segment => (segment.length > 0 ? decodeURIComponent(segment) : segment))
+		.join("/")
 }
 
 export function normalizeFilePathForExpo(filePath: string): string {
 	return `file://${normalizeFilePathForSdk(filePath)}`
+		.split("/")
+		.map(segment => (segment.length > 0 ? encodeURIComponent(segment) : segment))
+		.join("/")
 }

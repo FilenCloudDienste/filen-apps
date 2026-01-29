@@ -18,7 +18,8 @@ import * as DocumentPicker from "expo-document-picker"
 import transfers from "@/lib/transfers"
 import * as FileSystem from "expo-file-system"
 import useTransfersStore from "@/stores/useTransfers.store"
-import { FilenSdkError } from "@filen/sdk-rs"
+import { FilenSdkError, DirEnum } from "@filen/sdk-rs"
+import { router } from "expo-router"
 
 const Header = memo(() => {
 	const drivePath = useDrivePath()
@@ -85,16 +86,12 @@ const Header = memo(() => {
 										return
 									}
 
-									console.log({
-										parent
-									})
-
 									const id = `upload-${Date.now()}`
 									const result = await run(async () => {
 										return await transfers.upload({
 											id,
 											localFileOrDir: file,
-											parent
+											parent: new DirEnum.Dir(parent)
 										})
 									})
 
@@ -109,6 +106,13 @@ const Header = memo(() => {
 									}
 
 									console.log(result.data)
+								}
+							},
+							{
+								id: "transfers",
+								title: "tbd_transfers",
+								onPress: () => {
+									router.push("/transfers")
 								}
 							}
 						]

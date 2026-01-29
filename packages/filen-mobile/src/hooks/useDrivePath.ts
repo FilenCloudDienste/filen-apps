@@ -1,11 +1,15 @@
-import { useLocalSearchParams, usePathname } from "expo-router"
+import { useLocalSearchParams, useNavigation } from "expo-router"
 import { useMemo } from "@/lib/memo"
 import type { Contact } from "@filen/sdk-rs"
 import { validate as validateUuid } from "uuid"
 
+export const DRIVE_PATH_TYPES = ["drive", "sharedIn", "recents", "favorites", "trash", "sharedOut"] as const
+
+export type DrivePathType = (typeof DRIVE_PATH_TYPES)[number]
+
 export type DrivePath =
 	| {
-			type: "drive" | "sharedIn" | "recents" | "favorites" | "trash"
+			type: Exclude<DrivePathType, "sharedOut" | null>
 			uuid: string | null
 	  }
 	| {
@@ -20,10 +24,10 @@ export type DrivePath =
 
 export default function useDrivePath(): DrivePath {
 	const localSearchParams = useLocalSearchParams<{ uuid?: string }>()
-	const pathname = usePathname()
+	const navigation = useNavigation()
 
 	const drivePath = useMemo((): DrivePath => {
-		if (pathname.startsWith("/tabs/drive")) {
+		if (navigation.getId()?.startsWith("/tabs/drive")) {
 			if (localSearchParams && localSearchParams.uuid && validateUuid(localSearchParams.uuid)) {
 				return {
 					type: "drive",
@@ -41,7 +45,7 @@ export default function useDrivePath(): DrivePath {
 			type: null,
 			uuid: null
 		}
-	}, [localSearchParams, pathname])
+	}, [localSearchParams, navigation])
 
 	return drivePath
 }

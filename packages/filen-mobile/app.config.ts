@@ -69,6 +69,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 			usesNonExemptEncryption: false
 		},
 		infoPlist: {
+			UIFileSharingEnabled: true,
+			LSSupportsOpeningDocumentsInPlace: true,
 			UIBackgroundModes: ["audio", "fetch", "processing"],
 			NSAppTransportSecurity: {
 				NSAllowsLocalNetworking: true,

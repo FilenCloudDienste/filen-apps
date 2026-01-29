@@ -26,6 +26,7 @@ import ActionSheetProvider from "@/providers/actionSheet.provider"
 import { enableFreeze } from "react-native-screens"
 import Socket from "@/components/socket"
 import Pathname from "@/components/pathname"
+import { Platform } from "react-native"
 
 enableFreeze(true)
 
@@ -99,7 +100,14 @@ export const RootLayout = memo(() => {
 															backgroundColor: bgBackground.backgroundColor
 														}
 													}}
-												/>
+												>
+													<Stack.Screen
+														name="transfers"
+														options={{
+															presentation: Platform.OS === "ios" ? "pageSheet" : "formSheet"
+														}}
+													/>
+												</Stack>
 												{isAuthed && (
 													<Fragment>
 														<Socket />

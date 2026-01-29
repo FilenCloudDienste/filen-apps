@@ -22,12 +22,11 @@ export const NotifierErrorContainer = memo(({ children }: { children: React.Reac
 
 export class Alerts {
 	public error(message: unknown): void {
-		const description =
-			message instanceof Error
+		const description = FilenSdkError.hasInner(message)
+			? FilenSdkError.getInner(message).message()
+			: message instanceof Error
 				? message.message
-				: FilenSdkError.hasInner(message)
-					? FilenSdkError.getInner(message).message()
-					: String(message)
+				: String(message)
 
 		Notifier.showNotification({
 			title: "Error",
