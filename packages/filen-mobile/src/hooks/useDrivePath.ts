@@ -3,7 +3,7 @@ import { useMemo } from "@/lib/memo"
 import type { Contact } from "@filen/sdk-rs"
 import { validate as validateUuid } from "uuid"
 
-export const DRIVE_PATH_TYPES = ["drive", "sharedIn", "recents", "favorites", "trash", "sharedOut"] as const
+export const DRIVE_PATH_TYPES = ["drive", "sharedIn", "recents", "favorites", "trash", "sharedOut", "offline"] as const
 
 export type DrivePathType = (typeof DRIVE_PATH_TYPES)[number]
 

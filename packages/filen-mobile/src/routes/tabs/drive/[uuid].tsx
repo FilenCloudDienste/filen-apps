@@ -18,7 +18,7 @@ import * as DocumentPicker from "expo-document-picker"
 import transfers from "@/lib/transfers"
 import * as FileSystem from "expo-file-system"
 import useTransfersStore from "@/stores/useTransfers.store"
-import { FilenSdkError, DirEnum } from "@filen/sdk-rs"
+import { FilenSdkError, DirEnum, AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
 import { router } from "expo-router"
 
 const Header = memo(() => {
@@ -133,6 +133,7 @@ const Header = memo(() => {
 
 export const Drive = memo(() => {
 	const drivePath = useDrivePath()
+	const stringifiedClient = useStringifiedClient()
 
 	const driveItemsQuery = useDriveItemsQuery(
 		{
@@ -143,17 +144,50 @@ export const Drive = memo(() => {
 		}
 	)
 
-	const renderItem = useCallback((info: ListRenderItemInfo<DriveItem>) => {
-		return <Item info={info} />
-	}, [])
+	const parent = useMemo((): AnyDirEnumWithShareInfo | undefined => {
+		if (drivePath.type === "drive" && stringifiedClient && (!drivePath.uuid || (drivePath.uuid ?? "") === stringifiedClient.rootUuid)) {
+			return new AnyDirEnumWithShareInfo.Root({
+				uuid: stringifiedClient.rootUuid
+			})
+		}
+
+		const fromCache = cache.directoryUuidToAnyDirWithShareInfo.get(drivePath.uuid ?? "")
+
+		if (fromCache) {
+			return fromCache
+		}
+
+		return undefined
+	}, [drivePath.uuid, stringifiedClient, drivePath.type])
+
+	const renderItem = useCallback(
+		(info: ListRenderItemInfo<DriveItem>) => {
+			return (
+				<Item
+					info={{
+						...info,
+						item: {
+							item: info.item,
+							parent
+						}
+					}}
+				/>
+			)
+		},
+		[parent]
+	)
 
 	const keyExtractor = useCallback((item: DriveItem) => {
 		return item.data.uuid
 	}, [])
 
 	const data = useMemo(() => {
-		return driveItemsQuery.data ? itemSorter.sortItems(driveItemsQuery.data, "nameAsc") : []
-	}, [driveItemsQuery.data])
+		if (driveItemsQuery.status !== "success") {
+			return []
+		}
+
+		return itemSorter.sortItems(driveItemsQuery.data, "nameAsc")
+	}, [driveItemsQuery.data, driveItemsQuery.status])
 
 	const onRefresh = useCallback(async () => {
 		const result = await run(async () => {

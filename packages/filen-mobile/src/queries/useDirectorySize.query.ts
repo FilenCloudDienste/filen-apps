@@ -17,7 +17,7 @@ export async function fetchData(
 	}
 ) {
 	const sdkClient = await auth.getSdkClient()
-	const dir = cache.directoryUuidToDirForSize.get(params.uuid)
+	const dir = cache.directoryUuidToAnyDirWithShareInfo.get(params.uuid)
 
 	if (!dir) {
 		throw new Error("Directory not found in cache")

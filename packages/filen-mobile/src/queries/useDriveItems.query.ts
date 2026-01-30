@@ -4,10 +4,11 @@ import auth from "@/lib/auth"
 import useRefreshOnFocus from "@/queries/useRefreshOnFocus"
 import cache from "@/lib/cache"
 import { sortParams } from "@filen/utils"
-import { DirEnum, DirWithMetaEnum, AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
+import { DirEnum, DirWithMetaEnum, AnyDirEnumWithShareInfo, NonRootItemTagged, type File, type Dir } from "@filen/sdk-rs"
 import { type DrivePath, DRIVE_PATH_TYPES } from "@/hooks/useDrivePath"
 import { unwrapFileMeta, unwrapDirMeta } from "@/lib/utils"
 import type { DriveItem } from "@/types"
+import offline from "@/lib/offline"
 
 export const BASE_QUERY_KEY = "useDriveItemsQuery"
 
@@ -32,7 +33,7 @@ export async function fetchData(
 			}
 		: undefined
 
-	const result = await (() => {
+	const result = await (async () => {
 		switch (params.path.type) {
 			case "drive": {
 				const dir = (() => {
@@ -101,6 +102,29 @@ export async function fetchData(
 			case "trash": {
 				return sdkClient.listTrash(signal)
 			}
+
+			case "offline": {
+				const offlineFiles = await offline.listFiles()
+				const dirs: Dir[] = []
+				const files: File[] = []
+
+				for (const { file } of offlineFiles) {
+					if (file.type !== "file") {
+						continue
+					}
+
+					files.push(new NonRootItemTagged.File(file.data).inner[0])
+				}
+
+				return {
+					dirs,
+					files
+				}
+			}
+
+			default: {
+				return undefined
+			}
 		}
 	})()
 
@@ -129,7 +153,7 @@ export async function fetchData(
 
 			cache.directoryUuidToDir.set(uuid, dir)
 			cache.directoryUuidToName.set(uuid, meta?.name ?? uuid)
-			cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.Dir(dir))
+			cache.directoryUuidToAnyDirWithShareInfo.set(uuid, new AnyDirEnumWithShareInfo.Dir(dir))
 		} else {
 			items.push({
 				type: "sharedDirectory",
@@ -144,7 +168,7 @@ export async function fetchData(
 
 			cache.sharedDirUuidToDir.set(uuid, dir)
 			cache.sharedDirectoryUuidToName.set(uuid, meta?.name ?? uuid)
-			cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.SharedDir(dir))
+			cache.directoryUuidToAnyDirWithShareInfo.set(uuid, new AnyDirEnumWithShareInfo.SharedDir(dir))
 		}
 	}
 

@@ -149,7 +149,7 @@ export async function restoreQueries(): Promise<void> {
 
 									cache.directoryUuidToDir.set(uuid, item.data)
 									cache.directoryUuidToName.set(uuid, meta?.name ?? uuid)
-									cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.Dir(item.data))
+									cache.directoryUuidToAnyDirWithShareInfo.set(uuid, new AnyDirEnumWithShareInfo.Dir(item.data))
 								}
 
 								if (item.type === "sharedDirectory") {
@@ -161,7 +161,7 @@ export async function restoreQueries(): Promise<void> {
 
 									cache.sharedDirUuidToDir.set(uuid, item.data)
 									cache.sharedDirectoryUuidToName.set(uuid, meta?.name ?? uuid)
-									cache.directoryUuidToDirForSize.set(uuid, new AnyDirEnumWithShareInfo.SharedDir(item.data))
+									cache.directoryUuidToAnyDirWithShareInfo.set(uuid, new AnyDirEnumWithShareInfo.SharedDir(item.data))
 								}
 							}
 						}

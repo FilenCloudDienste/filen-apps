@@ -9,7 +9,7 @@ const cache = {
 	sharedDirUuidToDir: new Map<string, SharedDir>(),
 	sharedDirectoryUuidToName: new Map<string, string>(),
 	sharedDirectoryUuidToDir: new Map<string, SharedDir>(),
-	directoryUuidToDirForSize: new Map<string, AnyDirEnumWithShareInfo>(),
+	directoryUuidToAnyDirWithShareInfo: new Map<string, AnyDirEnumWithShareInfo>(),
 	chatUuidToChat: new Map<string, Chat>()
 }
 

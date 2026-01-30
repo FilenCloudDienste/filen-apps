@@ -7,15 +7,24 @@ import alerts from "@/lib/alerts"
 import { runWithLoading } from "@/components/ui/fullScreenLoadingModal"
 import prompts from "@/lib/prompts"
 import { run } from "@filen/utils"
-import { SharingRole_Tags } from "@filen/sdk-rs"
+import { SharingRole_Tags, type AnyDirEnumWithShareInfo } from "@filen/sdk-rs"
 import * as FileSystem from "expo-file-system"
 import transfers from "@/lib/transfers"
 import { randomUUID } from "expo-crypto"
 import * as MediaLibrary from "expo-media-library"
+import offline from "@/lib/offline"
 
 export type DriveItemMenuOrigin = "drive" | "preview" | "trash" | "sharedIn" | "sharedOut" | "favorites" | "recents" | "links"
 
-export function createMenuButtons({ item, origin }: { item: DriveItem; origin: DriveItemMenuOrigin }): MenuButton[] {
+export function createMenuButtons({
+	item,
+	origin,
+	parent
+}: {
+	item: DriveItem
+	origin: DriveItemMenuOrigin
+	parent?: AnyDirEnumWithShareInfo
+}): MenuButton[] {
 	const menuButtons: MenuButton[] = []
 
 	if (
@@ -88,12 +97,30 @@ export function createMenuButtons({ item, origin }: { item: DriveItem; origin: D
 				}
 			}
 		})
+	}
 
+	if ((item.type === "file" || item.type === "directory") && parent && origin !== "sharedIn") {
 		downloadSubButtons.push({
 			id: "makeAvailableOffline",
 			title: "tbd_make_available_offline",
-			onPress: () => {
-				// TODO
+			onPress: async () => {
+				if (item.type === "file") {
+					const result = await run(async () => {
+						return await offline.storeFile({
+							file: item,
+							parent
+						})
+					})
+
+					if (!result.success) {
+						console.error(result.error)
+						alerts.error(result.error)
+
+						return
+					}
+
+					console.log(await offline.listFiles())
+				}
 			}
 		})
 	}
@@ -327,7 +354,8 @@ const Menu = memo(
 		origin,
 		type,
 		className,
-		isAnchoredToRight
+		isAnchoredToRight,
+		parent
 	}: {
 		item: DriveItem
 		children: React.ReactNode
@@ -335,13 +363,15 @@ const Menu = memo(
 		type: React.ComponentPropsWithoutRef<typeof MenuComponent>["type"]
 		className?: string
 		isAnchoredToRight?: boolean
+		parent?: AnyDirEnumWithShareInfo
 	}) => {
 		const menuButtons = useMemo(() => {
 			return createMenuButtons({
 				item,
-				origin
+				origin,
+				parent
 			})
-		}, [origin, item])
+		}, [origin, item, parent])
 
 		return (
 			<MenuComponent
